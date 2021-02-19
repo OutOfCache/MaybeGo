@@ -6,6 +6,6 @@ func Read(adr uint16) byte {
 	return Memory[adr]
 }
 
-func WriteW(adr uint16, val byte) {
+func Write(adr uint16, val byte) {
 	Memory[adr] = val
 }
