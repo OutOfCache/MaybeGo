@@ -19,21 +19,41 @@ type Flags struct {
 	H bool // half carry
 }
 
-var currentOpcode uint16;
-var opcodes [256]func();
-
-func cpu00() { // do I need parameters for args?
-    return // NOP
+type CPU struct {
+	reg *Registers
+	flg *Flags
 }
 
-func cpu01() int { // LD BC, u16
-    Registers.B = Read(Registers.PC++)
-    Registers.C = Read(Registers.PC++)
-    Registers.PC++
+var currentOpcode uint16
+var opcodes [256]func()
+
+// dummy "constructor"
+func NewCPU() *CPU {
+	cpu := &CPU{reg: new(Registers), flg: new(Flags)}
+	//    cpu.Registers := &Registers{}
+	//    cpu.Flags := &Flags{}
+
+	return cpu
 }
 
-func cpu02() int { // LD (BC), A
-    address = (Registers.B << 8) + Registers.C
-    Write(address, Registers.A)
-    Registers.PC++
+func (cpu *CPU) cpu00() { // do I need parameters for args?
+	cpu.reg.PC++
+}
+
+func (cpu *CPU) cpu01() int { // LD BC, u16
+	cpu.reg.PC++
+	cpu.reg.C = Read(cpu.reg.PC)
+	cpu.reg.PC++
+	cpu.reg.B = Read(cpu.reg.PC)
+	cpu.reg.PC++
+
+	return 0
+}
+
+func (cpu *CPU) cpu02() int { // LD (BC), A
+	address := (uint16(cpu.reg.B) << 8) + uint16(cpu.reg.C)
+	Write(address, cpu.reg.A)
+	cpu.reg.PC++
+
+	return 0
 }
