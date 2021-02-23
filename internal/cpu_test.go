@@ -79,3 +79,67 @@ func TestCpu02(t *testing.T) {
 		}
 	}
 }
+
+func TestCpu07(t *testing.T) {
+	var tests = []struct {
+		pc         uint16
+		a          byte
+		carry      bool
+		expectedA  byte
+		expectedPC uint16
+	}{
+		{0x1234, 0x80, true, 0x01, 0x1235},
+		{0x63F8, 0x35, false, 0x6A, 0x63F9},
+	}
+
+	for _, test := range tests {
+		cpu.reg.PC = test.pc
+		cpu.reg.A = test.a
+		cpu.cpu07()
+		if cpu.flg.C != test.carry {
+			t.Errorf("Carry: %t, expected: %t", cpu.flg.C, test.carry)
+		}
+		if cpu.reg.A != test.expectedA {
+			t.Errorf("Current A: %x, expected %x", cpu.reg.A, test.expectedA)
+		}
+		if cpu.reg.PC != test.expectedPC {
+			t.Errorf("Current PC: %x, expected: %x", cpu.reg.PC, test.expectedPC)
+		}
+	}
+
+}
+
+func TestCpu08(t *testing.T) {
+	var tests = []struct {
+		pc         uint16
+		sp         uint16
+		splo       byte
+		sphi       byte
+		lo         byte
+		hi         byte
+		address    uint16
+		expectedPC uint16
+	}{
+		{0x1234, 0x385E, 0x5E, 0x38, 0x7D, 0x89, 0x897D, 0x1237},
+		{0x63F8, 0x3582, 0x82, 0x35, 0x6A, 0x12, 0x126A, 0x63FB},
+	}
+
+	for _, test := range tests {
+		cpu.reg.PC = test.pc
+		cpu.reg.SP = test.sp
+
+		Write(cpu.reg.PC+1, test.lo)
+		Write(cpu.reg.PC+2, test.hi)
+		cpu.cpu08()
+		if Read(test.address) != test.splo {
+			t.Errorf("At Address: %x, expected: %x", Read(test.address), test.lo)
+		}
+		if Read(test.address+1) != test.sphi {
+			t.Errorf("At Address + 1: %x, expected %x", Read(test.address+1), test.hi)
+		}
+		if cpu.reg.PC != test.expectedPC {
+			t.Errorf("Current PC: %x, expected: %x", cpu.reg.PC, test.expectedPC)
+		}
+	}
+
+}
