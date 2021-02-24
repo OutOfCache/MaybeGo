@@ -30,8 +30,6 @@ var opcodes [256]func()
 // dummy "constructor"
 func NewCPU() *CPU {
 	cpu := &CPU{reg: new(Registers), flg: new(Flags)}
-	//    cpu.Registers := &Registers{}
-	//    cpu.Flags := &Flags{}
 
 	return cpu
 }
@@ -43,104 +41,181 @@ func FlagToBit(flag bool) byte {
 	return 0
 }
 
+// LD r8, r8/n8
+func (cpu *CPU) ld8(dest *byte, src byte) {
+	*dest = src
+}
+
+// LD r16, r16/n16
+func ld16(destLo *byte, destHi *byte, srcLo byte, srcHi byte) {
+	*destLo = srcLo
+	*destHi = srcHi
+}
+
+// LD r16, r16/n16
+func (cpu *CPU) ld16reg(dest uint16, srcLo byte, srcHi byte) {
+	dest = uint16(srcHi)<<8 + uint16(srcLo)
+}
+
+// LD [r16], r8/n8
+func (cpu *CPU) ldToAddress(adrLo byte, adrHi byte, val byte) {
+	address := uint16(adrHi)<<8 + uint16(adrLo)
+	Write(address, val)
+}
+
+// LD [r16], r16
+func (cpu *CPU) ldToAddress16(adrLo byte, adrHi byte, valLo byte, valHi byte) {
+	address := uint16(adrHi)<<8 + uint16(adrLo)
+	Write(address, valLo)
+	Write(address+1, valHi)
+
+}
+
+// LD r8, [r16]
+func (cpu *CPU) ldFromAddress(dest *byte, adrLo byte, adrHi byte) {
+	address := uint16(adrHi)<<8 + uint16(adrLo)
+	*dest = Read(address)
+}
+
+func (cpu *CPU) inc8(reg *byte, flags bool) {
+	*reg++
+	if flags {
+		cpu.flg.N = false
+		cpu.flg.Z = *reg == 0
+		cpu.flg.H = *reg == 0x10
+	}
+}
+
+func (cpu *CPU) inc16(destLo *byte, destHi *byte) {
+	cpu.inc8(destLo, false)
+	if *destLo == 0 { // increase if overflow in low byte
+		cpu.inc8(destHi, false)
+	}
+}
+
+func (cpu *CPU) dec8(reg *byte, flags bool) {
+	*reg--
+	if flags {
+		cpu.flg.N = true
+		cpu.flg.Z = *reg == 0
+		cpu.flg.H = *reg == 0xF
+	}
+}
+
+func (cpu *CPU) dec16(destLo *byte, destHi *byte) {
+	cpu.dec8(destLo, false)
+	if *destLo == 0xFF {
+		cpu.dec8(destHi, false)
+	}
+}
+
+func (cpu *CPU) add16(destLo *byte, destHi *byte, srcLo byte, srcHi byte) {
+	cpu.flg.N = false
+
+	sum := int(*destLo) + int(srcLo)
+	*destLo = byte(sum & 0xFF)
+	cpu.flg.H = (byte(sum>>8)+(*destHi&0xf)+(srcHi&0xf))&0x10 == 0x10
+	sum = (sum >> 8) + int(*destHi) + int(srcHi)
+	*destHi = byte(sum & 0xFF)
+	cpu.flg.C = sum > 0xFF
+
+}
+
+func (cpu *CPU) rl8(reg *byte, carry bool) {
+	lsb := byte(0)
+	if carry {
+		lsb = FlagToBit(cpu.flg.C)
+	} else {
+		lsb = *reg >> 7
+	}
+	cpu.flg.C = *reg>>7 == 1
+
+	*reg = *reg<<1 + lsb
+
+	cpu.flg.N = false
+	cpu.flg.H = false
+	cpu.flg.Z = *reg == 0
+}
+
+func (cpu *CPU) rr8(reg *byte, carry bool) {
+	msb := byte(0)
+	if carry {
+		msb = FlagToBit(cpu.flg.C)
+	} else {
+		msb = *reg & 0x01
+	}
+	cpu.flg.C = *reg&0x01 == 1
+
+	*reg = *reg>>1 + (msb << 7)
+
+	cpu.flg.N = false
+	cpu.flg.H = false
+	cpu.flg.Z = *reg == 0
+}
+
 func (cpu *CPU) cpu00() { // do I need parameters for args?
 	cpu.reg.PC++
 }
 
 func (cpu *CPU) cpu01() int { // LD BC, u16
-	cpu.reg.PC++
-	cpu.reg.C = Read(cpu.reg.PC)
-	cpu.reg.PC++
-	cpu.reg.B = Read(cpu.reg.PC)
-	cpu.reg.PC++
+	ld16(&cpu.reg.C, &cpu.reg.B, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
+	cpu.reg.PC += 3
 
 	return 0
 }
 
 func (cpu *CPU) cpu02() int { // LD (BC), A
-	address := (uint16(cpu.reg.B) << 8) + uint16(cpu.reg.C)
-	Write(address, cpu.reg.A)
+	cpu.ldToAddress(cpu.reg.C, cpu.reg.B, cpu.reg.A)
 	cpu.reg.PC++
 
 	return 0
 }
 
 func (cpu *CPU) cpu03() int { // INC BC
-	cpu.reg.C++
-	if cpu.reg.C == 0 {
-		cpu.reg.B++
-	}
+	cpu.inc16(&cpu.reg.C, &cpu.reg.B)
 	cpu.reg.PC++
 
 	return 0
 }
 
 func (cpu *CPU) cpu04() int { // INC B
-	cpu.flg.N = false
-	cpu.reg.B++
-	if cpu.reg.B == 0 {
-		cpu.flg.Z = true
-	}
-	if cpu.reg.B == 0x10 {
-		cpu.flg.H = true
-	}
-
+	cpu.inc8(&cpu.reg.B, true)
 	cpu.reg.PC++
 	return 0
 }
 
 func (cpu *CPU) cpu05() int { // DEC B
-	cpu.flg.N = true
-	cpu.reg.B--
-	if cpu.reg.B == 0 {
-		cpu.flg.Z = true
-	}
-	if cpu.reg.B == 0xF {
-		cpu.flg.H = true
-	}
-
+	cpu.dec8(&cpu.reg.B, true)
 	cpu.reg.PC++
 	return 0
 }
 
 func (cpu *CPU) cpu06() int { // LD B, u8
-	cpu.reg.B = Read(cpu.reg.PC + 1)
+	cpu.ld8(&cpu.reg.B, Read(cpu.reg.PC+1))
 
 	cpu.reg.PC += 2
 	return 0
 }
 
 func (cpu *CPU) cpu07() int { // RLCA
-	if (cpu.reg.A & 0x80) == 0x80 {
-		cpu.flg.C = true
-	} else {
-		cpu.flg.C = false
-	}
+	cpu.rl8(&cpu.reg.A, false)
 
-	cpu.reg.A <<= 1
-	cpu.reg.A += FlagToBit(cpu.flg.C)
+	cpu.flg.Z = false
 
 	cpu.reg.PC++
 	return 0
 }
 
 func (cpu *CPU) cpu08() int { // LD (u16),SP
-	address := uint16(Read(cpu.reg.PC+1)) + (uint16(Read(cpu.reg.PC+2)) << 8)
-	Write(address, byte(cpu.reg.SP&0xFF))
-	Write(address+1, byte((cpu.reg.SP&0xFF00)>>8))
+	cpu.ldToAddress16(Read(cpu.reg.PC+1), Read(cpu.reg.PC+2),
+		byte(cpu.reg.SP&0xFF), byte(cpu.reg.SP>>8))
 
 	cpu.reg.PC += 3
 	return 0
 }
 
 func (cpu *CPU) cpu09() int { // ADD HL, BC
-	cpu.flg.N = false
-	sum := int(cpu.reg.L) + int(cpu.reg.C)
-	cpu.reg.L = byte(sum & 0xFF)
-	cpu.flg.H = (byte(sum>>8)+(cpu.reg.H&0xf)+(cpu.reg.B&0xf))&0x10 == 0x10
-	sum = (sum >> 8) + int(cpu.reg.H) + int(cpu.reg.B)
-	cpu.reg.H = byte(sum & 0xFF)
-	cpu.flg.C = sum > 0xFF
+	cpu.add16(&cpu.reg.L, &cpu.reg.H, cpu.reg.C, cpu.reg.B)
 
 	cpu.reg.PC++
 
@@ -148,68 +223,42 @@ func (cpu *CPU) cpu09() int { // ADD HL, BC
 }
 
 func (cpu *CPU) cpu0A() int { // LD A, (BC)
-	address := uint16(cpu.reg.B)<<8 + uint16(cpu.reg.C)
-	cpu.reg.A = Read(address)
-
+	cpu.ldFromAddress(&cpu.reg.A, cpu.reg.C, cpu.reg.B)
 	cpu.reg.PC++
 	return 0
 }
 
 func (cpu *CPU) cpu0B() int { // DEC BC
-	if cpu.reg.C == 0 && cpu.reg.B > 0 {
-		cpu.reg.C = 0xFF
-		cpu.reg.B--
-	} else {
-		cpu.reg.C--
-	}
+	cpu.dec16(&cpu.reg.C, &cpu.reg.B)
 
 	cpu.reg.PC++
 	return 0
 }
 
 func (cpu *CPU) cpu0C() int { // INC C
-	cpu.flg.N = false
-	cpu.reg.C++
-	if cpu.reg.C == 0 {
-		cpu.flg.Z = true
-	}
-	if cpu.reg.C == 0x10 {
-		cpu.flg.H = true
-	}
+	cpu.inc8(&cpu.reg.C, true)
 
 	cpu.reg.PC++
 	return 0
 }
 
 func (cpu *CPU) cpu0D() int { // DEC C
-	cpu.flg.N = true
-	cpu.reg.C--
-	if cpu.reg.C == 0 {
-		cpu.flg.Z = true
-	}
-	if cpu.reg.C == 0xF {
-		cpu.flg.H = true
-	}
+	cpu.dec8(&cpu.reg.C, true)
 
 	cpu.reg.PC++
 	return 0
 }
 
-func (cpu *CPU) cpu0E() int {
-	cpu.reg.PC++
-	cpu.reg.C = Read(cpu.reg.PC)
+func (cpu *CPU) cpu0E() int { // LD C, u8
+	cpu.ld8(&cpu.reg.C, Read(cpu.reg.PC+1))
 
-	cpu.reg.PC++
+	cpu.reg.PC += 2
 	return 0
 }
 
-func (cpu *CPU) cpu0F() int {
+func (cpu *CPU) cpu0F() int { // RRCA
+	cpu.rr8(&cpu.reg.A, false)
 	cpu.flg.Z = false
-	cpu.flg.N = false
-	cpu.flg.H = false
-	cpu.flg.C = cpu.reg.A&0x01 == 0x01
-	cpu.reg.A >>= 1
-	cpu.reg.A += FlagToBit(cpu.flg.C) << 7
 
 	cpu.reg.PC++
 	return 0
