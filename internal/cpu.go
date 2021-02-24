@@ -153,48 +153,49 @@ func (cpu *CPU) rr8(reg *byte, carry bool) {
 	cpu.flg.Z = *reg == 0
 }
 
-func (cpu *CPU) cpu00() { // do I need parameters for args?
+func (cpu *CPU) cpu00() int { // do I need parameters for args?
 	cpu.reg.PC++
+	return 1
 }
 
 func (cpu *CPU) cpu01() int { // LD BC, u16
 	cpu.ld16(&cpu.reg.C, &cpu.reg.B, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
 	cpu.reg.PC += 3
 
-	return 0
+	return 3
 }
 
 func (cpu *CPU) cpu02() int { // LD (BC), A
 	cpu.ldToAddress(cpu.reg.C, cpu.reg.B, cpu.reg.A)
 	cpu.reg.PC++
 
-	return 0
+	return 2
 }
 
 func (cpu *CPU) cpu03() int { // INC BC
 	cpu.inc16(&cpu.reg.C, &cpu.reg.B)
 	cpu.reg.PC++
 
-	return 0
+	return 2
 }
 
 func (cpu *CPU) cpu04() int { // INC B
 	cpu.inc8(&cpu.reg.B, true)
 	cpu.reg.PC++
-	return 0
+	return 1
 }
 
 func (cpu *CPU) cpu05() int { // DEC B
 	cpu.dec8(&cpu.reg.B, true)
 	cpu.reg.PC++
-	return 0
+	return 1
 }
 
 func (cpu *CPU) cpu06() int { // LD B, u8
 	cpu.ld8(&cpu.reg.B, Read(cpu.reg.PC+1))
 
 	cpu.reg.PC += 2
-	return 0
+	return 2
 }
 
 func (cpu *CPU) cpu07() int { // RLCA
@@ -203,7 +204,7 @@ func (cpu *CPU) cpu07() int { // RLCA
 	cpu.flg.Z = false
 
 	cpu.reg.PC++
-	return 0
+	return 1
 }
 
 func (cpu *CPU) cpu08() int { // LD (u16),SP
@@ -211,7 +212,7 @@ func (cpu *CPU) cpu08() int { // LD (u16),SP
 		byte(cpu.reg.SP&0xFF), byte(cpu.reg.SP>>8))
 
 	cpu.reg.PC += 3
-	return 0
+	return 5
 }
 
 func (cpu *CPU) cpu09() int { // ADD HL, BC
@@ -219,41 +220,41 @@ func (cpu *CPU) cpu09() int { // ADD HL, BC
 
 	cpu.reg.PC++
 
-	return 0
+	return 2
 }
 
 func (cpu *CPU) cpu0A() int { // LD A, (BC)
 	cpu.ldFromAddress(&cpu.reg.A, cpu.reg.C, cpu.reg.B)
 	cpu.reg.PC++
-	return 0
+	return 2
 }
 
 func (cpu *CPU) cpu0B() int { // DEC BC
 	cpu.dec16(&cpu.reg.C, &cpu.reg.B)
 
 	cpu.reg.PC++
-	return 0
+	return 2
 }
 
 func (cpu *CPU) cpu0C() int { // INC C
 	cpu.inc8(&cpu.reg.C, true)
 
 	cpu.reg.PC++
-	return 0
+	return 1
 }
 
 func (cpu *CPU) cpu0D() int { // DEC C
 	cpu.dec8(&cpu.reg.C, true)
 
 	cpu.reg.PC++
-	return 0
+	return 1
 }
 
 func (cpu *CPU) cpu0E() int { // LD C, u8
 	cpu.ld8(&cpu.reg.C, Read(cpu.reg.PC+1))
 
 	cpu.reg.PC += 2
-	return 0
+	return 2
 }
 
 func (cpu *CPU) cpu0F() int { // RRCA
@@ -261,7 +262,7 @@ func (cpu *CPU) cpu0F() int { // RRCA
 	cpu.flg.Z = false
 
 	cpu.reg.PC++
-	return 0
+	return 1
 }
 
 func (cpu *CPU) cpu10() int { // TODO: STOP
