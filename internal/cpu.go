@@ -47,7 +47,7 @@ func (cpu *CPU) ld8(dest *byte, src byte) {
 }
 
 // LD r16, r16/n16
-func ld16(destLo *byte, destHi *byte, srcLo byte, srcHi byte) {
+func (cpu *CPU) ld16(destLo *byte, destHi *byte, srcLo byte, srcHi byte) {
 	*destLo = srcLo
 	*destHi = srcHi
 }
@@ -158,7 +158,7 @@ func (cpu *CPU) cpu00() { // do I need parameters for args?
 }
 
 func (cpu *CPU) cpu01() int { // LD BC, u16
-	ld16(&cpu.reg.C, &cpu.reg.B, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
+	cpu.ld16(&cpu.reg.C, &cpu.reg.B, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
 	cpu.reg.PC += 3
 
 	return 0
@@ -262,4 +262,109 @@ func (cpu *CPU) cpu0F() int { // RRCA
 
 	cpu.reg.PC++
 	return 0
+}
+
+func (cpu *CPU) cpu10() int { // TODO: STOP
+	cpu.reg.PC += 2
+	return 1
+}
+
+func (cpu *CPU) cpu11() int { // LD DE, u16
+	cpu.ld16(&cpu.reg.E, &cpu.reg.D,
+		Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
+	cpu.reg.PC += 3
+
+	return 3
+}
+
+func (cpu *CPU) cpu12() int { // LD (DE), A
+	cpu.ldToAddress(cpu.reg.E, cpu.reg.D, cpu.reg.A)
+
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu13() int { // INC DE
+	cpu.inc16(&cpu.reg.E, &cpu.reg.D)
+
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu14() int { // INC D
+	cpu.inc8(&cpu.reg.D, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu15() int { // DEC D
+	cpu.dec8(&cpu.reg.D, true)
+
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu16() int { // LD D, u8
+	cpu.ld8(&cpu.reg.D, Read(cpu.reg.PC+1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpu17() int { // RLA
+	cpu.rl8(&cpu.reg.A, true)
+	cpu.flg.Z = false
+
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu18() int { // TODO: JR i8
+	return 3
+}
+
+func (cpu *CPU) cpu19() int { // ADD HL, DE
+	cpu.add16(&cpu.reg.L, &cpu.reg.H, cpu.reg.E, cpu.reg.D)
+
+	cpu.reg.PC++
+
+	return 2
+}
+
+func (cpu *CPU) cpu1A() int { // LD A, (DE)
+	cpu.ldFromAddress(&cpu.reg.A, cpu.reg.E, cpu.reg.D)
+
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu1B() int { // DEC DE
+	cpu.dec16(&cpu.reg.E, &cpu.reg.D)
+
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu1C() int { // INC E
+	cpu.inc8(&cpu.reg.E, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu1D() int { // DEC E
+	cpu.dec8(&cpu.reg.E, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu1E() int { // LD E, u8
+	cpu.ld8(&cpu.reg.E, Read(cpu.reg.PC+1))
+
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpu1F() int { // RRA
+	cpu.rr8(&cpu.reg.A, true)
+	cpu.reg.PC++
+	return 1
 }
