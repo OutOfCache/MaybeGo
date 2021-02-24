@@ -319,7 +319,8 @@ func (cpu *CPU) cpu17() int { // RLA
 	return 1
 }
 
-func (cpu *CPU) cpu18() int { // TODO: JR i8
+func (cpu *CPU) cpu18() int { //  JR i8
+	cpu.reg.PC += uint16(2 + int8(Read(cpu.reg.PC+1)))
 	return 3
 }
 
