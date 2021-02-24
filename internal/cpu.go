@@ -153,6 +153,10 @@ func (cpu *CPU) rr8(reg *byte, carry bool) {
 	cpu.flg.Z = *reg == 0
 }
 
+func (cpu *CPU) jr( /* i8 byte */ ) {
+	cpu.reg.PC += uint16(2 + int8(Read(cpu.reg.PC+1)))
+}
+
 func (cpu *CPU) cpu00() int { // do I need parameters for args?
 	cpu.reg.PC++
 	return 1
@@ -320,7 +324,7 @@ func (cpu *CPU) cpu17() int { // RLA
 }
 
 func (cpu *CPU) cpu18() int { //  JR i8
-	cpu.reg.PC += uint16(2 + int8(Read(cpu.reg.PC+1)))
+	cpu.jr()
 	return 3
 }
 
