@@ -109,6 +109,70 @@ func (cpu *CPU) dec16(destLo *byte, destHi *byte) {
 	}
 }
 
+func (cpu *CPU) addA(reg byte, carry bool) {
+	if carry {
+		carry = cpu.flg.C
+	}
+	cpu.flg.H = uint16(cpu.reg.A&0xF)+uint16(reg&0xF)&0x10 == 0x10
+
+	sum := uint16(cpu.reg.A) + uint16(reg) + uint16(FlagToBit(carry))
+	cpu.reg.A = byte(sum)
+
+	cpu.flg.Z = cpu.reg.A == 0
+	cpu.flg.C = sum&0x10 == 0x10
+	cpu.flg.N = false
+}
+
+func (cpu *CPU) subA(reg byte, carry bool) {
+	if carry {
+		carry = cpu.flg.C
+	}
+	cpu.flg.H = cpu.reg.A&0xF < reg&0xF
+	cpu.flg.C = cpu.reg.A < reg
+
+	cpu.reg.A -= reg + FlagToBit(carry)
+
+	cpu.flg.Z = cpu.reg.A == 0
+	cpu.flg.N = true
+}
+
+func (cpu *CPU) andA(reg byte) {
+	cpu.reg.A &= reg
+
+	cpu.flg.Z = cpu.reg.A == 0
+	cpu.flg.N = false
+	cpu.flg.H = true
+	cpu.flg.C = false
+}
+
+func (cpu *CPU) xorA(reg byte) {
+	cpu.reg.A ^= reg
+
+	cpu.flg.Z = cpu.reg.A == 0
+	cpu.flg.N = false
+	cpu.flg.H = false
+	cpu.flg.C = false
+}
+
+func (cpu *CPU) orA(reg byte) {
+	cpu.reg.A |= reg
+
+	cpu.flg.Z = cpu.reg.A == 0
+	cpu.flg.N = false
+	cpu.flg.H = false
+	cpu.flg.C = false
+}
+
+func (cpu *CPU) cpA(reg byte) {
+	cpu.flg.H = cpu.reg.A&0xF < reg&0xF
+	cpu.flg.C = cpu.reg.A < reg
+
+	result := cpu.reg.A - reg
+
+	cpu.flg.Z = result == 0
+	cpu.flg.N = true
+}
+
 func (cpu *CPU) add16(destLo *byte, destHi *byte, srcLo byte, srcHi byte) {
 	cpu.flg.N = false
 
@@ -586,6 +650,781 @@ func (cpu *CPU) cpu3F() int { // CCF
 	cpu.flg.N = false
 	cpu.flg.H = false
 
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu40() int { // LD B,B
+	cpu.ld8(&cpu.reg.B, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu41() int { // LD B,C
+	cpu.ld8(&cpu.reg.B, cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu42() int { // LD B,D
+	cpu.ld8(&cpu.reg.B, cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu43() int { // LD B,E
+	cpu.ld8(&cpu.reg.B, cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu44() int { // LD B,H
+	cpu.ld8(&cpu.reg.B, cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu45() int { // LD B,L
+	cpu.ld8(&cpu.reg.B, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu46() int { // LD B,(HL)
+	cpu.ldFromAddress(&cpu.reg.B, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu47() int { // LD B,A
+	cpu.ld8(&cpu.reg.B, cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu48() int { // LD C,B
+	cpu.ld8(&cpu.reg.C, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu49() int { // LD C,C
+	cpu.ld8(&cpu.reg.C, cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu4A() int { // LD C,D
+	cpu.ld8(&cpu.reg.C, cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu4B() int { // LD C,E
+	cpu.ld8(&cpu.reg.C, cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu4C() int { // LD C,H
+	cpu.ld8(&cpu.reg.C, cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu4D() int { // LD C,L
+	cpu.ld8(&cpu.reg.C, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu4E() int { // LD C,(HL)
+	cpu.ldFromAddress(&cpu.reg.C, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu4F() int { // LD C,A
+	cpu.ld8(&cpu.reg.C, cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu50() int { // LD D,B
+	cpu.ld8(&cpu.reg.D, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu51() int { // LD D,C
+	cpu.ld8(&cpu.reg.D, cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu52() int { // LD D,D
+	cpu.ld8(&cpu.reg.D, cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu53() int { // LD D,E
+	cpu.ld8(&cpu.reg.D, cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu54() int { // LD D,H
+	cpu.ld8(&cpu.reg.D, cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu55() int { // LD D,L
+	cpu.ld8(&cpu.reg.D, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu56() int { // LD D,(HL)
+	cpu.ldFromAddress(&cpu.reg.D, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu57() int { // LD D,A
+	cpu.ld8(&cpu.reg.D, cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu58() int { // LD E,B
+	cpu.ld8(&cpu.reg.E, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu59() int { // LD E,C
+	cpu.ld8(&cpu.reg.E, cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu5A() int { // LD E,D
+	cpu.ld8(&cpu.reg.E, cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu5B() int { // LD E,E
+	cpu.ld8(&cpu.reg.E, cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu5C() int { // LD E,H
+	cpu.ld8(&cpu.reg.E, cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu5D() int { // LD E,L
+	cpu.ld8(&cpu.reg.E, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu5E() int { // LD E,(HL)
+	cpu.ldFromAddress(&cpu.reg.E, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu5F() int { // LD E,A
+	cpu.ld8(&cpu.reg.E, cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu60() int { // LD H,B
+	cpu.ld8(&cpu.reg.H, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu61() int { // LD H,C
+	cpu.ld8(&cpu.reg.H, cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu62() int { // LD H,D
+	cpu.ld8(&cpu.reg.H, cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu63() int { // LD H,E
+	cpu.ld8(&cpu.reg.H, cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu64() int { // LD H,H
+	cpu.ld8(&cpu.reg.H, cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu65() int { // LD H,L
+	cpu.ld8(&cpu.reg.H, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu66() int { // LD H,(HL)
+	cpu.ldFromAddress(&cpu.reg.H, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu67() int { // LD H,A
+	cpu.ld8(&cpu.reg.H, cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu68() int { // LD L,B
+	cpu.ld8(&cpu.reg.L, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu69() int { // LD L,C
+	cpu.ld8(&cpu.reg.L, cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu6A() int { // LD L,D
+	cpu.ld8(&cpu.reg.L, cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu6B() int { // LD L,E
+	cpu.ld8(&cpu.reg.L, cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu6C() int { // LD L,H
+	cpu.ld8(&cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu6D() int { // LD L,L
+	cpu.ld8(&cpu.reg.L, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu6E() int { // LD L,(HL)
+	cpu.ldFromAddress(&cpu.reg.L, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu6F() int { // LD L,A
+	cpu.ld8(&cpu.reg.L, cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu70() int { // LD (HL),B
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.B)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu71() int { // LD (HL),C
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.C)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu72() int { // LD (HL),D
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.D)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu73() int { // LD (HL),E
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.E)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu74() int { // LD (HL),H
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu75() int { // LD (HL),L
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.L)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu76() int { // TODO: HALT
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu77() int { // LD (HL),A
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.A)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu78() int { // LD A,B
+	cpu.ld8(&cpu.reg.A, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu79() int { // LD A,C
+	cpu.ld8(&cpu.reg.A, cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu7A() int { // LD A,D
+	cpu.ld8(&cpu.reg.A, cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu7B() int { // LD A,E
+	cpu.ld8(&cpu.reg.A, cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu7C() int { // LD A,H
+	cpu.ld8(&cpu.reg.A, cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu7D() int { // LD A,L
+	cpu.ld8(&cpu.reg.A, cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu7E() int { // LD A,(HL)
+	cpu.ldFromAddress(&cpu.reg.A, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu7F() int { // LD A,A
+	cpu.ld8(&cpu.reg.A, cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu80() int { // ADD A,B
+	cpu.addA(cpu.reg.B, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu81() int { // ADD A,C
+	cpu.addA(cpu.reg.C, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu82() int { // ADD A,D
+	cpu.addA(cpu.reg.D, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu83() int { // ADD A,E
+	cpu.addA(cpu.reg.E, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu84() int { // ADD A,H
+	cpu.addA(cpu.reg.H, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu85() int { // ADD A,L
+	cpu.addA(cpu.reg.L, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu86() int { // ADD A,(HL)
+	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	cpu.addA(Read(address), false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu87() int { // ADD A,A
+	cpu.addA(cpu.reg.A, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu88() int { // ADC A,B
+	cpu.addA(cpu.reg.B, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu89() int { // ADC A,C
+	cpu.addA(cpu.reg.C, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu8A() int { // ADC A,D
+	cpu.addA(cpu.reg.D, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu8B() int { // ADC A,E
+	cpu.addA(cpu.reg.E, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu8C() int { // ADC A,H
+	cpu.addA(cpu.reg.H, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu8D() int { // ADC A,L
+	cpu.addA(cpu.reg.L, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu8E() int { // ADC A,(HL)
+	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	cpu.addA(Read(address), true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu8F() int { // ADC A,A
+	cpu.addA(cpu.reg.A, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu90() int { // SUB A,B
+	cpu.subA(cpu.reg.B, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu91() int { // SUB A,C
+	cpu.subA(cpu.reg.C, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu92() int { // SUB A,D
+	cpu.subA(cpu.reg.D, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu93() int { // SUB A,E
+	cpu.subA(cpu.reg.E, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu94() int { // SUB A,H
+	cpu.subA(cpu.reg.H, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu95() int { // SUB A,L
+	cpu.subA(cpu.reg.L, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu96() int { // SUB A,(HL)
+	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	cpu.subA(Read(address), false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu97() int { // SUB A,A
+	cpu.subA(cpu.reg.A, false)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu98() int { // SBC A,B
+	cpu.subA(cpu.reg.B, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu99() int { // SBC A,C
+	cpu.subA(cpu.reg.C, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu9A() int { // SBC A,D
+	cpu.subA(cpu.reg.D, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu9B() int { // SBC A,E
+	cpu.subA(cpu.reg.E, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu9C() int { // SBC A,H
+	cpu.subA(cpu.reg.H, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu9D() int { // SBC A,L
+	cpu.subA(cpu.reg.L, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu9E() int { // SBC A,(HL)
+	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	cpu.subA(Read(address), true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu9F() int { // SBC A,A
+	cpu.subA(cpu.reg.A, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA0() int { // AND A,B
+	cpu.andA(cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA1() int { // AND A,C
+	cpu.andA(cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA2() int { // AND A,D
+	cpu.andA(cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA3() int { // AND A,E
+	cpu.andA(cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA4() int { // AND A,H
+	cpu.andA(cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA5() int { // AND A,L
+	cpu.andA(cpu.reg.L)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA6() int { // AND A,(HL)
+	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	cpu.andA(Read(address))
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA7() int { // AND A,A
+	cpu.andA(cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA8() int { // XOR A,B
+	cpu.xorA(cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuA9() int { // XOR A,C
+	cpu.xorA(cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuAA() int { // XOR A,D
+	cpu.xorA(cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuAB() int { // XOR A,E
+	cpu.xorA(cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuAC() int { // XOR A,H
+	cpu.xorA(cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuAD() int { // XOR A,L
+	cpu.xorA(cpu.reg.L)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuAE() int { // XOR A,(HL)
+	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	cpu.xorA(Read(address))
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuAF() int { // XOR A,A
+	cpu.xorA(cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB0() int { // OR A,B
+	cpu.orA(cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB1() int { // OR A,C
+	cpu.orA(cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB2() int { // OR A,D
+	cpu.orA(cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB3() int { // OR A,E
+	cpu.orA(cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB4() int { // OR A,H
+	cpu.orA(cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB5() int { // OR A,L
+	cpu.orA(cpu.reg.L)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB6() int { // OR A,(HL)
+	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	cpu.orA(Read(address))
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB7() int { // OR A,A
+	cpu.orA(cpu.reg.A)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB8() int { // CP A,B
+	cpu.cpA(cpu.reg.B)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuB9() int { // CP A,C
+	cpu.cpA(cpu.reg.C)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuBA() int { // CP A,D
+	cpu.cpA(cpu.reg.D)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuBB() int { // CP A,E
+	cpu.cpA(cpu.reg.E)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuBC() int { // CP A,H
+	cpu.cpA(cpu.reg.H)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuBD() int { // CP A,L
+	cpu.cpA(cpu.reg.L)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuBE() int { // CP A,(HL)
+	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	cpu.cpA(Read(address))
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuBF() int { // CP A,A
+	cpu.cpA(cpu.reg.A)
 	cpu.reg.PC++
 	return 1
 }
