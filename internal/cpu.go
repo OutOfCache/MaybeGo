@@ -483,3 +483,109 @@ func (cpu *CPU) cpu2F() int { // CPL
 func (cpu *CPU) cpu30() int { // JR NC, i8
 	return cpu.jr(!cpu.flg.C)
 }
+
+func (cpu *CPU) cpu31() int { // LD SP,u16
+	cpu.ld16reg(&cpu.reg.SP, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
+
+	cpu.reg.PC += 3
+	return 3
+}
+
+func (cpu *CPU) cpu32() int { // LD (HL-), A
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.A)
+	cpu.dec16(&cpu.reg.L, &cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu33() int { // INC SP
+	cpu.reg.SP++
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu34() int { // INC (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	Write(address, Read(address)+1)
+
+	cpu.flg.Z = Read(address) == 0
+	cpu.flg.N = false
+	cpu.flg.H = Read(address)&0xF == 0x0
+	cpu.reg.PC++
+	return 3
+}
+
+func (cpu *CPU) cpu35() int { // DEC (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	Write(address, Read(address)-1)
+
+	cpu.flg.Z = Read(address) == 0
+	cpu.flg.N = true
+	cpu.flg.H = Read(address)&0xF == 0xF
+	cpu.reg.PC++
+	return 3
+}
+
+func (cpu *CPU) cpu36() int { // LD (HL),u8
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, Read(cpu.reg.PC+1))
+	cpu.reg.PC += 2
+	return 3
+}
+
+func (cpu *CPU) cpu37() int { // SCF
+	cpu.flg.N = false
+	cpu.flg.H = false
+	cpu.flg.C = true
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu38() int { // JR C,i8
+	return cpu.jr(cpu.flg.C)
+}
+
+func (cpu *CPU) cpu39() int { // ADD HL,SP
+	cpu.add16(&cpu.reg.L, &cpu.reg.H, byte(cpu.reg.SP&0xFF), byte(cpu.reg.SP>>8))
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu3A() int { // LD A, (HL-)
+	cpu.ldFromAddress(&cpu.reg.A, cpu.reg.L, cpu.reg.H)
+	cpu.dec16(&cpu.reg.L, &cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu3B() int { // DEC SP
+	cpu.reg.SP--
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu3C() int { // INC A
+	cpu.inc8(&cpu.reg.A, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu3D() int { // DEC A
+	cpu.dec8(&cpu.reg.A, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu3E() int { // LD A,u8
+	cpu.ld8(&cpu.reg.A, Read(cpu.reg.PC+1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpu3F() int { // CCF
+	cpu.flg.C = !cpu.flg.C
+	cpu.flg.N = false
+	cpu.flg.H = false
+
+	cpu.reg.PC++
+	return 1
+}
