@@ -53,8 +53,8 @@ func (cpu *CPU) ld16(destLo *byte, destHi *byte, srcLo byte, srcHi byte) {
 }
 
 // LD r16, r16/n16
-func (cpu *CPU) ld16reg(dest uint16, srcLo byte, srcHi byte) {
-	dest = uint16(srcHi)<<8 + uint16(srcLo)
+func (cpu *CPU) ld16reg(dest *uint16, srcLo byte, srcHi byte) {
+	*dest = uint16(srcHi)<<8 + uint16(srcLo)
 }
 
 // LD [r16], r8/n8
@@ -386,7 +386,7 @@ func (cpu *CPU) cpu20() int { // JR NZ, i8
 func (cpu *CPU) cpu21() int { // LD HL, u16
 	cpu.ld16(&cpu.reg.L, &cpu.reg.H,
 		Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
-	cpu.reg.PC++
+	cpu.reg.PC += 3
 	return 3
 }
 
