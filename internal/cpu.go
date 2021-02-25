@@ -153,8 +153,13 @@ func (cpu *CPU) rr8(reg *byte, carry bool) {
 	cpu.flg.Z = *reg == 0
 }
 
-func (cpu *CPU) jr( /* i8 byte */ ) {
-	cpu.reg.PC += uint16(2 + int8(Read(cpu.reg.PC+1)))
+func (cpu *CPU) jr(flag bool) int {
+	if flag {
+		cpu.reg.PC += uint16(2 + int8(Read(cpu.reg.PC+1)))
+		return 3
+	}
+	cpu.reg.PC += 2
+	return 2
 }
 
 func (cpu *CPU) cpu00() int { // do I need parameters for args?
@@ -324,8 +329,7 @@ func (cpu *CPU) cpu17() int { // RLA
 }
 
 func (cpu *CPU) cpu18() int { //  JR i8
-	cpu.jr()
-	return 3
+	return cpu.jr(true)
 }
 
 func (cpu *CPU) cpu19() int { // ADD HL, DE
@@ -373,4 +377,109 @@ func (cpu *CPU) cpu1F() int { // RRA
 	cpu.rr8(&cpu.reg.A, true)
 	cpu.reg.PC++
 	return 1
+}
+
+func (cpu *CPU) cpu20() int { // JR NZ, i8
+	return cpu.jr(!cpu.flg.Z)
+}
+
+func (cpu *CPU) cpu21() int { // LD HL, u16
+	cpu.ld16(&cpu.reg.L, &cpu.reg.H,
+		Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
+	cpu.reg.PC++
+	return 3
+}
+
+func (cpu *CPU) cpu22() int { // LD (HL+), A
+	cpu.ldToAddress(cpu.reg.L, cpu.reg.H, cpu.reg.A)
+	cpu.inc16(&cpu.reg.L, &cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu23() int { // INC HL
+	cpu.inc16(&cpu.reg.L, &cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu24() int { // INC H
+	cpu.inc8(&cpu.reg.H, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu25() int { // DEC H
+	cpu.dec8(&cpu.reg.H, true)
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu26() int { // LD H, u8
+	cpu.ld8(&cpu.reg.H, Read(cpu.reg.PC+1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpu27() int { // TODO: DAA
+	cpu.flg.H = false
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu28() int { // JR Z, i8
+	return cpu.jr(cpu.flg.Z)
+}
+
+func (cpu *CPU) cpu29() int { // ADD HL, HL
+	cpu.add16(&cpu.reg.L, &cpu.reg.H, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu2A() int { // LD A, (HL+)
+	cpu.ldFromAddress(&cpu.reg.A, cpu.reg.L, cpu.reg.H)
+	cpu.inc16(&cpu.reg.L, &cpu.reg.H)
+
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpu2B() int { // DEC HL
+	cpu.dec16(&cpu.reg.L, &cpu.reg.H)
+	cpu.reg.PC++
+
+	return 2
+}
+
+func (cpu *CPU) cpu2C() int { // INC L
+	cpu.inc8(&cpu.reg.L, true)
+
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu2D() int { // DEC L
+	cpu.dec8(&cpu.reg.L, true)
+
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu2E() int { // LD L, u8
+	cpu.ld8(&cpu.reg.L, Read(cpu.reg.PC+1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpu2F() int { // CPL
+	cpu.reg.A ^= 0xFF
+	cpu.flg.N = true
+	cpu.flg.H = true
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpu30() int { // JR NC, i8
+	return cpu.jr(!cpu.flg.C)
 }
