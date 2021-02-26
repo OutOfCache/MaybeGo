@@ -226,6 +226,33 @@ func (cpu *CPU) rr8(reg *byte, carry bool) {
 	cpu.flg.Z = *reg == 0
 }
 
+func (cpu *CPU) sl8(reg *byte) {
+	cpu.flg.C = *reg&0x80 == 0x80
+	*reg <<= 1
+	cpu.flg.Z = reg == 0
+	cpu.flg.N = false
+	cpu.flg.H = false
+}
+
+func (cpu *CPU) sr8(reg *byte) {
+	// arithmetic shift
+	msb := *reg & 0x80
+	cpu.flg.C = *reg&0x01 == 0x01
+	*reg >>= 1
+	*reg += msb
+	cpu.flg.Z = reg == 0
+	cpu.flg.N = false
+	cpu.flg.H = false
+}
+
+func (cpu *CPU) srl8(reg *byte) {
+	cpu.flg.C = *reg&0x01 == 0x01
+	*reg >>= 1
+	cpu.flg.Z = reg == 0
+	cpu.flg.N = false
+	cpu.flg.H = false
+}
+
 func (cpu *CPU) jr(flag bool) int {
 	if flag {
 		cpu.reg.PC += uint16(2 + int8(Read(cpu.reg.PC+1)))
@@ -285,6 +312,33 @@ func (cpu *CPU) pop16(destLo *byte, destHi *byte) {
 	cpu.reg.SP += 1
 	cpu.ldFromAddress(destHi, byte(cpu.reg.SP), byte(cpu.reg.SP>>8))
 	cpu.reg.SP += 1
+}
+
+func (cpu *CPU) swap(dest *byte) {
+	lo := *dest & 0x0F
+	hi := *dest & 0xF0 >> 4
+	*dest = lo<<4 + hi
+
+	cpu.flg.Z = *dest == 0
+	cpu.flg.N = false
+	cpu.flg.H = false
+	cpu.flg.C = false
+}
+
+func (cpu *CPU) bit(reg byte, bit byte) {
+	cpu.flg.N = false
+	cpu.flg.H = true
+	cpu.flg.Z = reg&(0x01<<bit) == 0
+}
+
+func (cpu *CPU) res(reg *byte, bit byte) {
+	// set bit to 0 by using AND
+	*reg = *reg & (0xFE << bit)
+}
+
+func (cpu *CPU) set(reg *byte, bit byte) {
+	// sest bit to 1 by using OR
+	*reg = *reg | (0x01 << bit)
 }
 
 func (cpu *CPU) cpu00() int { // do I need parameters for args?
@@ -1769,4 +1823,1606 @@ func (cpu *CPU) cpuFE() int { // CP A,u8
 
 func (cpu *CPU) cpuFF() int { // RST 0x38
 	return cpu.rst(0x38)
+}
+
+// Prefix CB functions
+
+func (cpu *CPU) cb00() int { // RLC B
+	cpu.rl8(&cpu.reg.B, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb01() int { // RLC C
+	cpu.rl8(&cpu.reg.C, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb02() int { // RLC D
+	cpu.rl8(&cpu.reg.D, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb03() int { // RLC E
+	cpu.rl8(&cpu.reg.E, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb04() int { // RLC H
+	cpu.rl8(&cpu.reg.H, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb05() int { // RLC L
+	cpu.rl8(&cpu.reg.L, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb06() int { // RLC (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.rl8(Read(address), false)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb07() int { // RLC A
+	cpu.rl8(&cpu.reg.A, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb08() int { // RRC B
+	cpu.rr8(&cpu.reg.B, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb09() int { // RRC C
+	cpu.rr8(&cpu.reg.C, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb0A() int { // RRC D
+	cpu.rr8(&cpu.reg.D, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb0B() int { // RRC E
+	cpu.rr8(&cpu.reg.E, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb0C() int { // RRC H
+	cpu.rr8(&cpu.reg.H, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb0D() int { // RRC L
+	cpu.rr8(&cpu.reg.L, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb0E() int { // RRC (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.rr88(Read(address), false)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb0F() int { // RRC A
+	cpu.rr8(&cpu.reg.A, false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb10() int { // RL B
+	cpu.rl8(&cpu.reg.B, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb11() int { // RL C
+	cpu.rl8(&cpu.reg.C, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb12() int { // RL D
+	cpu.rl8(&cpu.reg.D, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb13() int { // RL E
+	cpu.rl8(&cpu.reg.E, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb14() int { // RL H
+	cpu.rl8(&cpu.reg.H, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb15() int { // RL L
+	cpu.rl8(&cpu.reg.L, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb16() int { // RL (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.rl8(Read(address), true)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb17() int { // RL A
+	cpu.rl8(&cpu.reg.A, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb18() int { // RR B
+	cpu.rr8(&cpu.reg.B, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb19() int { // RR C
+	cpu.rr8(&cpu.reg.C, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb1A() int { // RR D
+	cpu.rr8(&cpu.reg.D, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb1B() int { // RR E
+	cpu.rr8(&cpu.reg.E, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb1C() int { // RR H
+	cpu.rr8(&cpu.reg.H, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb1D() int { // RR L
+	cpu.rr8(&cpu.reg.L, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb1E() int { // RR (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.rr88(Read(address), true)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb1F() int { // RR A
+	cpu.rr8(&cpu.reg.A, true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb20() int { // SLA B
+	cpu.sl8(&cpu.reg.B)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb21() int { // SLA C
+	cpu.sl8(&cpu.reg.C)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb22() int { // SLA D
+	cpu.sl8(&cpu.reg.D)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb23() int { // SLA E
+	cpu.sl8(&cpu.reg.E)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb24() int { // SLA H
+	cpu.sl8(&cpu.reg.H)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb25() int { // SLA L
+	cpu.sl8(&cpu.reg.L)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb26() int { // SLA (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.sl8(Read(address))
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb27() int { // SLA A
+	cpu.sl8(&cpu.reg.A)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb28() int { // SRA B
+	cpu.sr8(&cpu.reg.B)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb29() int { // SRA C
+	cpu.sr8(&cpu.reg.C)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb2A() int { // SRA D
+	cpu.sr8(&cpu.reg.D)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb2B() int { // SRA E
+	cpu.sr8(&cpu.reg.E)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb2C() int { // SRA H
+	cpu.sr8(&cpu.reg.H)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb2D() int { // SRA L
+	cpu.sr8(&cpu.reg.L)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb2E() int { // SRA (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.sr8(Read(address))
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb2F() int { // SRA A
+	cpu.sr8(&cpu.reg.A)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb30() int { // SWAP B
+	cpu.swap(&cpu.reg.B)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb31() int { // SWAP C
+	cpu.swap(&cpu.reg.C)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb32() int { // SWAP D
+	cpu.swap(&cpu.reg.D)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb33() int { // SWAP E
+	cpu.swap(&cpu.reg.E)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb34() int { // SWAP H
+	cpu.swap(&cpu.reg.H)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb35() int { // SWAP L
+	cpu.swap(&cpu.reg.L)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb36() int { // SWAP (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.swap(Read(address))
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb37() int { // SWAP A
+	cpu.swap(&cpu.reg.A)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb38() int { // SRL B
+	cpu.srl8(&cpu.reg.B)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb39() int { // SRL C
+	cpu.srl8(&cpu.reg.C)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb3A() int { // SRL D
+	cpu.srl8(&cpu.reg.D)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb3B() int { // SRL E
+	cpu.srl8(&cpu.reg.E)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb3C() int { // SRL H
+	cpu.srl8(&cpu.reg.H)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb3D() int { // SRL L
+	cpu.srl8(&cpu.reg.L)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb3E() int { // SRL (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.sr8(Read(address))
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb3F() int { // SRL A
+	cpu.srl8(&cpu.reg.A)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb40() int { // BIT 0, B
+	cpu.bit(&cpu.reg.B, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb41() int { // BIT 0, C
+	cpu.bit(&cpu.reg.C, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb42() int { // BIT 0, D
+	cpu.bit(&cpu.reg.D, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb43() int { // BIT 0, E
+	cpu.bit(&cpu.reg.E, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb44() int { // BIT 0, H
+	cpu.bit(&cpu.reg.H, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb45() int { // BIT 0, L
+	cpu.bit(&cpu.reg.L, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb46() int { // BIT 0, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.bit(Read(address), 0)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb47() int { // BIT 0, A
+	cpu.bit(&cpu.reg.A, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb48() int { // BIT 1, B
+	cpu.bit(&cpu.reg.B, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb49() int { // BIT 1, C
+	cpu.bit(&cpu.reg.C, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb4A() int { // BIT 1, D
+	cpu.bit(&cpu.reg.D, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb4B() int { // BIT 1, E
+	cpu.bit(&cpu.reg.E, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb4C() int { // BIT 1, H
+	cpu.bit(&cpu.reg.H, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb4D() int { // BIT 1, L
+	cpu.bit(&cpu.reg.L, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb4E() int { // BIT 1, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.bit(Read(address), 1)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb4F() int { // BIT 1, A
+	cpu.bit(&cpu.reg.A, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb50() int { // BIT 2, B
+	cpu.bit(&cpu.reg.B, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb51() int { // BIT 2, C
+	cpu.bit(&cpu.reg.C, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb52() int { // BIT 2, D
+	cpu.bit(&cpu.reg.D, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb53() int { // BIT 2, E
+	cpu.bit(&cpu.reg.E, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb54() int { // BIT 2, H
+	cpu.bit(&cpu.reg.H, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb55() int { // BIT 2, L
+	cpu.bit(&cpu.reg.L, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb56() int { // BIT 2, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.bit(Read(address), 2)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb57() int { // BIT 2, A
+	cpu.bit(&cpu.reg.A, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb58() int { // BIT 3, B
+	cpu.bit(&cpu.reg.B, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb59() int { // BIT 3, C
+	cpu.bit(&cpu.reg.C, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb5A() int { // BIT 3, D
+	cpu.bit(&cpu.reg.D, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb5B() int { // BIT 3, E
+	cpu.bit(&cpu.reg.E, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb5C() int { // BIT 3, H
+	cpu.bit(&cpu.reg.H, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb5D() int { // BIT 3, L
+	cpu.bit(&cpu.reg.L, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb5E() int { // BIT 3, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.bit(Read(address), 3)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb5F() int { // BIT 3, A
+	cpu.bit(&cpu.reg.A, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb60() int { // BIT 4, B
+	cpu.bit(&cpu.reg.B, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb61() int { // BIT 4, C
+	cpu.bit(&cpu.reg.C, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb62() int { // BIT 4, D
+	cpu.bit(&cpu.reg.D, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb63() int { // BIT 4, E
+	cpu.bit(&cpu.reg.E, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb64() int { // BIT 4, H
+	cpu.bit(&cpu.reg.H, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb65() int { // BIT 4, L
+	cpu.bit(&cpu.reg.L, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb66() int { // BIT 4, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.bit(Read(address), 4)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb67() int { // BIT 4, A
+	cpu.bit(&cpu.reg.A, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb68() int { // BIT 5, B
+	cpu.bit(&cpu.reg.B, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb69() int { // BIT 5, C
+	cpu.bit(&cpu.reg.C, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb6A() int { // BIT 5, D
+	cpu.bit(&cpu.reg.D, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb6B() int { // BIT 5, E
+	cpu.bit(&cpu.reg.E, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb6C() int { // BIT 5, H
+	cpu.bit(&cpu.reg.H, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb6D() int { // BIT 5, L
+	cpu.bit(&cpu.reg.L, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb6E() int { // BIT 5, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.bit(Read(address), 5)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb6F() int { // BIT 5, A
+	cpu.bit(&cpu.reg.A, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb70() int { // BIT 6, B
+	cpu.bit(&cpu.reg.B, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb71() int { // BIT 6, C
+	cpu.bit(&cpu.reg.C, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb72() int { // BIT 6, D
+	cpu.bit(&cpu.reg.D, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb73() int { // BIT 6, E
+	cpu.bit(&cpu.reg.E, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb74() int { // BIT 6, H
+	cpu.bit(&cpu.reg.H, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb75() int { // BIT 6, L
+	cpu.bit(&cpu.reg.L, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb76() int { // BIT 6, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.bit(Read(address), 6)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb77() int { // BIT 6, A
+	cpu.bit(&cpu.reg.A, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb78() int { // BIT 7, B
+	cpu.bit(&cpu.reg.B, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb79() int { // BIT 7, C
+	cpu.bit(&cpu.reg.C, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb7A() int { // BIT 7, D
+	cpu.bit(&cpu.reg.D, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb7B() int { // BIT 7, E
+	cpu.bit(&cpu.reg.E, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb7C() int { // BIT 7, H
+	cpu.bit(&cpu.reg.H, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb7D() int { // BIT 7, L
+	cpu.bit(&cpu.reg.L, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb7E() int { // BIT 7, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.bit(Read(address), 7)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb7F() int { // BIT 7, A
+	cpu.bit(&cpu.reg.A, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb80() int { // RES 0, B
+	cpu.res(&cpu.reg.B, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb81() int { // RES 0, C
+	cpu.res(&cpu.reg.C, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb82() int { // RES 0, D
+	cpu.res(&cpu.reg.D, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb83() int { // RES 0, E
+	cpu.res(&cpu.reg.E, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb84() int { // RES 0, H
+	cpu.res(&cpu.reg.H, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb85() int { // RES 0, L
+	cpu.res(&cpu.reg.L, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb86() int { // RES 0, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.res(Read(address), 0)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb87() int { // RES 0, A
+	cpu.res(&cpu.reg.A, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb88() int { // RES 1, B
+	cpu.res(&cpu.reg.B, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb89() int { // RES 1, C
+	cpu.res(&cpu.reg.C, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb8A() int { // RES 1, D
+	cpu.res(&cpu.reg.D, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb8B() int { // RES 1, E
+	cpu.res(&cpu.reg.E, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb8C() int { // RES 1, H
+	cpu.res(&cpu.reg.H, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb8D() int { // RES 1, L
+	cpu.res(&cpu.reg.L, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb8E() int { // RES 1, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.res(Read(address), 1)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb8F() int { // RES 1, A
+	cpu.res(&cpu.reg.A, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb90() int { // RES 2, B
+	cpu.res(&cpu.reg.B, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb91() int { // RES 2, C
+	cpu.res(&cpu.reg.C, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb92() int { // RES 2, D
+	cpu.res(&cpu.reg.D, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb93() int { // RES 2, E
+	cpu.res(&cpu.reg.E, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb94() int { // RES 2, H
+	cpu.res(&cpu.reg.H, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb95() int { // RES 2, L
+	cpu.res(&cpu.reg.L, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb96() int { // RES 2, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.res(Read(address), 2)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb97() int { // RES 2, A
+	cpu.res(&cpu.reg.A, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb98() int { // RES 3, B
+	cpu.res(&cpu.reg.B, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb99() int { // RES 3, C
+	cpu.res(&cpu.reg.C, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb9A() int { // RES 3, D
+	cpu.res(&cpu.reg.D, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb9B() int { // RES 3, E
+	cpu.res(&cpu.reg.E, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb9C() int { // RES 3, H
+	cpu.res(&cpu.reg.H, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb9D() int { // RES 3, L
+	cpu.res(&cpu.reg.L, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb9E() int { // RES 3, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.res(Read(address), 3)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cb9F() int { // RES 3, A
+	cpu.res(&cpu.reg.A, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA0() int { // RES 4, B
+	cpu.res(&cpu.reg.B, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA1() int { // RES 4, C
+	cpu.res(&cpu.reg.C, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA2() int { // RES 4, D
+	cpu.res(&cpu.reg.D, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA3() int { // RES 4, E
+	cpu.res(&cpu.reg.E, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA4() int { // RES 4, H
+	cpu.res(&cpu.reg.H, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA5() int { // RES 4, L
+	cpu.res(&cpu.reg.L, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA6() int { // RES 4, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.res(Read(address), 4)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA7() int { // RES 4, A
+	cpu.res(&cpu.reg.A, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA8() int { // RES 5, B
+	cpu.res(&cpu.reg.B, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbA9() int { // RES 5, C
+	cpu.res(&cpu.reg.C, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbAA() int { // RES 5, D
+	cpu.res(&cpu.reg.D, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbAB() int { // RES 5, E
+	cpu.res(&cpu.reg.E, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbAC() int { // RES 5, H
+	cpu.res(&cpu.reg.H, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbAD() int { // RES 5, L
+	cpu.res(&cpu.reg.L, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbAE() int { // RES 5, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.res(Read(address), 5)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbAF() int { // RES 5, A
+	cpu.res(&cpu.reg.A, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB0() int { // RES 6, B
+	cpu.res(&cpu.reg.B, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB1() int { // RES 6, C
+	cpu.res(&cpu.reg.C, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB2() int { // RES 6, D
+	cpu.res(&cpu.reg.D, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB3() int { // RES 6, E
+	cpu.res(&cpu.reg.E, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB4() int { // RES 6, H
+	cpu.res(&cpu.reg.H, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB5() int { // RES 6, L
+	cpu.res(&cpu.reg.L, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB6() int { // RES 6, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.res(Read(address), 6)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB7() int { // RES 6, A
+	cpu.res(&cpu.reg.A, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB8() int { // RES 7, B
+	cpu.res(&cpu.reg.B, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbB9() int { // RES 7, C
+	cpu.res(&cpu.reg.C, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbBA() int { // RES 7, D
+	cpu.res(&cpu.reg.D, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbBB() int { // RES 7, E
+	cpu.res(&cpu.reg.E, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbBC() int { // RES 7, H
+	cpu.res(&cpu.reg.H, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbBD() int { // RES 7, L
+	cpu.res(&cpu.reg.L, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbBE() int { // RES 7, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.res(Read(address), 7)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbBF() int { // RES 7, A
+	cpu.res(&cpu.reg.A, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC0() int { // SET 0, B
+	cpu.set(&cpu.reg.B, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC1() int { // SET 0, C
+	cpu.set(&cpu.reg.C, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC2() int { // SET 0, D
+	cpu.set(&cpu.reg.D, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC3() int { // SET 0, E
+	cpu.set(&cpu.reg.E, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC4() int { // SET 0, H
+	cpu.set(&cpu.reg.H, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC5() int { // SET 0, L
+	cpu.set(&cpu.reg.L, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC6() int { // SET 0, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.set(Read(address), 0)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC7() int { // SET 0, A
+	cpu.set(&cpu.reg.A, 0)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC8() int { // SET 1, B
+	cpu.set(&cpu.reg.B, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbC9() int { // SET 1, C
+	cpu.set(&cpu.reg.C, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbCA() int { // SET 1, D
+	cpu.set(&cpu.reg.D, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbCB() int { // SET 1, E
+	cpu.set(&cpu.reg.E, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbCC() int { // SET 1, H
+	cpu.set(&cpu.reg.H, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbCD() int { // SET 1, L
+	cpu.set(&cpu.reg.L, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbCE() int { // SET 1, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.set(Read(address), 1)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbCF() int { // SET 1, A
+	cpu.set(&cpu.reg.A, 1)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD0() int { // SET 2, B
+	cpu.set(&cpu.reg.B, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD1() int { // SET 2, C
+	cpu.set(&cpu.reg.C, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD2() int { // SET 2, D
+	cpu.set(&cpu.reg.D, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD3() int { // SET 2, E
+	cpu.set(&cpu.reg.E, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD4() int { // SET 2, H
+	cpu.set(&cpu.reg.H, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD5() int { // SET 2, L
+	cpu.set(&cpu.reg.L, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD6() int { // SET 2, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.set(Read(address), 2)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD7() int { // SET 2, A
+	cpu.set(&cpu.reg.A, 2)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD8() int { // SET 3, B
+	cpu.set(&cpu.reg.B, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbD9() int { // SET 3, C
+	cpu.set(&cpu.reg.C, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbDA() int { // SET 3, D
+	cpu.set(&cpu.reg.D, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbDB() int { // SET 3, E
+	cpu.set(&cpu.reg.E, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbDC() int { // SET 3, H
+	cpu.set(&cpu.reg.H, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbDD() int { // SET 3, L
+	cpu.set(&cpu.reg.L, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbDE() int { // SET 3, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.set(Read(address), 3)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbDF() int { // SET 3, A
+	cpu.set(&cpu.reg.A, 3)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE0() int { // SET 4, B
+	cpu.set(&cpu.reg.B, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE1() int { // SET 4, C
+	cpu.set(&cpu.reg.C, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE2() int { // SET 4, D
+	cpu.set(&cpu.reg.D, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE3() int { // SET 4, E
+	cpu.set(&cpu.reg.E, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE4() int { // SET 4, H
+	cpu.set(&cpu.reg.H, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE5() int { // SET 4, L
+	cpu.set(&cpu.reg.L, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE6() int { // SET 4, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.set(Read(address), 4)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE7() int { // SET 4, A
+	cpu.set(&cpu.reg.A, 4)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE8() int { // SET 5, B
+	cpu.set(&cpu.reg.B, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbE9() int { // SET 5, C
+	cpu.set(&cpu.reg.C, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbEA() int { // SET 5, D
+	cpu.set(&cpu.reg.D, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbEB() int { // SET 5, E
+	cpu.set(&cpu.reg.E, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbEC() int { // SET 5, H
+	cpu.set(&cpu.reg.H, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbED() int { // SET 5, L
+	cpu.set(&cpu.reg.L, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbEE() int { // SET 5, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.set(Read(address), 5)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbEF() int { // SET 5, A
+	cpu.set(&cpu.reg.A, 5)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF0() int { // SET 6, B
+	cpu.set(&cpu.reg.B, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF1() int { // SET 6, C
+	cpu.set(&cpu.reg.C, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF2() int { // SET 6, D
+	cpu.set(&cpu.reg.D, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF3() int { // SET 6, E
+	cpu.set(&cpu.reg.E, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF4() int { // SET 6, H
+	cpu.set(&cpu.reg.H, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF5() int { // SET 6, L
+	cpu.set(&cpu.reg.L, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF6() int { // SET 6, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.set(Read(address), 6)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF7() int { // SET 6, A
+	cpu.set(&cpu.reg.A, 6)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF8() int { // SET 7, B
+	cpu.set(&cpu.reg.B, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbF9() int { // SET 7, C
+	cpu.set(&cpu.reg.C, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbFA() int { // SET 7, D
+	cpu.set(&cpu.reg.D, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbFB() int { // SET 7, E
+	cpu.set(&cpu.reg.E, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbFC() int { // SET 7, H
+	cpu.set(&cpu.reg.H, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbFD() int { // SET 7, L
+	cpu.set(&cpu.reg.L, 7)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbFE() int { // SET 7, (HL)
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
+	val := cpu.set(Read(address), 7)
+	Write(address, val)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cbFF() int { // SET 7, A
+	cpu.set(&cpu.reg.A, 7)
+	cpu.reg.PC += 2
+	return 2
 }
