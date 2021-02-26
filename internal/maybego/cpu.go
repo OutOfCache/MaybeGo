@@ -13,25 +13,170 @@ type Registers struct {
 }
 
 type Flags struct {
-	Z bool // zero flag
-	C bool // carry flag
-	N bool // sub flag
-	H bool // half carry
+	Z    bool // zero flag
+	C    bool // carry flag
+	N    bool // sub flag
+	H    bool // half carry
+	HALT bool // HALT flag
 }
 
 type CPU struct {
-	reg *Registers
-	flg *Flags
+	reg           *Registers
+	flg           *Flags
+	currentOpcode byte
+	opcodes       [256]func()
+	cbOps         [256]func()
 }
-
-var currentOpcode uint16
-var opcodes [256]func()
 
 // dummy "constructor"
 func NewCPU() *CPU {
 	cpu := &CPU{reg: new(Registers), flg: new(Flags)}
 
+	cpu.opcodes = [256]func(){
+		cpu.cpu00, cpu.cpu01, cpu.cpu02, cpu.cpu03,
+		cpu.cpu04, cpu.cpu05, cpu.cpu06, cpu.cpu07,
+		cpu.cpu08, cpu.cpu09, cpu.cpu0A, cpu.cpu0B,
+		cpu.cpu0C, cpu.cpu0D, cpu.cpu0E, cpu.cpu0F,
+		cpu.cpu10, cpu.cpu11, cpu.cpu12, cpu.cpu13,
+		cpu.cpu14, cpu.cpu15, cpu.cpu16, cpu.cpu17,
+		cpu.cpu18, cpu.cpu19, cpu.cpu1A, cpu.cpu1B,
+		cpu.cpu1C, cpu.cpu1D, cpu.cpu1E, cpu.cpu1F,
+		cpu.cpu20, cpu.cpu21, cpu.cpu22, cpu.cpu23,
+		cpu.cpu24, cpu.cpu25, cpu.cpu26, cpu.cpu27,
+		cpu.cpu28, cpu.cpu29, cpu.cpu2A, cpu.cpu2B,
+		cpu.cpu2C, cpu.cpu2D, cpu.cpu2E, cpu.cpu2F,
+		cpu.cpu30, cpu.cpu31, cpu.cpu32, cpu.cpu33,
+		cpu.cpu34, cpu.cpu35, cpu.cpu36, cpu.cpu37,
+		cpu.cpu38, cpu.cpu39, cpu.cpu3A, cpu.cpu3B,
+		cpu.cpu3C, cpu.cpu3D, cpu.cpu3E, cpu.cpu3F,
+		cpu.cpu40, cpu.cpu41, cpu.cpu42, cpu.cpu43,
+		cpu.cpu44, cpu.cpu45, cpu.cpu46, cpu.cpu47,
+		cpu.cpu48, cpu.cpu49, cpu.cpu4A, cpu.cpu4B,
+		cpu.cpu4C, cpu.cpu4D, cpu.cpu4E, cpu.cpu4F,
+		cpu.cpu50, cpu.cpu51, cpu.cpu52, cpu.cpu53,
+		cpu.cpu54, cpu.cpu55, cpu.cpu56, cpu.cpu57,
+		cpu.cpu58, cpu.cpu59, cpu.cpu5A, cpu.cpu5B,
+		cpu.cpu5C, cpu.cpu5D, cpu.cpu5E, cpu.cpu5F,
+		cpu.cpu60, cpu.cpu61, cpu.cpu62, cpu.cpu63,
+		cpu.cpu64, cpu.cpu65, cpu.cpu66, cpu.cpu67,
+		cpu.cpu68, cpu.cpu69, cpu.cpu6A, cpu.cpu6B,
+		cpu.cpu6C, cpu.cpu6D, cpu.cpu6E, cpu.cpu6F,
+		cpu.cpu70, cpu.cpu71, cpu.cpu72, cpu.cpu73,
+		cpu.cpu74, cpu.cpu75, cpu.cpu76, cpu.cpu77,
+		cpu.cpu78, cpu.cpu79, cpu.cpu7A, cpu.cpu7B,
+		cpu.cpu7C, cpu.cpu7D, cpu.cpu7E, cpu.cpu7F,
+		cpu.cpu80, cpu.cpu81, cpu.cpu82, cpu.cpu83,
+		cpu.cpu84, cpu.cpu85, cpu.cpu86, cpu.cpu87,
+		cpu.cpu88, cpu.cpu89, cpu.cpu8A, cpu.cpu8B,
+		cpu.cpu8C, cpu.cpu8D, cpu.cpu8E, cpu.cpu8F,
+		cpu.cpu90, cpu.cpu91, cpu.cpu92, cpu.cpu93,
+		cpu.cpu94, cpu.cpu95, cpu.cpu96, cpu.cpu97,
+		cpu.cpu98, cpu.cpu99, cpu.cpu9A, cpu.cpu9B,
+		cpu.cpu9C, cpu.cpu9D, cpu.cpu9E, cpu.cpu9F,
+		cpu.cpuA0, cpu.cpuA1, cpu.cpuA2, cpu.cpuA3,
+		cpu.cpuA4, cpu.cpuA5, cpu.cpuA6, cpu.cpuA7,
+		cpu.cpuA8, cpu.cpuA9, cpu.cpuAA, cpu.cpuAB,
+		cpu.cpuAC, cpu.cpuAD, cpu.cpuAE, cpu.cpuAF,
+		cpu.cpuB0, cpu.cpuB1, cpu.cpuB2, cpu.cpuB3,
+		cpu.cpuB4, cpu.cpuB5, cpu.cpuB6, cpu.cpuB7,
+		cpu.cpuB8, cpu.cpuB9, cpu.cpuBA, cpu.cpuBB,
+		cpu.cpuBC, cpu.cpuBD, cpu.cpuBE, cpu.cpuBF,
+		cpu.cpuC0, cpu.cpuC1, cpu.cpuC2, cpu.cpuC3,
+		cpu.cpuC4, cpu.cpuC5, cpu.cpuC6, cpu.cpuC7,
+		cpu.cpuC8, cpu.cpuC9, cpu.cpuCA, cpu.cpuCB,
+		cpu.cpuCC, cpu.cpuCD, cpu.cpuCE, cpu.cpuCF,
+		cpu.cpuD0, cpu.cpuD1, cpu.cpuD2, cpu.cpuD3,
+		cpu.cpuD4, cpu.cpuD5, cpu.cpuD6, cpu.cpuD7,
+		cpu.cpuD8, cpu.cpuD9, cpu.cpuDA, cpu.cpuDB,
+		cpu.cpuDC, cpu.cpuDD, cpu.cpuDE, cpu.cpuDF,
+		cpu.cpuE0, cpu.cpuE1, cpu.cpuE2, cpu.cpuE3,
+		cpu.cpuE4, cpu.cpuE5, cpu.cpuE6, cpu.cpuE7,
+		cpu.cpuE8, cpu.cpuE9, cpu.cpuEA, cpu.cpuEB,
+		cpu.cpuEC, cpu.cpuED, cpu.cpuEE, cpu.cpuEF,
+		cpu.cpuF0, cpu.cpuF1, cpu.cpuF2, cpu.cpuF3,
+		cpu.cpuF4, cpu.cpuF5, cpu.cpuF6, cpu.cpuF7,
+		cpu.cpuF8, cpu.cpuF9, cpu.cpuFA, cpu.cpuFB,
+		cpu.cpuFC, cpu.cpuFD, cpu.cpuFE, cpu.cpuFF,
+	}
+
+	cpu.cbOps = [256]func(){
+		cpu.cb00, cpu.cb01, cpu.cb02, cpu.cb03,
+		cpu.cb04, cpu.cb05, cpu.cb06, cpu.cb07,
+		cpu.cb08, cpu.cb09, cpu.cb0A, cpu.cb0B,
+		cpu.cb0C, cpu.cb0D, cpu.cb0E, cpu.cb0F,
+		cpu.cb10, cpu.cb11, cpu.cb12, cpu.cb13,
+		cpu.cb14, cpu.cb15, cpu.cb16, cpu.cb17,
+		cpu.cb18, cpu.cb19, cpu.cb1A, cpu.cb1B,
+		cpu.cb1C, cpu.cb1D, cpu.cb1E, cpu.cb1F,
+		cpu.cb20, cpu.cb21, cpu.cb22, cpu.cb23,
+		cpu.cb24, cpu.cb25, cpu.cb26, cpu.cb27,
+		cpu.cb28, cpu.cb29, cpu.cb2A, cpu.cb2B,
+		cpu.cb2C, cpu.cb2D, cpu.cb2E, cpu.cb2F,
+		cpu.cb30, cpu.cb31, cpu.cb32, cpu.cb33,
+		cpu.cb34, cpu.cb35, cpu.cb36, cpu.cb37,
+		cpu.cb38, cpu.cb39, cpu.cb3A, cpu.cb3B,
+		cpu.cb3C, cpu.cb3D, cpu.cb3E, cpu.cb3F,
+		cpu.cb40, cpu.cb41, cpu.cb42, cpu.cb43,
+		cpu.cb44, cpu.cb45, cpu.cb46, cpu.cb47,
+		cpu.cb48, cpu.cb49, cpu.cb4A, cpu.cb4B,
+		cpu.cb4C, cpu.cb4D, cpu.cb4E, cpu.cb4F,
+		cpu.cb50, cpu.cb51, cpu.cb52, cpu.cb53,
+		cpu.cb54, cpu.cb55, cpu.cb56, cpu.cb57,
+		cpu.cb58, cpu.cb59, cpu.cb5A, cpu.cb5B,
+		cpu.cb5C, cpu.cb5D, cpu.cb5E, cpu.cb5F,
+		cpu.cb60, cpu.cb61, cpu.cb62, cpu.cb63,
+		cpu.cb64, cpu.cb65, cpu.cb66, cpu.cb67,
+		cpu.cb68, cpu.cb69, cpu.cb6A, cpu.cb6B,
+		cpu.cb6C, cpu.cb6D, cpu.cb6E, cpu.cb6F,
+		cpu.cb70, cpu.cb71, cpu.cb72, cpu.cb73,
+		cpu.cb74, cpu.cb75, cpu.cb76, cpu.cb77,
+		cpu.cb78, cpu.cb79, cpu.cb7A, cpu.cb7B,
+		cpu.cb7C, cpu.cb7D, cpu.cb7E, cpu.cb7F,
+		cpu.cb80, cpu.cb81, cpu.cb82, cpu.cb83,
+		cpu.cb84, cpu.cb85, cpu.cb86, cpu.cb87,
+		cpu.cb88, cpu.cb89, cpu.cb8A, cpu.cb8B,
+		cpu.cb8C, cpu.cb8D, cpu.cb8E, cpu.cb8F,
+		cpu.cb90, cpu.cb91, cpu.cb92, cpu.cb93,
+		cpu.cb94, cpu.cb95, cpu.cb96, cpu.cb97,
+		cpu.cb98, cpu.cb99, cpu.cb9A, cpu.cb9B,
+		cpu.cb9C, cpu.cb9D, cpu.cb9E, cpu.cb9F,
+		cpu.cbA0, cpu.cbA1, cpu.cbA2, cpu.cbA3,
+		cpu.cbA4, cpu.cbA5, cpu.cbA6, cpu.cbA7,
+		cpu.cbA8, cpu.cbA9, cpu.cbAA, cpu.cbAB,
+		cpu.cbAC, cpu.cbAD, cpu.cbAE, cpu.cbAF,
+		cpu.cbB0, cpu.cbB1, cpu.cbB2, cpu.cbB3,
+		cpu.cbB4, cpu.cbB5, cpu.cbB6, cpu.cbB7,
+		cpu.cbB8, cpu.cbB9, cpu.cbBA, cpu.cbBB,
+		cpu.cbBC, cpu.cbBD, cpu.cbBE, cpu.cbBF,
+		cpu.cbC0, cpu.cbC1, cpu.cbC2, cpu.cbC3,
+		cpu.cbC4, cpu.cbC5, cpu.cbC6, cpu.cbC7,
+		cpu.cbC8, cpu.cbC9, cpu.cbCA, cpu.cbCB,
+		cpu.cbCC, cpu.cbCD, cpu.cbCE, cpu.cbCF,
+		cpu.cbD0, cpu.cbD1, cpu.cbD2, cpu.cbD3,
+		cpu.cbD4, cpu.cbD5, cpu.cbD6, cpu.cbD7,
+		cpu.cbD8, cpu.cbD9, cpu.cbDA, cpu.cbDB,
+		cpu.cbDC, cpu.cbDD, cpu.cbDE, cpu.cbDF,
+		cpu.cbE0, cpu.cbE1, cpu.cbE2, cpu.cbE3,
+		cpu.cbE4, cpu.cbE5, cpu.cbE6, cpu.cbE7,
+		cpu.cbE8, cpu.cbE9, cpu.cbEA, cpu.cbEB,
+		cpu.cbEC, cpu.cbED, cpu.cbEE, cpu.cbEF,
+		cpu.cbF0, cpu.cbF1, cpu.cbF2, cpu.cbF3,
+		cpu.cbF4, cpu.cbF5, cpu.cbF6, cpu.cbF7,
+		cpu.cbF8, cpu.cbF9, cpu.cbFA, cpu.cbFB,
+		cpu.cbFC, cpu.cbFD, cpu.cbFE, cpu.cbFF,
+	}
+
 	return cpu
+}
+
+func (cpu *CPU) Fetch() {
+	if !cpu.flg.HALT {
+		cpu.currentOpcode = Read(cpu.reg.PC)
+	}
+}
+
+func (cpu *CPU) Decode() {
+	cpu.opcodes[cpu.currentOpcode]()
 }
 
 func FlagToBit(flag bool) byte {
@@ -600,7 +745,23 @@ func (cpu *CPU) cpu26() int { // LD H, u8
 	return 2
 }
 
-func (cpu *CPU) cpu27() int { // TODO: DAA
+func (cpu *CPU) cpu27() int { // DAA
+	// https://ehaskins.com/2018-01-30%20Z80%20DAA/
+	var correction byte
+	if cpu.flg.H || cpu.reg.A&0xF > 9 {
+		correction += 0x06
+	}
+	if cpu.flg.C || cpu.reg.A&0xF0 > 0x90 {
+		correction += 0x60
+	}
+
+	if cpu.flg.N {
+		cpu.reg.A -= correction
+	} else {
+		cpu.reg.A += correction
+	}
+	cpu.flg.Z = cpu.reg.A == 0
+	cpu.flg.C = cpu.reg.A > 0x99
 	cpu.flg.H = false
 	cpu.reg.PC++
 	return 1
@@ -1093,7 +1254,8 @@ func (cpu *CPU) cpu75() int { // LD (HL),L
 	return 2
 }
 
-func (cpu *CPU) cpu76() int { // TODO: HALT
+func (cpu *CPU) cpu76() int { // HALT
+	cpu.flg.HALT = true
 	cpu.reg.PC++
 	return 1
 }
@@ -1595,7 +1757,7 @@ func (cpu *CPU) cpuCA() int { // JP Z,u16
 }
 
 func (cpu *CPU) cpuCB() int { // TODO: Prefix 0xCB
-	return 1
+	return cbOps[Read(cpu.reg.PC+1)]
 }
 
 func (cpu *CPU) cpuCC() int { // CALL Z,u16
