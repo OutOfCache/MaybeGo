@@ -41,6 +41,15 @@ func FlagToBit(flag bool) byte {
 	return 0
 }
 
+func FlagsToBytes() byte {
+	z := FlagToBit(cpu.reg.Z)
+	n := FlagToBit(cpu.reg.N)
+	h := FlagToBit(cpu.reg.H)
+	c := FlagToBit(cpu.reg.C)
+
+	return (z << 7) + (n << 6) + (h << 5) + (c << 4)
+}
+
 // LD r8, r8/n8
 func (cpu *CPU) ld8(dest *byte, src byte) {
 	*dest = src
@@ -224,6 +233,58 @@ func (cpu *CPU) jr(flag bool) int {
 	}
 	cpu.reg.PC += 2
 	return 2
+}
+
+func (cpu *CPU) jp(flag bool) int {
+	if flag {
+		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(cpu.reg.PC+2) << 8)
+		return 4
+	}
+	cpu.reg.PC += 3
+	return 3
+}
+
+func (cpu *CPU) call(flag bool) int {
+	if flag {
+		lo := byte(cpu.reg.PC + 3)
+		hi := byte((cpu.reg.PC + 3) >> 8)
+		cpu.push16(lo, hi)
+		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(Read(cpu.reg.PC+2) << 8))
+		return 6
+	}
+	cpu.reg.PC += 3
+	return 3
+}
+
+func (cpu *CPU) ret(flag bool) int {
+	if flag {
+		cpu.pop16(&byte(cpu.reg.PC), &byte(cpu.reg.PC>>8))
+		return 5
+	}
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) rst(vec byte) int {
+	lo := byte(cpu.reg.PC + 1)
+	hi := byte((cpu.reg.PC + 1) >> 8)
+	cpu.push16(lo, hi)
+	cpu.reg.PC = vec
+	return 4
+}
+
+func (cpu *CPU) push16(lo byte) {
+	cpu.reg.SP -= 1
+	Write(cpu.reg.SP, lo)
+	cpu.reg.SP -= 1
+	Write(cpu.reg.SP, hi)
+}
+
+func (cpu *CPU) pop16(destLo *byte, destHi *byte) {
+	cpu.ldFromAddress(destLo, byte(cpu.reg.SP), byte(cpu.reg.SP>>8))
+	cpu.reg.SP += 1
+	cpu.ldFromAddress(destHi, byte(cpu.reg.SP), byte(cpu.reg.SP>>8))
+	cpu.reg.SP += 1
 }
 
 func (cpu *CPU) cpu00() int { // do I need parameters for args?
@@ -1427,4 +1488,285 @@ func (cpu *CPU) cpuBF() int { // CP A,A
 	cpu.cpA(cpu.reg.A)
 	cpu.reg.PC++
 	return 1
+}
+
+func (cpu *CPU) cpuC0() int { // RET NZ
+	return cpu.ret(!cpu.flg.Z)
+}
+
+func (cpu *CPU) cpuC1() int { // POP BC
+	cpu.pop16(&cpu.reg.C, &cpu.reg.B)
+	cpu.reg.PC++
+	return 3
+}
+
+func (cpu *CPU) cpuC2() int { // JP NZ, u16
+	return cpu.jp(!cpu.flg.Z)
+}
+
+func (cpu *CPU) cpuC3() int { // JP u16
+	return cpu.jp(true)
+}
+
+func (cpu *CPU) cpuC4() int { // CALL NZ, u16
+	return cpu.call(!cpu.flg.Z)
+}
+
+func (cpu *CPU) cpuC5() int { // PUSH BC
+	cpu.push16(cpu.reg.C, cpu.reg.B)
+	cpu.reg.PC++
+	return 4
+}
+
+func (cpu *CPU) cpuC6() int { // ADD A, u8
+	cpu.addA(Read(cpu.reg.PC+1), false)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpuC7() int { // RST 0x00
+	return cpu.rst(0x00)
+}
+
+func (cpu *CPU) cpuC8() int { // RET Z
+	return cpu.ret(cpu.flg.Z)
+}
+
+func (cpu *CPU) cpuC9() int { // RET
+	return cpu.ret(true)
+}
+
+func (cpu *CPU) cpuCA() int { // JP Z,u16
+	return cpu.jp(cpu.flg.Z)
+}
+
+func (cpu *CPU) cpuCB() int { // TODO: Prefix 0xCB
+	return 1
+}
+
+func (cpu *CPU) cpuCC() int { // CALL Z,u16
+	return cpu.call(cpu.flg.Z)
+}
+
+func (cpu *CPU) cpuCD() int { // CALL u16
+	return cpu.call(true)
+}
+
+func (cpu *CPU) cpuCE() int { // ADC A,u8
+	cpu.addA(Read(cpu.reg.PC+1), true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpuCF() int { // RST 08
+	return cpu.call(0x08)
+}
+
+func (cpu *CPU) cpuD0() int { // RET NC
+	return cpu.ret(!cpu.flg.C)
+}
+
+func (cpu *CPU) cpuD1() int { // POP DE
+	cpu.pop16(&cpu.reg.E, &cpu.reg.D)
+	cpu.reg.PC++
+	return 3
+}
+
+func (cpu *CPU) cpuD2() int { // JP NC, u16
+	return cpu.jp(!cpu.flg.C)
+}
+
+func (cpu *CPU) cpuD4() int { // CALL NC, u16
+	return cpu.call(!cpu.flg.C)
+}
+
+func (cpu *CPU) cpuD5() int { // PUSH DE
+	cpu.push16(cpu.reg.E, cpu.reg.D)
+	cpu.reg.PC++
+	return 4
+}
+
+func (cpu *CPU) cpuD6() int { // SUB A, u8
+	cpu.subA(Read(cpu.reg.PC + 1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpuD7() int { // RST 0x10
+	return cpu.rst(0x10)
+}
+
+func (cpu *CPU) cpuD8() int { // RET C
+	return cpu.ret(cpu.flg.C)
+}
+
+func (cpu *CPU) cpuD9() int { // TODO: RETI
+	// ei
+	cpu.ret(true)
+	return 4
+}
+
+func (cpu *CPU) cpuDA() int { // JP C,u16
+	return cpu.jp(cpu.flg.C)
+}
+
+func (cpu *CPU) cpuDC() int { // CALL C,u16
+	return cpu.call(cpu.flg.C)
+}
+
+func (cpu *CPU) cpuCE() int { // SBC A,u8
+	cpu.subA(Read(cpu.reg.PC+1), true)
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpuCF() int { // RST 18
+	return cpu.call(0x18)
+}
+
+func (cpu *CPU) nop() int { // TODO: invalid
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuE0() int { // LD (FF00+u8),A
+	cpu.ldToAddress(Read(cpu.reg.PC+1), 0xFF, cpu.reg.A)
+	cpu.reg.PC += 2
+	return 3
+}
+
+func (cpu *CPU) cpuE1() int { // POP HL
+	cpu.pop16(cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 3
+}
+
+func (cpu *CPU) cpuE2() int { // LD (FF00+C),A
+	cpu.ldToAddress(cpu.reg.C, 0xFF, cpu.reg.A)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpuE5() int { // PUSH HL
+	cpu.push16(cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
+	return 4
+}
+
+func (cpu *CPU) cpuE6() int { // AND A,u8
+	cpu.andA(Read(cpu.reg.PC + 1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpuE7() int { // RST 20
+	return cpu.rst(0x20)
+}
+
+func (cpu *CPU) cpuE8() int { // ADD SP,i8
+	cpu.flg.H = cpu.reg.SP&0xF+uint16(Read(cpu.reg.PC+1)&0xF)&0x10 == 0x10
+	cpu.flg.C = cpu.reg.SP&0xFF+uint16(Read(cpu.reg.PC+1)&0xFF)&0x100 == 0x100
+	cpu.reg.SP += int16(Read(cpu.reg.PC + 1))
+
+	cpu.flg.Z = false
+	cpu.flg.N = false
+	cpu.reg.PC += 2
+	return 4
+}
+
+func (cpu *CPU) cpuE9() int { // JP HL
+	cpu.reg.PC = Read(uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L))
+	return 1
+}
+
+func (cpu *CPU) cpuEA() int { // LD (u16),A
+	cpu.ldToAddress(Read(cpu.reg.PC+1), Read(cpu.reg.PC+2), cpu.reg.A)
+	cpu.reg.PC += 3
+	return 4
+}
+
+func (cpu *CPU) cpuEE() int { // XOR A,u8
+	cpu.xorA(Read(cpu.reg.PC + 1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpuEF() int { // RST 0x28
+	return cpu.rst(0x28)
+}
+
+func (cpu *CPU) cpuF0() int { // LD A,(FF00+u8)
+	cpu.ldFromAddress(&cpu.reg.A, Read(cpu.reg.PC+1), 0xFF)
+	cpu.reg.PC += 2
+	return 3
+}
+
+func (cpu *CPU) cpuF1() int { // POP AF
+	cpu.pop16(FlagsToByte(), cpu.reg.A)
+	cpu.reg.PC++
+	return 3
+}
+
+func (cpu *CPU) cpuF2() int { // LD A,(FF00+C)
+	cpu.ldFromAddress(&cpu.reg.A, cpu.reg.C, 0xFF)
+	cpu.reg.PC++
+	return 2
+}
+
+func (cpu *CPU) cpuF3() int { // TODO: DI
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuF5() int { // PUSH AF
+	cpu.push16(FlagsToByte(), cpu.reg.A)
+	cpu.reg.PC++
+	return 4
+}
+
+func (cpu *CPU) cpuF6() int { // OR A,u8
+	cpu.orA(Read(cpu.reg.PC + 1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpuF7() int { // RST 30
+	return cpu.rst(0x30)
+}
+
+func (cpu *CPU) cpuF8() int { // LD HL,SP+i8
+	cpu.flg.H = cpu.reg.SP&0xF+uint16(Read(cpu.reg.PC+1)&0xF)&0x10 == 0x10
+	cpu.flg.C = cpu.reg.SP&0xFF+uint16(Read(cpu.reg.PC+1)&0xFF)&0x100 == 0x100
+	cpu.reg.HL = cpu.reg.SP + int16(Read(cpu.reg.PC+1))
+
+	cpu.flg.Z = false
+	cpu.flg.N = false
+	cpu.reg.PC += 2
+	return 4
+}
+
+func (cpu *CPU) cpuF9() int { // LD SP,HL
+	cpu.ld16reg(&cpu.reg.SP, cpu.reg.L, cpu.reg.H)
+	return 2
+}
+
+func (cpu *CPU) cpuFA() int { // LD A,(u16)
+	cpu.ldFromAddress(cpu.reg.A, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
+	cpu.reg.PC += 3
+	return 4
+}
+
+func (cpu *CPU) cpuFB() int { // TODO: EI
+	cpu.reg.PC++
+	return 1
+}
+
+func (cpu *CPU) cpuFE() int { // CP A,u8
+	cpu.cpA(Read(cpu.reg.PC + 1))
+	cpu.reg.PC += 2
+	return 2
+}
+
+func (cpu *CPU) cpuFF() int { // RST 0x38
+	return cpu.rst(0x38)
 }
