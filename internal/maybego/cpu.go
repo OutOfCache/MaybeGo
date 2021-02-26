@@ -18,6 +18,7 @@ type Flags struct {
 	N    bool // sub flag
 	H    bool // half carry
 	HALT bool // HALT flag
+	IME  bool // Interrupts Master Enable
 }
 
 type CPU struct {
@@ -1820,8 +1821,8 @@ func (cpu *CPU) cpuD8() int { // RET C
 	return cpu.ret(cpu.flg.C)
 }
 
-func (cpu *CPU) cpuD9() int { // TODO: RETI
-	// ei
+func (cpu *CPU) cpuD9() int { // RETI
+	cpu.flg.IME = true
 	cpu.ret(true)
 	return 4
 }
@@ -1961,7 +1962,8 @@ func (cpu *CPU) cpuF2() int { // LD A,(FF00+C)
 	return 2
 }
 
-func (cpu *CPU) cpuF3() int { // TODO: DI
+func (cpu *CPU) cpuF3() int { // DI
+	cpu.flg.IME = false
 	cpu.reg.PC++
 	return 1
 }
@@ -2008,7 +2010,8 @@ func (cpu *CPU) cpuFA() int { // LD A,(u16)
 	return 4
 }
 
-func (cpu *CPU) cpuFB() int { // TODO: EI
+func (cpu *CPU) cpuFB() int { // EI
+	cpu.flg.IME = true
 	cpu.reg.PC++
 	return 1
 }
