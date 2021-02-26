@@ -1756,7 +1756,7 @@ func (cpu *CPU) cpuCA() int { // JP Z,u16
 	return cpu.jp(cpu.flg.Z)
 }
 
-func (cpu *CPU) cpuCB() int { // TODO: Prefix 0xCB
+func (cpu *CPU) cpuCB() int { // Prefix 0xCB
 	return cbOps[Read(cpu.reg.PC+1)]
 }
 
@@ -1790,6 +1790,10 @@ func (cpu *CPU) cpuD1() int { // POP DE
 
 func (cpu *CPU) cpuD2() int { // JP NC, u16
 	return cpu.jp(!cpu.flg.C)
+}
+
+func (cpu *CPU) cpuD3() int { // invalid
+	return cpu.nop()
 }
 
 func (cpu *CPU) cpuD4() int { // CALL NC, u16
@@ -1826,21 +1830,29 @@ func (cpu *CPU) cpuDA() int { // JP C,u16
 	return cpu.jp(cpu.flg.C)
 }
 
+func (cpu *CPU) cpuDB() int { // invalid
+	return cpu.nop()
+}
+
 func (cpu *CPU) cpuDC() int { // CALL C,u16
 	return cpu.call(cpu.flg.C)
 }
 
-func (cpu *CPU) cpuCE() int { // SBC A,u8
+func (cpu *CPU) cpuDD() int { // invalid
+	return cpu.nop()
+}
+
+func (cpu *CPU) cpuDE() int { // SBC A,u8
 	cpu.subA(Read(cpu.reg.PC+1), true)
 	cpu.reg.PC += 2
 	return 2
 }
 
-func (cpu *CPU) cpuCF() int { // RST 18
+func (cpu *CPU) cpuDF() int { // RST 18
 	return cpu.call(0x18)
 }
 
-func (cpu *CPU) nop() int { // TODO: invalid
+func (cpu *CPU) nop() int { // invalid
 	cpu.reg.PC++
 	return 1
 }
@@ -1861,6 +1873,14 @@ func (cpu *CPU) cpuE2() int { // LD (FF00+C),A
 	cpu.ldToAddress(cpu.reg.C, 0xFF, cpu.reg.A)
 	cpu.reg.PC++
 	return 2
+}
+
+func (cpu *CPU) cpuE3() int { // invalid
+	return cpu.nop()
+}
+
+func (cpu *CPU) cpuE4() int { // invalid
+	return cpu.nop()
 }
 
 func (cpu *CPU) cpuE5() int { // PUSH HL
@@ -1901,6 +1921,18 @@ func (cpu *CPU) cpuEA() int { // LD (u16),A
 	return 4
 }
 
+func (cpu *CPU) cpuEB() int { // invalid
+	return cpu.nop()
+}
+
+func (cpu *CPU) cpuEC() int { // invalid
+	return cpu.nop()
+}
+
+func (cpu *CPU) cpuED() int { // invalid
+	return cpu.nop()
+}
+
 func (cpu *CPU) cpuEE() int { // XOR A,u8
 	cpu.xorA(Read(cpu.reg.PC + 1))
 	cpu.reg.PC += 2
@@ -1932,6 +1964,10 @@ func (cpu *CPU) cpuF2() int { // LD A,(FF00+C)
 func (cpu *CPU) cpuF3() int { // TODO: DI
 	cpu.reg.PC++
 	return 1
+}
+
+func (cpu *CPU) cpuF4() int { // invalid
+	return cpu.nop()
 }
 
 func (cpu *CPU) cpuF5() int { // PUSH AF
@@ -1975,6 +2011,14 @@ func (cpu *CPU) cpuFA() int { // LD A,(u16)
 func (cpu *CPU) cpuFB() int { // TODO: EI
 	cpu.reg.PC++
 	return 1
+}
+
+func (cpu *CPU) cpuFC() int { // invalid
+	return cpu.nop()
+}
+
+func (cpu *CPU) cpuFD() int { // invalid
+	return cpu.nop()
 }
 
 func (cpu *CPU) cpuFE() int { // CP A,u8
