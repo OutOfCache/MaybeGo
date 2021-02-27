@@ -952,3 +952,25 @@ func TestCpu3F(t *testing.T) {
 	}
 
 }
+
+func TestCpuC3(t *testing.T) {
+	var tests = []struct {
+		pc       uint16
+		lo       byte
+		hi       byte
+		expected uint16
+	}{
+		{0x0, 0x50, 0x01, 0x0150},
+		{0x2F, 0x32, 0x7F, 0x7F32},
+	}
+
+	for _, test := range tests {
+		cpu.reg.PC = test.pc
+		Write(cpu.reg.PC+1, test.lo)
+		Write(cpu.reg.PC+2, test.hi)
+		cpu.cpuC3()
+		if cpu.reg.PC != test.expected {
+			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expected)
+		}
+	}
+}

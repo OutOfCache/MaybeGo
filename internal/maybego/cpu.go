@@ -1,5 +1,11 @@
 package maybego
 
+import (
+	"fmt"
+	"log"
+	"os"
+)
+
 type Registers struct {
 	A  byte // can be combined to AF
 	B  byte // BC, B hi
@@ -25,15 +31,17 @@ type CPU struct {
 	reg           *Registers
 	flg           *Flags
 	currentOpcode byte
-	opcodes       [256]func()
-	cbOps         [256]func()
+	opcodes       [256]func() int
+	cbOps         [256]func() int
 }
 
 // dummy "constructor"
 func NewCPU() *CPU {
 	cpu := &CPU{reg: new(Registers), flg: new(Flags)}
+	cpu.reg.PC = 0x100  // to bypass boot rom for now
+	cpu.reg.SP = 0xFFFE // bypassing boot rom
 
-	cpu.opcodes = [256]func(){
+	cpu.opcodes = [256]func() int{
 		cpu.cpu00, cpu.cpu01, cpu.cpu02, cpu.cpu03,
 		cpu.cpu04, cpu.cpu05, cpu.cpu06, cpu.cpu07,
 		cpu.cpu08, cpu.cpu09, cpu.cpu0A, cpu.cpu0B,
@@ -100,7 +108,7 @@ func NewCPU() *CPU {
 		cpu.cpuFC, cpu.cpuFD, cpu.cpuFE, cpu.cpuFF,
 	}
 
-	cpu.cbOps = [256]func(){
+	cpu.cbOps = [256]func() int{
 		cpu.cb00, cpu.cb01, cpu.cb02, cpu.cb03,
 		cpu.cb04, cpu.cb05, cpu.cb06, cpu.cb07,
 		cpu.cb08, cpu.cb09, cpu.cb0A, cpu.cb0B,
@@ -167,12 +175,22 @@ func NewCPU() *CPU {
 		cpu.cbFC, cpu.cbFD, cpu.cbFE, cpu.cbFF,
 	}
 
+	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.SetOutput(file)
+
 	return cpu
 }
 
 func (cpu *CPU) Fetch() {
 	if !cpu.flg.HALT {
 		cpu.currentOpcode = Read(cpu.reg.PC)
+		log.Printf("PC: %x, Opcode: %x, Flags: %b", cpu.reg.PC, cpu.currentOpcode, cpu.FlagsToBytes())
+	} else {
+		fmt.Println("halted")
 	}
 }
 
@@ -187,13 +205,20 @@ func FlagToBit(flag bool) byte {
 	return 0
 }
 
-func FlagsToBytes() byte {
-	z := FlagToBit(cpu.reg.Z)
-	n := FlagToBit(cpu.reg.N)
-	h := FlagToBit(cpu.reg.H)
-	c := FlagToBit(cpu.reg.C)
+func (cpu *CPU) FlagsToBytes() byte {
+	z := FlagToBit(cpu.flg.Z)
+	n := FlagToBit(cpu.flg.N)
+	h := FlagToBit(cpu.flg.H)
+	c := FlagToBit(cpu.flg.C)
 
 	return (z << 7) + (n << 6) + (h << 5) + (c << 4)
+}
+
+func (cpu *CPU) BytesToFlags(flags byte) {
+	cpu.flg.Z = flags&0x80 == 0x80
+	cpu.flg.N = flags&0x40 == 0x40
+	cpu.flg.H = flags&0x20 == 0x20
+	cpu.flg.C = flags&0x10 == 0x10
 }
 
 // LD r8, r8/n8
@@ -249,7 +274,7 @@ func (cpu *CPU) inc16(destLo *byte, destHi *byte) {
 }
 
 func (cpu *CPU) dec8(reg *byte, flags bool) {
-	*reg--
+	*reg -= 1
 	if flags {
 		cpu.flg.N = true
 		cpu.flg.Z = *reg == 0
@@ -375,7 +400,7 @@ func (cpu *CPU) rr8(reg *byte, carry bool) {
 func (cpu *CPU) sl8(reg *byte) {
 	cpu.flg.C = *reg&0x80 == 0x80
 	*reg <<= 1
-	cpu.flg.Z = reg == 0
+	cpu.flg.Z = *reg == 0
 	cpu.flg.N = false
 	cpu.flg.H = false
 }
@@ -386,7 +411,7 @@ func (cpu *CPU) sr8(reg *byte) {
 	cpu.flg.C = *reg&0x01 == 0x01
 	*reg >>= 1
 	*reg += msb
-	cpu.flg.Z = reg == 0
+	cpu.flg.Z = *reg == 0
 	cpu.flg.N = false
 	cpu.flg.H = false
 }
@@ -394,7 +419,7 @@ func (cpu *CPU) sr8(reg *byte) {
 func (cpu *CPU) srl8(reg *byte) {
 	cpu.flg.C = *reg&0x01 == 0x01
 	*reg >>= 1
-	cpu.flg.Z = reg == 0
+	cpu.flg.Z = *reg == 0
 	cpu.flg.N = false
 	cpu.flg.H = false
 }
@@ -410,7 +435,7 @@ func (cpu *CPU) jr(flag bool) int {
 
 func (cpu *CPU) jp(flag bool) int {
 	if flag {
-		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(cpu.reg.PC+2) << 8)
+		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(Read(cpu.reg.PC+2)) << 8)
 		return 4
 	}
 	cpu.reg.PC += 3
@@ -422,7 +447,7 @@ func (cpu *CPU) call(flag bool) int {
 		lo := byte(cpu.reg.PC + 3)
 		hi := byte((cpu.reg.PC + 3) >> 8)
 		cpu.push16(lo, hi)
-		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(Read(cpu.reg.PC+2) << 8))
+		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(Read(cpu.reg.PC+2)) << 8)
 		return 6
 	}
 	cpu.reg.PC += 3
@@ -431,7 +456,7 @@ func (cpu *CPU) call(flag bool) int {
 
 func (cpu *CPU) ret(flag bool) int {
 	if flag {
-		cpu.pop16(&byte(cpu.reg.PC), &byte(cpu.reg.PC>>8))
+		cpu.pop16reg(&cpu.reg.PC)
 		return 5
 	}
 	cpu.reg.PC++
@@ -442,15 +467,15 @@ func (cpu *CPU) rst(vec byte) int {
 	lo := byte(cpu.reg.PC + 1)
 	hi := byte((cpu.reg.PC + 1) >> 8)
 	cpu.push16(lo, hi)
-	cpu.reg.PC = vec
+	cpu.reg.PC = uint16(vec)
 	return 4
 }
 
-func (cpu *CPU) push16(lo byte) {
-	cpu.reg.SP -= 1
-	Write(cpu.reg.SP, lo)
+func (cpu *CPU) push16(lo byte, hi byte) {
 	cpu.reg.SP -= 1
 	Write(cpu.reg.SP, hi)
+	cpu.reg.SP -= 1
+	Write(cpu.reg.SP, lo)
 }
 
 func (cpu *CPU) pop16(destLo *byte, destHi *byte) {
@@ -458,6 +483,17 @@ func (cpu *CPU) pop16(destLo *byte, destHi *byte) {
 	cpu.reg.SP += 1
 	cpu.ldFromAddress(destHi, byte(cpu.reg.SP), byte(cpu.reg.SP>>8))
 	cpu.reg.SP += 1
+}
+
+func (cpu *CPU) pop16reg(dest *uint16) {
+	var lo byte
+	var hi byte
+	cpu.ldFromAddress(&lo, byte(cpu.reg.SP), byte(cpu.reg.SP>>8))
+	cpu.reg.SP += 1
+	cpu.ldFromAddress(&hi, byte(cpu.reg.SP), byte(cpu.reg.SP>>8))
+	cpu.reg.SP += 1
+
+	*dest = uint16(hi)<<8 + uint16(lo)
 }
 
 func (cpu *CPU) swap(dest *byte) {
@@ -471,10 +507,10 @@ func (cpu *CPU) swap(dest *byte) {
 	cpu.flg.C = false
 }
 
-func (cpu *CPU) bit(reg byte, bit byte) {
+func (cpu *CPU) bit(reg *byte, bit byte) {
 	cpu.flg.N = false
 	cpu.flg.H = true
-	cpu.flg.Z = reg&(0x01<<bit) == 0
+	cpu.flg.Z = *reg&byte(0x01<<bit) == 0
 }
 
 func (cpu *CPU) res(reg *byte, bit byte) {
@@ -705,6 +741,9 @@ func (cpu *CPU) cpu1F() int { // RRA
 }
 
 func (cpu *CPU) cpu20() int { // JR NZ, i8
+	// if cpu.flg.Z {
+	// 	fmt.Println(cpu.flg.Z)
+	// }
 	return cpu.jr(!cpu.flg.Z)
 }
 
@@ -1298,7 +1337,7 @@ func (cpu *CPU) cpu7C() int { // LD A,H
 }
 
 func (cpu *CPU) cpu7D() int { // LD A,L
-	cpu.ld8(&cpu.reg.A, cpu.reg.B)
+	cpu.ld8(&cpu.reg.A, cpu.reg.L)
 	cpu.reg.PC++
 	return 1
 }
@@ -1352,7 +1391,7 @@ func (cpu *CPU) cpu85() int { // ADD A,L
 }
 
 func (cpu *CPU) cpu86() int { // ADD A,(HL)
-	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	cpu.addA(Read(address), false)
 	cpu.reg.PC++
 	return 1
@@ -1401,7 +1440,7 @@ func (cpu *CPU) cpu8D() int { // ADC A,L
 }
 
 func (cpu *CPU) cpu8E() int { // ADC A,(HL)
-	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	cpu.addA(Read(address), true)
 	cpu.reg.PC++
 	return 1
@@ -1450,7 +1489,7 @@ func (cpu *CPU) cpu95() int { // SUB A,L
 }
 
 func (cpu *CPU) cpu96() int { // SUB A,(HL)
-	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	cpu.subA(Read(address), false)
 	cpu.reg.PC++
 	return 1
@@ -1499,7 +1538,7 @@ func (cpu *CPU) cpu9D() int { // SBC A,L
 }
 
 func (cpu *CPU) cpu9E() int { // SBC A,(HL)
-	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	cpu.subA(Read(address), true)
 	cpu.reg.PC++
 	return 1
@@ -1548,7 +1587,7 @@ func (cpu *CPU) cpuA5() int { // AND A,L
 }
 
 func (cpu *CPU) cpuA6() int { // AND A,(HL)
-	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	cpu.andA(Read(address))
 	cpu.reg.PC++
 	return 1
@@ -1597,7 +1636,7 @@ func (cpu *CPU) cpuAD() int { // XOR A,L
 }
 
 func (cpu *CPU) cpuAE() int { // XOR A,(HL)
-	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	cpu.xorA(Read(address))
 	cpu.reg.PC++
 	return 1
@@ -1646,7 +1685,7 @@ func (cpu *CPU) cpuB5() int { // OR A,L
 }
 
 func (cpu *CPU) cpuB6() int { // OR A,(HL)
-	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	cpu.orA(Read(address))
 	cpu.reg.PC++
 	return 1
@@ -1695,7 +1734,7 @@ func (cpu *CPU) cpuBD() int { // CP A,L
 }
 
 func (cpu *CPU) cpuBE() int { // CP A,(HL)
-	address := uint16(cpu.reg.H)<<8 + cpu.reg.L
+	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	cpu.cpA(Read(address))
 	cpu.reg.PC++
 	return 1
@@ -1758,7 +1797,7 @@ func (cpu *CPU) cpuCA() int { // JP Z,u16
 }
 
 func (cpu *CPU) cpuCB() int { // Prefix 0xCB
-	return cbOps[Read(cpu.reg.PC+1)]
+	return cpu.cbOps[Read(cpu.reg.PC+1)]()
 }
 
 func (cpu *CPU) cpuCC() int { // CALL Z,u16
@@ -1776,7 +1815,7 @@ func (cpu *CPU) cpuCE() int { // ADC A,u8
 }
 
 func (cpu *CPU) cpuCF() int { // RST 08
-	return cpu.call(0x08)
+	return cpu.rst(0x08)
 }
 
 func (cpu *CPU) cpuD0() int { // RET NC
@@ -1808,7 +1847,7 @@ func (cpu *CPU) cpuD5() int { // PUSH DE
 }
 
 func (cpu *CPU) cpuD6() int { // SUB A, u8
-	cpu.subA(Read(cpu.reg.PC + 1))
+	cpu.subA(Read(cpu.reg.PC+1), false)
 	cpu.reg.PC += 2
 	return 2
 }
@@ -1850,7 +1889,7 @@ func (cpu *CPU) cpuDE() int { // SBC A,u8
 }
 
 func (cpu *CPU) cpuDF() int { // RST 18
-	return cpu.call(0x18)
+	return cpu.rst(0x18)
 }
 
 func (cpu *CPU) nop() int { // invalid
@@ -1865,7 +1904,7 @@ func (cpu *CPU) cpuE0() int { // LD (FF00+u8),A
 }
 
 func (cpu *CPU) cpuE1() int { // POP HL
-	cpu.pop16(cpu.reg.L, cpu.reg.H)
+	cpu.pop16(&cpu.reg.L, &cpu.reg.H)
 	cpu.reg.PC++
 	return 3
 }
@@ -1901,9 +1940,9 @@ func (cpu *CPU) cpuE7() int { // RST 20
 }
 
 func (cpu *CPU) cpuE8() int { // ADD SP,i8
-	cpu.flg.H = cpu.reg.SP&0xF+uint16(Read(cpu.reg.PC+1)&0xF)&0x10 == 0x10
+	cpu.flg.H = cpu.reg.SP&0x0F+uint16(Read(cpu.reg.PC+1)&0x0F)&0x010 == 0x10
 	cpu.flg.C = cpu.reg.SP&0xFF+uint16(Read(cpu.reg.PC+1)&0xFF)&0x100 == 0x100
-	cpu.reg.SP += int16(Read(cpu.reg.PC + 1))
+	cpu.reg.SP = uint16(int16(cpu.reg.SP) + int16(Read(cpu.reg.PC+1)))
 
 	cpu.flg.Z = false
 	cpu.flg.N = false
@@ -1912,7 +1951,7 @@ func (cpu *CPU) cpuE8() int { // ADD SP,i8
 }
 
 func (cpu *CPU) cpuE9() int { // JP HL
-	cpu.reg.PC = Read(uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L))
+	cpu.reg.PC = uint16((cpu.reg.H))<<8 + uint16(cpu.reg.L)
 	return 1
 }
 
@@ -1951,7 +1990,9 @@ func (cpu *CPU) cpuF0() int { // LD A,(FF00+u8)
 }
 
 func (cpu *CPU) cpuF1() int { // POP AF
-	cpu.pop16(FlagsToByte(), cpu.reg.A)
+	flags := cpu.FlagsToBytes()
+	cpu.pop16(&flags, &cpu.reg.A)
+	cpu.BytesToFlags(flags)
 	cpu.reg.PC++
 	return 3
 }
@@ -1973,7 +2014,7 @@ func (cpu *CPU) cpuF4() int { // invalid
 }
 
 func (cpu *CPU) cpuF5() int { // PUSH AF
-	cpu.push16(FlagsToByte(), cpu.reg.A)
+	cpu.push16(cpu.FlagsToBytes(), cpu.reg.A)
 	cpu.reg.PC++
 	return 4
 }
@@ -1991,7 +2032,10 @@ func (cpu *CPU) cpuF7() int { // RST 30
 func (cpu *CPU) cpuF8() int { // LD HL,SP+i8
 	cpu.flg.H = cpu.reg.SP&0xF+uint16(Read(cpu.reg.PC+1)&0xF)&0x10 == 0x10
 	cpu.flg.C = cpu.reg.SP&0xFF+uint16(Read(cpu.reg.PC+1)&0xFF)&0x100 == 0x100
-	cpu.reg.HL = cpu.reg.SP + int16(Read(cpu.reg.PC+1))
+	hl := uint16(int16(cpu.reg.SP) + int16(Read(cpu.reg.PC+1)))
+
+	cpu.reg.L = byte(hl)
+	cpu.reg.H = byte(hl >> 8)
 
 	cpu.flg.Z = false
 	cpu.flg.N = false
@@ -2005,7 +2049,7 @@ func (cpu *CPU) cpuF9() int { // LD SP,HL
 }
 
 func (cpu *CPU) cpuFA() int { // LD A,(u16)
-	cpu.ldFromAddress(cpu.reg.A, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
+	cpu.ldFromAddress(&cpu.reg.A, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
 	cpu.reg.PC += 3
 	return 4
 }
@@ -2074,7 +2118,8 @@ func (cpu *CPU) cb05() int { // RLC L
 
 func (cpu *CPU) cb06() int { // RLC (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.rl8(Read(address), false)
+	val := Read(address)
+	cpu.rl8(&val, false)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2124,7 +2169,8 @@ func (cpu *CPU) cb0D() int { // RRC L
 
 func (cpu *CPU) cb0E() int { // RRC (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.rr88(Read(address), false)
+	val := Read(address)
+	cpu.rr8(&val, false)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2174,7 +2220,8 @@ func (cpu *CPU) cb15() int { // RL L
 
 func (cpu *CPU) cb16() int { // RL (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.rl8(Read(address), true)
+	val := Read(address)
+	cpu.rl8(&val, true)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2224,7 +2271,8 @@ func (cpu *CPU) cb1D() int { // RR L
 
 func (cpu *CPU) cb1E() int { // RR (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.rr88(Read(address), true)
+	val := Read(address)
+	cpu.rr8(&val, true)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2274,7 +2322,8 @@ func (cpu *CPU) cb25() int { // SLA L
 
 func (cpu *CPU) cb26() int { // SLA (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.sl8(Read(address))
+	val := Read(address)
+	cpu.sl8(&val)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2324,7 +2373,8 @@ func (cpu *CPU) cb2D() int { // SRA L
 
 func (cpu *CPU) cb2E() int { // SRA (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.sr8(Read(address))
+	val := Read(address)
+	cpu.sr8(&val)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2374,7 +2424,8 @@ func (cpu *CPU) cb35() int { // SWAP L
 
 func (cpu *CPU) cb36() int { // SWAP (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.swap(Read(address))
+	val := Read(address)
+	cpu.swap(&val)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2424,7 +2475,8 @@ func (cpu *CPU) cb3D() int { // SRL L
 
 func (cpu *CPU) cb3E() int { // SRL (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.sr8(Read(address))
+	val := Read(address)
+	cpu.sr8(&val)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2474,7 +2526,8 @@ func (cpu *CPU) cb45() int { // BIT 0, L
 
 func (cpu *CPU) cb46() int { // BIT 0, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.bit(Read(address), 0)
+	val := Read(address)
+	cpu.bit(&val, 0)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2524,7 +2577,8 @@ func (cpu *CPU) cb4D() int { // BIT 1, L
 
 func (cpu *CPU) cb4E() int { // BIT 1, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.bit(Read(address), 1)
+	val := Read(address)
+	cpu.bit(&val, 1)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2574,7 +2628,8 @@ func (cpu *CPU) cb55() int { // BIT 2, L
 
 func (cpu *CPU) cb56() int { // BIT 2, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.bit(Read(address), 2)
+	val := Read(address)
+	cpu.bit(&val, 2)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2624,7 +2679,8 @@ func (cpu *CPU) cb5D() int { // BIT 3, L
 
 func (cpu *CPU) cb5E() int { // BIT 3, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.bit(Read(address), 3)
+	val := Read(address)
+	cpu.bit(&val, 3)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2674,7 +2730,8 @@ func (cpu *CPU) cb65() int { // BIT 4, L
 
 func (cpu *CPU) cb66() int { // BIT 4, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.bit(Read(address), 4)
+	val := Read(address)
+	cpu.bit(&val, 4)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2724,7 +2781,8 @@ func (cpu *CPU) cb6D() int { // BIT 5, L
 
 func (cpu *CPU) cb6E() int { // BIT 5, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.bit(Read(address), 5)
+	val := Read(address)
+	cpu.bit(&val, 5)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2774,7 +2832,8 @@ func (cpu *CPU) cb75() int { // BIT 6, L
 
 func (cpu *CPU) cb76() int { // BIT 6, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.bit(Read(address), 6)
+	val := Read(address)
+	cpu.bit(&val, 6)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2824,7 +2883,8 @@ func (cpu *CPU) cb7D() int { // BIT 7, L
 
 func (cpu *CPU) cb7E() int { // BIT 7, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.bit(Read(address), 7)
+	val := Read(address)
+	cpu.bit(&val, 7)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2874,7 +2934,8 @@ func (cpu *CPU) cb85() int { // RES 0, L
 
 func (cpu *CPU) cb86() int { // RES 0, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.res(Read(address), 0)
+	val := Read(address)
+	cpu.res(&val, 0)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2924,7 +2985,8 @@ func (cpu *CPU) cb8D() int { // RES 1, L
 
 func (cpu *CPU) cb8E() int { // RES 1, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.res(Read(address), 1)
+	val := Read(address)
+	cpu.res(&val, 1)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -2974,7 +3036,8 @@ func (cpu *CPU) cb95() int { // RES 2, L
 
 func (cpu *CPU) cb96() int { // RES 2, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.res(Read(address), 2)
+	val := Read(address)
+	cpu.res(&val, 2)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3024,7 +3087,8 @@ func (cpu *CPU) cb9D() int { // RES 3, L
 
 func (cpu *CPU) cb9E() int { // RES 3, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.res(Read(address), 3)
+	val := Read(address)
+	cpu.res(&val, 3)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3074,7 +3138,8 @@ func (cpu *CPU) cbA5() int { // RES 4, L
 
 func (cpu *CPU) cbA6() int { // RES 4, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.res(Read(address), 4)
+	val := Read(address)
+	cpu.res(&val, 4)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3124,7 +3189,8 @@ func (cpu *CPU) cbAD() int { // RES 5, L
 
 func (cpu *CPU) cbAE() int { // RES 5, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.res(Read(address), 5)
+	val := Read(address)
+	cpu.res(&val, 5)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3174,7 +3240,8 @@ func (cpu *CPU) cbB5() int { // RES 6, L
 
 func (cpu *CPU) cbB6() int { // RES 6, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.res(Read(address), 6)
+	val := Read(address)
+	cpu.res(&val, 6)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3224,7 +3291,8 @@ func (cpu *CPU) cbBD() int { // RES 7, L
 
 func (cpu *CPU) cbBE() int { // RES 7, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.res(Read(address), 7)
+	val := Read(address)
+	cpu.res(&val, 7)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3274,7 +3342,8 @@ func (cpu *CPU) cbC5() int { // SET 0, L
 
 func (cpu *CPU) cbC6() int { // SET 0, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.set(Read(address), 0)
+	val := Read(address)
+	cpu.set(&val, 0)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3324,7 +3393,8 @@ func (cpu *CPU) cbCD() int { // SET 1, L
 
 func (cpu *CPU) cbCE() int { // SET 1, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.set(Read(address), 1)
+	val := Read(address)
+	cpu.set(&val, 1)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3374,7 +3444,8 @@ func (cpu *CPU) cbD5() int { // SET 2, L
 
 func (cpu *CPU) cbD6() int { // SET 2, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.set(Read(address), 2)
+	val := Read(address)
+	cpu.set(&val, 2)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3424,7 +3495,8 @@ func (cpu *CPU) cbDD() int { // SET 3, L
 
 func (cpu *CPU) cbDE() int { // SET 3, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.set(Read(address), 3)
+	val := Read(address)
+	cpu.set(&val, 3)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3474,7 +3546,8 @@ func (cpu *CPU) cbE5() int { // SET 4, L
 
 func (cpu *CPU) cbE6() int { // SET 4, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.set(Read(address), 4)
+	val := Read(address)
+	cpu.set(&val, 4)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3524,7 +3597,8 @@ func (cpu *CPU) cbED() int { // SET 5, L
 
 func (cpu *CPU) cbEE() int { // SET 5, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.set(Read(address), 5)
+	val := Read(address)
+	cpu.set(&val, 5)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3574,7 +3648,8 @@ func (cpu *CPU) cbF5() int { // SET 6, L
 
 func (cpu *CPU) cbF6() int { // SET 6, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.set(Read(address), 6)
+	val := Read(address)
+	cpu.set(&val, 6)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
@@ -3624,7 +3699,8 @@ func (cpu *CPU) cbFD() int { // SET 7, L
 
 func (cpu *CPU) cbFE() int { // SET 7, (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
-	val := cpu.set(Read(address), 7)
+	val := Read(address)
+	cpu.set(&val, 7)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
