@@ -196,7 +196,7 @@ func NewCPU() *CPU {
 func (cpu *CPU) Fetch() {
 	if !cpu.flg.HALT {
 		cpu.currentOpcode = Read(cpu.reg.PC)
-		log.Printf("PC: %x, Opcode: %x, Z: %t, N: %t, H: %t, C: %t, A: %x", cpu.reg.PC, cpu.currentOpcode, cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C, cpu.reg.A)
+		log.Printf("PC: %x, Opcode: %x, Z: %t, N: %t, H: %t, C: %t, A: %x, E: %x", cpu.reg.PC, cpu.currentOpcode, cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C, cpu.reg.A, cpu.reg.E)
 	} else {
 		fmt.Println("halted")
 	}
@@ -749,9 +749,6 @@ func (cpu *CPU) cpu1F() int { // RRA
 }
 
 func (cpu *CPU) cpu20() int { // JR NZ, i8
-	// if cpu.flg.Z {
-	// 	fmt.Println(cpu.flg.Z)
-	// }
 	return cpu.jr(!cpu.flg.Z)
 }
 
@@ -1009,7 +1006,7 @@ func (cpu *CPU) cpu44() int { // LD B,H
 }
 
 func (cpu *CPU) cpu45() int { // LD B,L
-	cpu.ld8(&cpu.reg.B, cpu.reg.B)
+	cpu.ld8(&cpu.reg.B, cpu.reg.L)
 	cpu.reg.PC++
 	return 1
 }
@@ -1057,7 +1054,7 @@ func (cpu *CPU) cpu4C() int { // LD C,H
 }
 
 func (cpu *CPU) cpu4D() int { // LD C,L
-	cpu.ld8(&cpu.reg.C, cpu.reg.B)
+	cpu.ld8(&cpu.reg.C, cpu.reg.L)
 	cpu.reg.PC++
 	return 1
 }
@@ -1105,7 +1102,7 @@ func (cpu *CPU) cpu54() int { // LD D,H
 }
 
 func (cpu *CPU) cpu55() int { // LD D,L
-	cpu.ld8(&cpu.reg.D, cpu.reg.B)
+	cpu.ld8(&cpu.reg.D, cpu.reg.L)
 	cpu.reg.PC++
 	return 1
 }
@@ -1153,7 +1150,7 @@ func (cpu *CPU) cpu5C() int { // LD E,H
 }
 
 func (cpu *CPU) cpu5D() int { // LD E,L
-	cpu.ld8(&cpu.reg.E, cpu.reg.B)
+	cpu.ld8(&cpu.reg.E, cpu.reg.L)
 	cpu.reg.PC++
 	return 1
 }
@@ -1201,7 +1198,7 @@ func (cpu *CPU) cpu64() int { // LD H,H
 }
 
 func (cpu *CPU) cpu65() int { // LD H,L
-	cpu.ld8(&cpu.reg.H, cpu.reg.B)
+	cpu.ld8(&cpu.reg.H, cpu.reg.L)
 	cpu.reg.PC++
 	return 1
 }
@@ -1249,7 +1246,7 @@ func (cpu *CPU) cpu6C() int { // LD L,H
 }
 
 func (cpu *CPU) cpu6D() int { // LD L,L
-	cpu.ld8(&cpu.reg.L, cpu.reg.B)
+	cpu.ld8(&cpu.reg.L, cpu.reg.L)
 	cpu.reg.PC++
 	return 1
 }

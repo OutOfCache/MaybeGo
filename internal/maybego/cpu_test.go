@@ -988,6 +988,7 @@ func TestCpuC6(t *testing.T) {
 		expectedCF bool
 	}{
 		{0xC8E9, 0xF8, 0x08, 0xC8EB, 0x00, true, false, true, true},
+		{0xC8E9, 0x08, 0x08, 0xC8EB, 0x10, false, false, true, false},
 	}
 
 	for _, test := range tests {
