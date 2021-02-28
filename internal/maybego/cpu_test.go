@@ -974,3 +974,45 @@ func TestCpuC3(t *testing.T) {
 		}
 	}
 }
+
+func TestCpuC6(t *testing.T) {
+	var tests = []struct {
+		pc         uint16
+		a          byte
+		u8         byte
+		expectedPC uint16
+		expectedA  byte
+		expectedZF bool
+		expectedNF bool
+		expectedHF bool
+		expectedCF bool
+	}{
+		{0xC8E9, 0xF8, 0x08, 0xC8EB, 0x00, true, false, true, true},
+	}
+
+	for _, test := range tests {
+		cpu.reg.PC = test.pc
+		cpu.reg.A = test.a
+		Write(cpu.reg.PC+1, test.u8)
+		cpu.cpuC6()
+
+		if cpu.reg.PC != test.expectedPC {
+			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
+		}
+		if cpu.reg.A != test.expectedA {
+			t.Errorf("Current A %x; expected: %x", cpu.reg.A, test.expectedA)
+		}
+		if cpu.flg.Z != test.expectedZF {
+			t.Errorf("Current Z %t; expected: %t", cpu.flg.Z, test.expectedZF)
+		}
+		if cpu.flg.N != test.expectedNF {
+			t.Errorf("Current N %t; expected: %t", cpu.flg.N, test.expectedNF)
+		}
+		if cpu.flg.H != test.expectedHF {
+			t.Errorf("Current H %t; expected: %t", cpu.flg.H, test.expectedHF)
+		}
+		if cpu.flg.C != test.expectedCF {
+			t.Errorf("Current C %t; expected: %t", cpu.flg.C, test.expectedCF)
+		}
+	}
+}

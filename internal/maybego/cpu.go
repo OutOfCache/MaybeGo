@@ -40,6 +40,14 @@ func NewCPU() *CPU {
 	cpu := &CPU{reg: new(Registers), flg: new(Flags)}
 	cpu.reg.PC = 0x100  // to bypass boot rom for now
 	cpu.reg.SP = 0xFFFE // bypassing boot rom
+	cpu.reg.A = 0x1
+	cpu.flg.Z = true
+	cpu.flg.N = true
+	cpu.flg.C = true
+	cpu.reg.C = 0x13
+	cpu.reg.E = 0xD8
+	cpu.reg.H = 0x01
+	cpu.reg.L = 0x4D
 
 	cpu.opcodes = [256]func() int{
 		cpu.cpu00, cpu.cpu01, cpu.cpu02, cpu.cpu03,
@@ -188,7 +196,7 @@ func NewCPU() *CPU {
 func (cpu *CPU) Fetch() {
 	if !cpu.flg.HALT {
 		cpu.currentOpcode = Read(cpu.reg.PC)
-		log.Printf("PC: %x, Opcode: %x, Flags: %b", cpu.reg.PC, cpu.currentOpcode, cpu.FlagsToBytes())
+		log.Printf("PC: %x, Opcode: %x, Z: %t, N: %t, H: %t, C: %t, A: %x", cpu.reg.PC, cpu.currentOpcode, cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C, cpu.reg.A)
 	} else {
 		fmt.Println("halted")
 	}
@@ -293,13 +301,13 @@ func (cpu *CPU) addA(reg byte, carry bool) {
 	if carry {
 		carry = cpu.flg.C
 	}
-	cpu.flg.H = uint16(cpu.reg.A&0xF)+uint16(reg&0xF)&0x10 == 0x10
+	cpu.flg.H = ((cpu.reg.A&0xF)+(reg&0xF))&0x10 == 0x10
 
 	sum := uint16(cpu.reg.A) + uint16(reg) + uint16(FlagToBit(carry))
 	cpu.reg.A = byte(sum)
 
 	cpu.flg.Z = cpu.reg.A == 0
-	cpu.flg.C = sum&0x10 == 0x10
+	cpu.flg.C = sum&0x100 == 0x100
 	cpu.flg.N = false
 }
 
@@ -344,7 +352,7 @@ func (cpu *CPU) orA(reg byte) {
 }
 
 func (cpu *CPU) cpA(reg byte) {
-	cpu.flg.H = cpu.reg.A&0xF < reg&0xF
+	cpu.flg.H = (cpu.reg.A & 0xF) < (reg & 0xF)
 	cpu.flg.C = cpu.reg.A < reg
 
 	result := cpu.reg.A - reg
@@ -356,10 +364,10 @@ func (cpu *CPU) cpA(reg byte) {
 func (cpu *CPU) add16(destLo *byte, destHi *byte, srcLo byte, srcHi byte) {
 	cpu.flg.N = false
 
-	sum := int(*destLo) + int(srcLo)
+	sum := uint16(*destLo) + uint16(srcLo)
 	*destLo = byte(sum & 0xFF)
 	cpu.flg.H = (byte(sum>>8)+(*destHi&0xf)+(srcHi&0xf))&0x10 == 0x10
-	sum = (sum >> 8) + int(*destHi) + int(srcHi)
+	sum = (sum >> 8) + uint16(*destHi) + uint16(srcHi)
 	*destHi = byte(sum & 0xFF)
 	cpu.flg.C = sum > 0xFF
 
