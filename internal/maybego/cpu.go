@@ -301,7 +301,7 @@ func (cpu *CPU) addA(reg byte, carry bool) {
 	if carry {
 		carry = cpu.flg.C
 	}
-	cpu.flg.H = ((cpu.reg.A&0xF)+(reg&0xF))&0x10 == 0x10
+	cpu.flg.H = ((cpu.reg.A&0xF)+(reg&0xF)+FlagToBit(carry))&0x10 == 0x10
 
 	sum := uint16(cpu.reg.A) + uint16(reg) + uint16(FlagToBit(carry))
 	cpu.reg.A = byte(sum)
@@ -315,10 +315,10 @@ func (cpu *CPU) subA(reg byte, carry bool) {
 	if carry {
 		carry = cpu.flg.C
 	}
-	cpu.flg.H = cpu.reg.A&0xF < reg&0xF
-	cpu.flg.C = cpu.reg.A < reg
+	cpu.flg.H = (cpu.reg.A & 0xF) < ((reg + FlagToBit(carry)) & 0xF)
+	cpu.flg.C = cpu.reg.A < (reg + FlagToBit(carry))
 
-	cpu.reg.A -= reg + FlagToBit(carry)
+	cpu.reg.A -= (reg + FlagToBit(carry))
 
 	cpu.flg.Z = cpu.reg.A == 0
 	cpu.flg.N = true
@@ -791,22 +791,25 @@ func (cpu *CPU) cpu26() int { // LD H, u8
 }
 
 func (cpu *CPU) cpu27() int { // DAA
-	// https://ehaskins.com/2018-01-30%20Z80%20DAA/
-	var correction byte
-	if cpu.flg.H || cpu.reg.A&0xF > 9 {
-		correction += 0x06
-	}
-	if cpu.flg.C || cpu.reg.A&0xF0 > 0x90 {
-		correction += 0x60
+	// from nesdev
+	if !cpu.flg.N {
+		if cpu.flg.C || cpu.reg.A > 0x99 {
+			cpu.reg.A += 0x60
+			cpu.flg.C = true
+		}
+		if cpu.flg.H || cpu.reg.A&0x0F > 0x09 {
+			cpu.reg.A += 0x06
+		}
+	} else {
+		if cpu.flg.C {
+			cpu.reg.A -= 0x60
+		}
+		if cpu.flg.H {
+			cpu.reg.A -= 0x06
+		}
 	}
 
-	if cpu.flg.N {
-		cpu.reg.A -= correction
-	} else {
-		cpu.reg.A += correction
-	}
 	cpu.flg.Z = cpu.reg.A == 0
-	cpu.flg.C = cpu.reg.A > 0x99
 	cpu.flg.H = false
 	cpu.reg.PC++
 	return 1

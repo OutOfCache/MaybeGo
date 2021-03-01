@@ -528,6 +528,7 @@ func TestCpu21(t *testing.T) {
 		}
 	}
 }
+
 func TestCpu22(t *testing.T) {
 	var tests = []struct {
 		pc         uint16
@@ -560,32 +561,61 @@ func TestCpu22(t *testing.T) {
 	}
 }
 
-// func TestCpu27(t *testing.T) {
-// 	var tests = []struct {
-// 		pc         uint16
-// 		carry      bool
-// 		expectedCF bool
-// 		expectedPC uint16
-// 	}{
-// 		{0x1234, false, true, 0x1235},
-// 		{0x1234, true, true, 0x1235},
-// 		{0x63F8, false, true, 0x63F9},
-// 		{0x63F8, true, true, 0x63F9},
-// 	}
-//
-// 	for _, test := range tests {
-// 		cpu.reg.PC = test.pc
-// 		cpu.flg.C = test.carry
-// 		cpu.cpu27()
-// 		if cpu.flg.C != test.expectedCF {
-// 			t.Errorf("Carry: %t, expected: %t", cpu.flg.C, test.expectedCF)
-// 		}
-// 		if cpu.reg.PC != test.expectedPC {
-// 			t.Errorf("Current PC: %x, expected: %x", cpu.reg.PC, test.expectedPC)
-// 		}
-// 	}
-//
-// }
+func TestCpu27(t *testing.T) {
+	var tests = []struct {
+		pc         uint16
+		A          byte
+		negative   bool
+		halfcarry  bool
+		carry      bool
+		expectedPC uint16
+		expectedA  byte
+		expectedCF bool
+	}{
+		{0x9432, 0x6A, false, false, false, 0x9433, 0x70, false},
+		{0x9432, 0x9A, false, false, false, 0x9433, 0x00, true},
+		{0x2F3C, 0xFA, false, false, false, 0x2F3D, 0x60, true},
+		{0x9432, 0x6A, false, false, true, 0x9433, 0xd0, true},
+		{0x9432, 0x9A, false, false, true, 0x9433, 0x00, true},
+		{0x2F3C, 0xFA, false, false, true, 0x2F3D, 0x60, true},
+		{0x9432, 0x6A, false, true, false, 0x9433, 0x70, false},
+		{0x9432, 0x9A, false, true, false, 0x9433, 0x00, true},
+		{0x2F3C, 0xFA, false, true, false, 0x2F3D, 0x60, true},
+		{0x9432, 0x29, false, true, true, 0x9433, 0x8F, true},
+		{0x9432, 0x9A, false, true, true, 0x9433, 0x00, true},
+		{0x2F3C, 0xFA, false, true, true, 0x2F3D, 0x60, true},
+		{0x9432, 0x6A, true, false, false, 0x9433, 0x6A, false},
+		{0x9432, 0x9A, true, false, false, 0x9433, 0x9A, false},
+		{0x2F3C, 0xFA, true, false, false, 0x2F3D, 0xFA, false},
+		{0x9432, 0x6A, true, false, true, 0x9433, 0x0A, true},
+		{0x9432, 0x9A, true, false, true, 0x9433, 0x3A, true},
+		{0x2F3C, 0xFA, true, false, true, 0x2F3D, 0x9A, true},
+		{0x9432, 0x6A, true, true, false, 0x9433, 0x64, false},
+		{0x9432, 0x9A, true, true, false, 0x9433, 0x94, false},
+		{0x2F3C, 0xFA, true, true, false, 0x2F3D, 0xF4, false},
+		{0x9432, 0x29, true, true, true, 0x9433, 0xC3, true},
+		{0x9432, 0x9A, true, true, true, 0x9433, 0x34, true},
+		{0x2F3C, 0xFA, true, true, true, 0x2F3D, 0x94, true},
+	}
+
+	for _, test := range tests {
+		cpu.reg.PC = test.pc
+		cpu.reg.A = test.A
+		cpu.flg.N = test.negative
+		cpu.flg.H = test.halfcarry
+		cpu.flg.C = test.carry
+		cpu.cpu27()
+		if cpu.reg.PC != test.expectedPC {
+			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
+		}
+		if cpu.reg.A != test.expectedA {
+			t.Errorf("Current A: %x; expected: %x", cpu.reg.A, test.expectedA)
+		}
+		if cpu.flg.C != test.expectedCF {
+			t.Errorf("Current CF: %t, expected: %t", cpu.flg.C, test.expectedCF)
+		}
+	}
+}
 
 func TestCpu28(t *testing.T) {
 	var tests = []struct {
@@ -996,6 +1026,100 @@ func TestCpuC6(t *testing.T) {
 		cpu.reg.A = test.a
 		Write(cpu.reg.PC+1, test.u8)
 		cpu.cpuC6()
+
+		if cpu.reg.PC != test.expectedPC {
+			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
+		}
+		if cpu.reg.A != test.expectedA {
+			t.Errorf("Current A %x; expected: %x", cpu.reg.A, test.expectedA)
+		}
+		if cpu.flg.Z != test.expectedZF {
+			t.Errorf("Current Z %t; expected: %t", cpu.flg.Z, test.expectedZF)
+		}
+		if cpu.flg.N != test.expectedNF {
+			t.Errorf("Current N %t; expected: %t", cpu.flg.N, test.expectedNF)
+		}
+		if cpu.flg.H != test.expectedHF {
+			t.Errorf("Current H %t; expected: %t", cpu.flg.H, test.expectedHF)
+		}
+		if cpu.flg.C != test.expectedCF {
+			t.Errorf("Current C %t; expected: %t", cpu.flg.C, test.expectedCF)
+		}
+	}
+}
+
+func TestCpuCE(t *testing.T) {
+	var tests = []struct {
+		pc         uint16
+		a          byte
+		u8         byte
+		carry      bool
+		expectedPC uint16
+		expectedA  byte
+		expectedZF bool
+		expectedNF bool
+		expectedHF bool
+		expectedCF bool
+	}{
+		{0xC8E9, 0xF8, 0x08, false, 0xC8EB, 0x00, true, false, true, true},
+		{0xC8E9, 0xF8, 0x08, true, 0xC8EB, 0x01, false, false, true, true},
+		{0xC8E9, 0x08, 0x08, false, 0xC8EB, 0x10, false, false, true, false},
+		{0xC8E9, 0x08, 0x08, true, 0xC8EB, 0x11, false, false, true, false},
+	}
+
+	for _, test := range tests {
+		cpu.reg.PC = test.pc
+		cpu.reg.A = test.a
+		cpu.flg.C = test.carry
+		Write(cpu.reg.PC+1, test.u8)
+		cpu.cpuCE()
+
+		if cpu.reg.PC != test.expectedPC {
+			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
+		}
+		if cpu.reg.A != test.expectedA {
+			t.Errorf("Current A %x; expected: %x", cpu.reg.A, test.expectedA)
+		}
+		if cpu.flg.Z != test.expectedZF {
+			t.Errorf("Current Z %t; expected: %t", cpu.flg.Z, test.expectedZF)
+		}
+		if cpu.flg.N != test.expectedNF {
+			t.Errorf("Current N %t; expected: %t", cpu.flg.N, test.expectedNF)
+		}
+		if cpu.flg.H != test.expectedHF {
+			t.Errorf("Current H %t; expected: %t", cpu.flg.H, test.expectedHF)
+		}
+		if cpu.flg.C != test.expectedCF {
+			t.Errorf("Current C %t; expected: %t", cpu.flg.C, test.expectedCF)
+		}
+	}
+}
+
+func TestCpuDE(t *testing.T) {
+	var tests = []struct {
+		pc         uint16
+		a          byte
+		u8         byte
+		carry      bool
+		expectedPC uint16
+		expectedA  byte
+		expectedZF bool
+		expectedNF bool
+		expectedHF bool
+		expectedCF bool
+	}{
+		{0xC8E9, 0xF8, 0x08, false, 0xC8EB, 0xF0, false, true, false, false},
+		{0xC8E9, 0xF8, 0x08, true, 0xC8EB, 0xEF, false, true, true, false},
+		{0xC8E9, 0x08, 0x08, false, 0xC8EB, 0x00, true, true, false, false},
+		{0xC8E9, 0x08, 0x08, true, 0xC8EB, 0xFF, false, true, true, true},
+	}
+
+	for _, test := range tests {
+		cpu.reg.PC = test.pc
+		cpu.reg.A = test.a
+		cpu.flg.C = test.carry
+		Write(cpu.reg.PC+1, test.u8)
+		cpu.cpuDE()
 
 		if cpu.reg.PC != test.expectedPC {
 			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
