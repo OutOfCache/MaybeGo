@@ -270,7 +270,7 @@ func (cpu *CPU) inc8(reg *byte, flags bool) {
 	if flags {
 		cpu.flg.N = false
 		cpu.flg.Z = *reg == 0
-		cpu.flg.H = *reg == 0x10
+		cpu.flg.H = *reg&0xF == 0x0
 	}
 }
 
@@ -286,7 +286,7 @@ func (cpu *CPU) dec8(reg *byte, flags bool) {
 	if flags {
 		cpu.flg.N = true
 		cpu.flg.Z = *reg == 0
-		cpu.flg.H = *reg == 0xF
+		cpu.flg.H = (*reg)&0xF == 0xF
 	}
 }
 
@@ -398,7 +398,7 @@ func (cpu *CPU) rr8(reg *byte, carry bool) {
 	}
 	cpu.flg.C = *reg&0x01 == 1
 
-	*reg = *reg>>1 + (msb << 7)
+	*reg = (*reg >> 1) + (msb << 7)
 
 	cpu.flg.N = false
 	cpu.flg.H = false
@@ -744,6 +744,7 @@ func (cpu *CPU) cpu1E() int { // LD E, u8
 
 func (cpu *CPU) cpu1F() int { // RRA
 	cpu.rr8(&cpu.reg.A, true)
+	cpu.flg.Z = false
 	cpu.reg.PC++
 	return 1
 }
