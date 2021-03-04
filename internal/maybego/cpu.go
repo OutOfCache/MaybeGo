@@ -1,7 +1,7 @@
 package maybego
 
 import (
-	"fmt"
+	//	"fmt"
 	"log"
 	"os"
 )
@@ -25,6 +25,7 @@ type Flags struct {
 	H    bool // half carry
 	HALT bool // HALT flag
 	IME  bool // Interrupts Master Enable
+	//	ICnt byte // Countdown to activate IME (since delay for one instruction)
 }
 
 type CPU struct {
@@ -197,8 +198,6 @@ func (cpu *CPU) Fetch() {
 	if !cpu.flg.HALT {
 		cpu.currentOpcode = Read(cpu.reg.PC)
 		log.Printf("PC: %x, Opcode: %x, Z: %t, N: %t, H: %t, C: %t, A: %x, E: %x", cpu.reg.PC, cpu.currentOpcode, cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C, cpu.reg.A, cpu.reg.E)
-	} else {
-		fmt.Println("halted")
 	}
 }
 
@@ -312,13 +311,18 @@ func (cpu *CPU) addA(reg byte, carry bool) {
 }
 
 func (cpu *CPU) subA(reg byte, carry bool) {
+	// cpu.addA(reg^0xFF+1, carry)
 	if carry {
 		carry = cpu.flg.C
 	}
-	cpu.flg.H = (cpu.reg.A & 0xF) < ((reg + FlagToBit(carry)) & 0xF)
-	cpu.flg.C = cpu.reg.A < (reg + FlagToBit(carry))
+	data := reg + FlagToBit(carry)
+	// cpu.flg.H = (cpu.reg.A & 0xF) < ((reg + FlagToBit(carry)) & 0xF)
+	// cpu.flg.C = cpu.reg.A < (reg + FlagToBit(carry))
+	cpu.flg.H = (cpu.reg.A & 0xF) < (data & 0xF)
+	cpu.flg.C = cpu.reg.A < data
 
-	cpu.reg.A -= (reg + FlagToBit(carry))
+	cpu.reg.A -= data
+	// cpu.reg.A += ((reg ^ 0xFF) + FlagToBit(carry))
 
 	cpu.flg.Z = cpu.reg.A == 0
 	cpu.flg.N = true

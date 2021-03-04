@@ -1141,3 +1141,89 @@ func TestCpuDE(t *testing.T) {
 		}
 	}
 }
+
+func TestSubA(t *testing.T) {
+	var tests = []struct {
+		a          byte
+		reg        byte
+		carry      bool
+		cf         bool
+		expectedA  byte
+		expectedZF bool
+		expectedNF bool
+		expectedHF bool
+		expectedCF bool
+	}{
+		{0x35, 0x37, false, false, 0xFE, false, true, true, true},
+		{0x35, 0x37, false, true, 0xFE, false, true, true, true},
+		{0xDE, 0x13, false, false, 0xCB, false, true, false, false},
+		{0xDE, 0x13, false, true, 0xCB, false, true, false, false},
+		{0x35, 0x37, true, false, 0xFE, false, true, true, true},
+		{0x35, 0x37, true, true, 0xFD, false, true, true, true},
+		{0xDE, 0x13, true, false, 0xCB, false, true, false, false},
+		{0xDE, 0x13, true, true, 0xCA, false, true, false, false},
+	}
+
+	for _, test := range tests {
+		cpu.reg.A = test.a
+		cpu.flg.C = test.cf
+		cpu.subA(test.reg, test.carry)
+
+		if cpu.reg.A != test.expectedA {
+			t.Errorf("Current A %x; expected: %x", cpu.reg.A, test.expectedA)
+		}
+		if cpu.flg.Z != test.expectedZF {
+			t.Errorf("Current Z %t; expected: %t", cpu.flg.Z, test.expectedZF)
+		}
+		if cpu.flg.N != test.expectedNF {
+			t.Errorf("Current N %t; expected: %t", cpu.flg.N, test.expectedNF)
+		}
+		if cpu.flg.H != test.expectedHF {
+			t.Errorf("Current H %t; expected: %t", cpu.flg.H, test.expectedHF)
+		}
+		if cpu.flg.C != test.expectedCF {
+			t.Errorf("Current C %t; expected: %t", cpu.flg.C, test.expectedCF)
+		}
+	}
+}
+
+func TestCpu98(t *testing.T) {
+	var tests = []struct {
+		a          byte
+		reg        byte
+		cf         bool
+		expectedA  byte
+		expectedZF bool
+		expectedNF bool
+		expectedHF bool
+		expectedCF bool
+	}{
+		{0x35, 0x37, false, 0xFE, false, true, true, true},
+		{0x35, 0x37, true, 0xFD, false, true, true, true},
+		{0xDE, 0x13, false, 0xCB, false, true, false, false},
+		{0xDE, 0x13, true, 0xCA, false, true, false, false},
+	}
+
+	for _, test := range tests {
+		cpu.reg.A = test.a
+		cpu.reg.B = test.reg
+		cpu.flg.C = test.cf
+		cpu.cpu98()
+
+		if cpu.reg.A != test.expectedA {
+			t.Errorf("Current A %x; expected: %x", cpu.reg.A, test.expectedA)
+		}
+		if cpu.flg.Z != test.expectedZF {
+			t.Errorf("Current Z %t; expected: %t", cpu.flg.Z, test.expectedZF)
+		}
+		if cpu.flg.N != test.expectedNF {
+			t.Errorf("Current N %t; expected: %t", cpu.flg.N, test.expectedNF)
+		}
+		if cpu.flg.H != test.expectedHF {
+			t.Errorf("Current H %t; expected: %t", cpu.flg.H, test.expectedHF)
+		}
+		if cpu.flg.C != test.expectedCF {
+			t.Errorf("Current C %t; expected: %t", cpu.flg.C, test.expectedCF)
+		}
+	}
+}
