@@ -198,6 +198,10 @@ func NewCPU() *CPU {
 }
 
 func (cpu *CPU) Fetch() {
+	if cpu.flg.IME {
+		cpu.interrupt()
+	}
+
 	if !cpu.flg.HALT {
 		cpu.currentOpcode = Read(cpu.reg.PC)
 		log.Printf("PC: %x, Opcode: %x, Z: %t, N: %t, H: %t, C: %t, A: %x, E: %x", cpu.reg.PC, cpu.currentOpcode, cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C, cpu.reg.A, cpu.reg.E)
@@ -3736,7 +3740,7 @@ func (cpu *CPU) interrupt() int { // handle interrupts
 			// check if found int is enabled in 0xFFFF
 			if Read(0xFFFF)&(0x01<<i) > 0 {
 				// reset IME and the interrupt bit
-				cpu.IME = false
+				cpu.flg.IME = false
 				Write(0xFFFF, Read(0xFFFF)&((0x01<<i)^0xFF))
 				// originally, rst(byte) was just for the RST instruction
 				// however, it allows easy calling of a specific address
