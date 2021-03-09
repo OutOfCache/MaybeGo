@@ -34,6 +34,7 @@ type CPU struct {
 	currentOpcode byte
 	opcodes       [256]func() int
 	cbOps         [256]func() int
+	interrupts    [5]byte
 }
 
 // dummy "constructor"
@@ -183,6 +184,8 @@ func NewCPU() *CPU {
 		cpu.cbF8, cpu.cbF9, cpu.cbFA, cpu.cbFB,
 		cpu.cbFC, cpu.cbFD, cpu.cbFE, cpu.cbFF,
 	}
+
+	cpu.interrupts = int{0x40, 0x48, 0x50, 0x58, 0x60}
 
 	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
@@ -3723,4 +3726,25 @@ func (cpu *CPU) cbFF() int { // SET 7, A
 	cpu.set(&cpu.reg.A, 7)
 	cpu.reg.PC += 2
 	return 2
+}
+
+func (cpu *CPU) interrupt() int { // handle interrupts
+	// check if interrupt occurred
+	// loop through every bit in 0xFF0F until we find one
+	for i := 0; i < 5; i++ {
+		if Read(0xFF0F)&(0x01<<i) > 0 {
+			// check if found int is enabled in 0xFFFF
+			if Read(0xFFFF)&(0x01<<i) > 0 {
+				// reset IME and the interrupt bit
+				cpu.IME = false
+				Write(0xFFFF, Read(0xFFFF)&((0x01<<i)^0xFF))
+				// originally, rst(byte) was just for the RST instruction
+				// however, it allows easy calling of a specific address
+				// and pushing the current PC to stack already
+				// so I won't write the same code here
+				cpu.rst(interrupts[i])
+				cpu.ret()
+			}
+		}
+	}
 }
