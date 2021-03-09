@@ -3,8 +3,11 @@
 ## Todo
 
   - [ ] CPU
-    - [ ] instructions
-    - [ ] testing
+    - [X] instructions
+    - [ ] testing  
+      Issues with SBC
+    - [ ] interrupts
+    - [ ] timing
   - [ ] Memory
     - [x] basic rw
     - [x] testing rw
