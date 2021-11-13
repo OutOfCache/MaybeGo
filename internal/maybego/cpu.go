@@ -185,7 +185,7 @@ func NewCPU() *CPU {
 		cpu.cbFC, cpu.cbFD, cpu.cbFE, cpu.cbFF,
 	}
 
-	cpu.interrupts = int{0x40, 0x48, 0x50, 0x58, 0x60}
+	cpu.interrupts = [5]byte{0x40, 0x48, 0x50, 0x58, 0x60}
 
 	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
@@ -474,6 +474,7 @@ func (cpu *CPU) call(flag bool) int {
 }
 
 func (cpu *CPU) ret(flag bool) int {
+	// return if flag is true, otherwise continue to next instruction
 	if flag {
 		cpu.pop16reg(&cpu.reg.PC)
 		return 5
@@ -3746,9 +3747,10 @@ func (cpu *CPU) interrupt() int { // handle interrupts
 				// however, it allows easy calling of a specific address
 				// and pushing the current PC to stack already
 				// so I won't write the same code here
-				cpu.rst(interrupts[i])
-				cpu.ret()
+				cpu.rst(cpu.interrupts[i])
+				// cpu.ret(true)
 			}
 		}
 	}
+	return 20 + int(FlagToBit(cpu.flg.HALT)*4) // according to "The Cycle-Accurate GB" doc, "It takes 20 clocks to dispatch an interrupt. If CPU is in HALT mode, another extra 4 clocks are needed"
 }

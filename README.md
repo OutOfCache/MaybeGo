@@ -4,6 +4,7 @@
 
   - [ ] CPU
     - [X] instructions
+    - [ ] define constants for registers for easier recognition
     - [ ] testing  
       Issues with SBC
     - [ ] interrupts

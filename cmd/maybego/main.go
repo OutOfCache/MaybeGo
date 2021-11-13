@@ -1,8 +1,9 @@
 package main
 
 import (
-	"../../internal/maybego"
+	// "../../internal/maybego"
 	"fmt"
+	"github.com/outofcache/maybego/internal/maybego"
 	"io/ioutil"
 	"os"
 )
