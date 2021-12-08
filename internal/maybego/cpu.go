@@ -187,7 +187,7 @@ func NewCPU() *CPU {
 
 	cpu.interrupts = [5]byte{0x40, 0x48, 0x50, 0x58, 0x60}
 
-	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -204,7 +204,9 @@ func (cpu *CPU) Fetch() {
 
 	if !cpu.flg.HALT {
 		cpu.currentOpcode = Read(cpu.reg.PC)
-		log.Printf("PC: %x, Opcode: %x, Z: %t, N: %t, H: %t, C: %t, A: %x, E: %x", cpu.reg.PC, cpu.currentOpcode, cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C, cpu.reg.A, cpu.reg.E)
+		log.Printf("PC: %x, Opcode: %x\tZ: %t, N: %t, H: %t, C: %t\nA: %x, B: %x, C: %x, D: %x, E: %x, H: %x, L: %x",
+			cpu.reg.PC, cpu.currentOpcode, cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C,
+			cpu.reg.A, cpu.reg.B, cpu.reg.C, cpu.reg.D, cpu.reg.E, cpu.reg.H, cpu.reg.L)
 	}
 }
 
@@ -319,6 +321,7 @@ func (cpu *CPU) addA(reg byte, carry bool) {
 
 func (cpu *CPU) subA(reg byte, carry bool) {
 	// cpu.addA(reg^0xFF+1, carry)
+
 	if carry {
 		carry = cpu.flg.C
 	}
@@ -332,7 +335,9 @@ func (cpu *CPU) subA(reg byte, carry bool) {
 	// cpu.reg.A += ((reg ^ 0xFF) + FlagToBit(carry))
 
 	cpu.flg.Z = cpu.reg.A == 0
+
 	cpu.flg.N = true
+
 }
 
 func (cpu *CPU) andA(reg byte) {
@@ -535,7 +540,7 @@ func (cpu *CPU) bit(reg *byte, bit byte) {
 
 func (cpu *CPU) res(reg *byte, bit byte) {
 	// set bit to 0 by using AND
-	*reg = *reg & (0xFE << bit)
+	*reg = *reg & ((0x01 << bit) ^ 0xFF) // shift the one to the right place and invert for a mask
 }
 
 func (cpu *CPU) set(reg *byte, bit byte) {
