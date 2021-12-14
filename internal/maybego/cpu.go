@@ -202,12 +202,14 @@ func (cpu *CPU) Fetch() {
 		cpu.interrupt()
 	}
 
-	if !cpu.flg.HALT {
-		cpu.currentOpcode = Read(cpu.reg.PC)
-		log.Printf("PC: %x, Opcode: %x\tZ: %t, N: %t, H: %t, C: %t\nA: %x, B: %x, C: %x, D: %x, E: %x, H: %x, L: %x",
-			cpu.reg.PC, cpu.currentOpcode, cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C,
-			cpu.reg.A, cpu.reg.B, cpu.reg.C, cpu.reg.D, cpu.reg.E, cpu.reg.H, cpu.reg.L)
+	if cpu.flg.HALT {
+		return
 	}
+	cpu.currentOpcode = Read(cpu.reg.PC)
+	log.Printf("PC: %x, Opcode: %x, PC+1:%x, PC+2: %x\tZ: %t, N: %t, H: %t, C: %t\nA: %x, B: %x, C: %x, D: %x, E: %x, H: %x, L: %x",
+		cpu.reg.PC, cpu.currentOpcode, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2), cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C,
+		cpu.reg.A, cpu.reg.B, cpu.reg.C, cpu.reg.D, cpu.reg.E, cpu.reg.H, cpu.reg.L)
+
 }
 
 func (cpu *CPU) Decode() {
@@ -320,24 +322,17 @@ func (cpu *CPU) addA(reg byte, carry bool) {
 }
 
 func (cpu *CPU) subA(reg byte, carry bool) {
-	// cpu.addA(reg^0xFF+1, carry)
-
 	if carry {
 		carry = cpu.flg.C
 	}
-	data := reg + FlagToBit(carry)
-	// cpu.flg.H = (cpu.reg.A & 0xF) < ((reg + FlagToBit(carry)) & 0xF)
-	// cpu.flg.C = cpu.reg.A < (reg + FlagToBit(carry))
-	cpu.flg.H = (cpu.reg.A & 0xF) < (data & 0xF)
-	cpu.flg.C = cpu.reg.A < data
+	data := uint16(reg) + uint16(FlagToBit(carry))
+	cpu.flg.H = (cpu.reg.A & 0xF) < (reg&0xF)+FlagToBit(carry)
+	cpu.flg.C = uint16(cpu.reg.A) < data
 
-	cpu.reg.A -= data
-	// cpu.reg.A += ((reg ^ 0xFF) + FlagToBit(carry))
+	cpu.reg.A = byte((uint16(cpu.reg.A) - data))
 
 	cpu.flg.Z = cpu.reg.A == 0
-
 	cpu.flg.N = true
-
 }
 
 func (cpu *CPU) andA(reg byte) {
@@ -449,6 +444,7 @@ func (cpu *CPU) srl8(reg *byte) {
 }
 
 func (cpu *CPU) jr(flag bool) int {
+	log.Printf("JR")
 	if flag {
 		cpu.reg.PC += uint16(2 + int8(Read(cpu.reg.PC+1)))
 		return 3
@@ -458,6 +454,7 @@ func (cpu *CPU) jr(flag bool) int {
 }
 
 func (cpu *CPU) jp(flag bool) int {
+	log.Printf("JP")
 	if flag {
 		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(Read(cpu.reg.PC+2)) << 8)
 		return 4
@@ -467,6 +464,7 @@ func (cpu *CPU) jp(flag bool) int {
 }
 
 func (cpu *CPU) call(flag bool) int {
+	log.Printf("CALL")
 	if flag {
 		lo := byte(cpu.reg.PC + 3)
 		hi := byte((cpu.reg.PC + 3) >> 8)
@@ -479,6 +477,7 @@ func (cpu *CPU) call(flag bool) int {
 }
 
 func (cpu *CPU) ret(flag bool) int {
+	log.Printf("RET")
 	// return if flag is true, otherwise continue to next instruction
 	if flag {
 		cpu.pop16reg(&cpu.reg.PC)
@@ -489,6 +488,7 @@ func (cpu *CPU) ret(flag bool) int {
 }
 
 func (cpu *CPU) rst(vec byte) int {
+	log.Printf("RST")
 	lo := byte(cpu.reg.PC + 1)
 	hi := byte((cpu.reg.PC + 1) >> 8)
 	cpu.push16(lo, hi)
@@ -518,7 +518,7 @@ func (cpu *CPU) pop16reg(dest *uint16) {
 	cpu.ldFromAddress(&hi, byte(cpu.reg.SP), byte(cpu.reg.SP>>8))
 	cpu.reg.SP += 1
 
-	*dest = uint16(hi)<<8 + uint16(lo)
+	*dest = (uint16(hi) << 8) + uint16(lo)
 }
 
 func (cpu *CPU) swap(dest *byte) {
