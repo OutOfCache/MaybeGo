@@ -2071,6 +2071,7 @@ func (cpu *CPU) cpuF8() int { // LD HL,SP+i8
 
 func (cpu *CPU) cpuF9() int { // LD SP,HL
 	cpu.ld16reg(&cpu.reg.SP, cpu.reg.L, cpu.reg.H)
+	cpu.reg.PC++
 	return 2
 }
 
