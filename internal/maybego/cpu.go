@@ -2502,7 +2502,7 @@ func (cpu *CPU) cb3D() int { // SRL L
 func (cpu *CPU) cb3E() int { // SRL (HL)
 	address := uint16(cpu.reg.H)<<8 + uint16(cpu.reg.L)
 	val := Read(address)
-	cpu.sr8(&val)
+	cpu.srl8(&val)
 	Write(address, val)
 	cpu.reg.PC += 2
 	return 2
