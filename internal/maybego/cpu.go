@@ -344,6 +344,17 @@ func (cpu *CPU) andA(reg byte) {
 	cpu.flg.C = false
 }
 
+func (cpu *CPU) addSP(i8 int8) uint16 {
+	sum := uint16(int32(cpu.reg.SP) + int32(i8))
+	// the result is the carries at each bit
+	// essentially s1 = c1 + a1 + b1
+	// so (-)c1 = (a1 + b1) + s1 (sign does not matter in 1-bit)
+	carries := (cpu.reg.SP ^ uint16(i8)) ^ sum
+	cpu.flg.H = carries&0x10 == 0x10
+	cpu.flg.C = carries&0x100 == 0x100
+	return sum
+}
+
 func (cpu *CPU) xorA(reg byte) {
 	cpu.reg.A ^= reg
 
@@ -1966,9 +1977,7 @@ func (cpu *CPU) cpuE7() int { // RST 20
 }
 
 func (cpu *CPU) cpuE8() int { // ADD SP,i8
-	cpu.flg.H = cpu.reg.SP&0x0F+uint16(Read(cpu.reg.PC+1)&0x0F)&0x010 == 0x10
-	cpu.flg.C = cpu.reg.SP&0xFF+uint16(Read(cpu.reg.PC+1)&0xFF)&0x100 == 0x100
-	cpu.reg.SP = uint16(int16(cpu.reg.SP) + int16(Read(cpu.reg.PC+1)))
+	cpu.reg.SP = cpu.addSP(int8(Read(cpu.reg.PC + 1)))
 
 	cpu.flg.Z = false
 	cpu.flg.N = false
@@ -2056,9 +2065,7 @@ func (cpu *CPU) cpuF7() int { // RST 30
 }
 
 func (cpu *CPU) cpuF8() int { // LD HL,SP+i8
-	cpu.flg.H = cpu.reg.SP&0xF+uint16(Read(cpu.reg.PC+1)&0xF)&0x10 == 0x10
-	cpu.flg.C = cpu.reg.SP&0xFF+uint16(Read(cpu.reg.PC+1)&0xFF)&0x100 == 0x100
-	hl := uint16(int16(cpu.reg.SP) + int16(Read(cpu.reg.PC+1)))
+	hl := cpu.addSP(int8(Read(cpu.reg.PC + 1)))
 
 	cpu.reg.L = byte(hl)
 	cpu.reg.H = byte(hl >> 8)

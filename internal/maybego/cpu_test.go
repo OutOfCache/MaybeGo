@@ -1228,3 +1228,118 @@ func TestCpu98(t *testing.T) {
 		}
 	}
 }
+
+func TestAddSP(t *testing.T) {
+	var tests = []struct {
+		sp         uint16
+		i8         int8
+		expectedSP uint16
+	}{
+		{0x0000, 1, 0x0001},
+		{0x0001, 1, 0x0002},
+		{0x000F, 1, 0x0010},
+		{0x0010, 1, 0x0011},
+		{0x001F, 1, 0x0020},
+		{0x007F, 1, 0x0080},
+		{0x0080, 1, 0x0081},
+		{0x00FF, 1, 0x0100},
+		{0x0F00, 1, 0x0F01},
+		{0x1F00, 1, 0x1F01},
+		{0x1000, 1, 0x1001},
+		{0x7FFF, 1, 0x8000},
+		{0x8000, 1, 0x8001},
+		{0xFFFF, 1, 0x0000},
+		{0x0000, -1, 0xFFFF},
+		{0x0001, -1, 0x0000},
+		{0x000F, -1, 0x000E},
+		{0x0010, -1, 0x000F},
+		{0x001F, -1, 0x001E},
+		{0x007F, -1, 0x007E},
+		{0x0080, -1, 0x007F},
+		{0x00FF, -1, 0x00FE},
+		{0x0F00, -1, 0x0EFF},
+		{0x1F00, -1, 0x1EFF},
+		{0x1000, -1, 0x0FFF},
+		{0x7FFF, -1, 0x7FFE},
+		{0x8000, -1, 0x7FFF},
+		{0xFFFF, -1, 0xFFFE},
+	}
+
+	for _, test := range tests {
+		cpu.reg.SP = test.sp
+		var result uint16 = cpu.addSP(test.i8)
+
+		if result != test.expectedSP {
+			t.Errorf("Current SP %x; expected: %x", cpu.reg.SP, test.expectedSP)
+		}
+	}
+}
+
+func TestCpuE8(t *testing.T) {
+	var tests = []struct {
+		sp         uint16
+		i8         int8
+		expectedSP uint16
+		expectedZF bool
+		expectedNF bool
+	}{
+		{0x0000, 1, 0x0001, false, false},
+		{0x0001, 1, 0x0002, false, false},
+		{0x000F, 1, 0x0010, false, false},
+		{0x0010, 1, 0x0011, false, false},
+		{0x001F, 1, 0x0020, false, false},
+		{0x007F, 1, 0x0080, false, false},
+		{0x0080, 1, 0x0081, false, false},
+		{0x00FF, 1, 0x0100, false, false},
+		{0x0F00, 1, 0x0F01, false, false},
+		{0x1F00, 1, 0x1F01, false, false},
+		{0x1000, 1, 0x1001, false, false},
+		{0x7FFF, 1, 0x8000, false, false},
+		{0x8000, 1, 0x8001, false, false},
+		{0xFFFF, 1, 0x0000, false, false},
+		{0x0000, -1, 0xFFFF, false, false},
+		{0x0001, -1, 0x0000, false, false},
+		{0x000F, -1, 0x000E, false, false},
+		{0x0010, -1, 0x000F, false, false},
+		{0x001F, -1, 0x001E, false, false},
+		{0x007F, -1, 0x007E, false, false},
+		{0x0080, -1, 0x007F, false, false},
+		{0x00FF, -1, 0x00FE, false, false},
+		{0x0F00, -1, 0x0EFF, false, false},
+		{0x1F00, -1, 0x1EFF, false, false},
+		{0x1000, -1, 0x0FFF, false, false},
+		{0x7FFF, -1, 0x7FFE, false, false},
+		{0x8000, -1, 0x7FFF, false, false},
+		{0xFFFF, -1, 0xFFFE, false, false},
+	}
+
+	for _, test := range tests {
+		cpu.reg.PC = 0xF345
+		cpu.reg.SP = test.sp
+		Write(cpu.reg.PC+1, byte(test.i8))
+		cpu.cpuE8()
+
+		carries := test.sp ^ uint16(test.i8) ^ test.expectedSP
+		expectedHF := carries&0x10 == 0x10
+		expectedCF := carries&0x100 == 0x100
+
+		if cpu.reg.SP != test.expectedSP {
+			t.Errorf("Current SP %x; expected: %x", cpu.reg.SP, test.expectedSP)
+		}
+		if cpu.flg.Z != test.expectedZF {
+			t.Errorf("Current Z %t; expected: %t", cpu.flg.Z, test.expectedZF)
+		}
+		if cpu.flg.N != test.expectedNF {
+			t.Errorf("Current N %t; expected: %t", cpu.flg.N, test.expectedNF)
+		}
+		if cpu.flg.H != expectedHF {
+			t.Errorf("Current H %t; expected: %t, i8: %d", cpu.flg.H, expectedHF, test.i8)
+		}
+		if cpu.flg.C != expectedCF {
+			t.Errorf("Current C %t; expected: %t", cpu.flg.C, expectedCF)
+		}
+		if cpu.reg.PC != 0xF347 {
+			t.Errorf("Current PC: %x; expected: %x", cpu.reg.PC, 0xF345)
+		}
+	}
+}
