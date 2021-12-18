@@ -32,6 +32,7 @@ type CPU struct {
 	reg           *Registers
 	flg           *Flags
 	currentOpcode byte
+	pendingIME    bool
 	opcodes       [256]func() int
 	cbOps         [256]func() int
 	interrupts    [5]byte
@@ -200,6 +201,11 @@ func NewCPU() *CPU {
 func (cpu *CPU) Fetch() {
 	if cpu.flg.IME {
 		cpu.interrupt()
+	}
+
+	if cpu.pendingIME {
+		cpu.pendingIME = false
+		cpu.flg.IME = true
 	}
 
 	if cpu.flg.HALT {
@@ -2089,7 +2095,9 @@ func (cpu *CPU) cpuFA() int { // LD A,(u16)
 }
 
 func (cpu *CPU) cpuFB() int { // EI
-	cpu.flg.IME = true
+	// cpu.flg.IME = true
+	log.Printf("EI")
+	cpu.pendingIME = true
 	cpu.reg.PC++
 	return 1
 }
@@ -3749,6 +3757,7 @@ func (cpu *CPU) cbFF() int { // SET 7, A
 func (cpu *CPU) interrupt() int { // handle interrupts
 	// check if interrupt occurred
 	// loop through every bit in 0xFF0F until we find one
+	log.Printf("In interrupt handler")
 	for i := 0; i < 5; i++ {
 		if Read(0xFF0F)&(0x01<<i) > 0 {
 			// check if found int is enabled in 0xFFFF
