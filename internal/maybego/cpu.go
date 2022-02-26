@@ -3779,21 +3779,24 @@ func (cpu *CPU) interrupt() int { // handle interrupts
 	for i := byte(0); i < 5; i++ {
 		check_bit := byte(0x01 << i)
 		interrupt_occurred := Read(IF)&check_bit == 1
-		if interrupt_occurred {
-			interrupt_enabled := Read(IE)&check_bit == 1
-			if interrupt_enabled {
-				cpu.flg.IME = false
-				reset_interrupt_flag := (check_bit) ^ 0xFF
-				updated_interrupt_flags := Read(IF) & reset_interrupt_flag
-				Write(IF, updated_interrupt_flags)
-				// originally, rst(byte) was just for the RST instruction
-				// however, it allows easy calling of a specific address
-				// and pushing the current PC to stack already
-				// so I won't write the same code here
-				cpu.rst(cpu.interrupts[i])
-				// cpu.ret(true)
-			}
+		if !interrupt_occurred {
+			break
 		}
+		interrupt_enabled := Read(IE)&check_bit == 1
+		if !interrupt_enabled {
+			break
+		}
+		cpu.flg.IME = false
+		reset_interrupt_flag := (check_bit) ^ 0xFF
+		updated_interrupt_flags := Read(IF) & reset_interrupt_flag
+		Write(IF, updated_interrupt_flags)
+		// originally, rst(byte) was just for the RST instruction
+		// however, it allows easy calling of a specific address
+		// and pushing the current PC to stack already
+		// so I won't write the same code here
+		cpu.rst(cpu.interrupts[i])
+		// cpu.ret(true)
+
 	}
 	return 20 + int(FlagToBit(cpu.flg.HALT)*4) // according to "The Cycle-Accurate GB" doc, "It takes 20 clocks to dispatch an interrupt. If CPU is in HALT mode, another extra 4 clocks are needed"
 }
