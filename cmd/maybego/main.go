@@ -6,7 +6,7 @@ import (
 	"github.com/outofcache/maybego/internal/maybego"
 	"io/ioutil"
 	"os"
-	"time"
+	// "time"
 )
 
 var cpu *maybego.CPU
@@ -33,13 +33,9 @@ func loadROM() {
 
 func main() {
 	cpu = maybego.NewCPU()
-	cpuFreq := 1000.0 / 4194304 // 4.194304 MHz
-	fmt.Print(cpuFreq)
-	cpuCLK := time.NewTicker(time.Duration(cpuFreq) * time.Millisecond)
-
 	loadROM()
 
-	for _ = range cpuCLK.C {
+	for {
 		cpu.Fetch()
 		cpu.Decode()
 

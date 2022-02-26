@@ -7,6 +7,13 @@ import (
 	//	"time"
 )
 
+const (
+	DIV  uint16 = 0xFF04 // Divider Register
+	TIMA uint16 = 0xFF05 // Timer counter
+	IF   uint16 = 0xFF0F // Interrupt Flag
+	IE   uint16 = 0xFFFF // Interrupt Enable
+)
+
 type Registers struct {
 	A  byte // can be combined to AF
 	B  byte // BC, B hi
@@ -3767,15 +3774,18 @@ func (cpu *CPU) cbFF() int { // SET 7, A
 
 func (cpu *CPU) interrupt() int { // handle interrupts
 	// check if interrupt occurred
-	// loop through every bit in 0xFF0F until we find one
+	// loop through every bit in the interrupt flag register until we find one
 	log.Printf("In interrupt handler")
-	for i := 0; i < 5; i++ {
-		if Read(0xFF0F)&(0x01<<i) > 0 {
-			// check if found int is enabled in 0xFFFF
-			if Read(0xFFFF)&(0x01<<i) > 0 {
-				// reset IME and the interrupt bit
+	for i := byte(0); i < 5; i++ {
+		check_bit := byte(0x01 << i)
+		interrupt_occurred := Read(IF)&check_bit == 1
+		if interrupt_occurred {
+			interrupt_enabled := Read(IE)&check_bit == 1
+			if interrupt_enabled {
 				cpu.flg.IME = false
-				Write(0xFFFF, Read(0xFFFF)&((0x01<<i)^0xFF))
+				reset_interrupt_flag := (check_bit) ^ 0xFF
+				updated_interrupt_flags := Read(IF) & reset_interrupt_flag
+				Write(IF, updated_interrupt_flags)
 				// originally, rst(byte) was just for the RST instruction
 				// however, it allows easy calling of a specific address
 				// and pushing the current PC to stack already
@@ -3802,7 +3812,7 @@ func (cpu *CPU) handle_timer(cycle byte) {
 
 	cpu.clk.timer_clocksum = total_ticks % timer_frequency
 
-	tima_overflow := cpu.increase_register(0xFF05, timer_increment)
+	tima_overflow := cpu.increase_register(TIMA, timer_increment)
 
 	if tima_overflow {
 		cpu.set_interrupt_request(0b100)
@@ -3812,7 +3822,7 @@ func (cpu *CPU) handle_timer(cycle byte) {
 func (cpu *CPU) increase_div(cycle byte) {
 	overflow := cycle > (255 - cpu.clk.div_clocksum)
 	if overflow {
-		cpu.increase_register(0xff04, 1) // TODO: change after memory map is handled correctly
+		cpu.increase_register(DIV, 1) // TODO: change after memory map is handled correctly
 	}
 
 	cpu.clk.div_clocksum += cycle
