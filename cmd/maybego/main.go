@@ -37,7 +37,9 @@ func main() {
 
 	for {
 		cpu.Fetch()
-		cpu.Decode()
+		cycles := cpu.Decode()
+
+		cpu.Handle_timer(cycles)
 
 		// blarggs test
 		if maybego.Read(0xff02) == 0x81 {
