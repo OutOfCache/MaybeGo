@@ -1403,7 +1403,7 @@ func TestGetTimerFrequency(t *testing.T) {
 
 	for _, test := range tests {
 		Write(0xFF07, test.ff07)
-		expected_freq := 4194304 / test.expected_div
+		expected_freq := cpu.clk.MASTER_CLK / test.expected_div
 
 		actual_freq := cpu.get_timer_frequency()
 

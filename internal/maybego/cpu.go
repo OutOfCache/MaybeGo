@@ -30,6 +30,7 @@ type Flags struct {
 }
 
 type Clocks struct {
+	MASTER_CLK     int
 	frequency      int
 	div_clocksum   byte
 	timer_clocksum uint16
@@ -59,6 +60,8 @@ func NewCPU() *CPU {
 	cpu.reg.E = 0xD8
 	cpu.reg.H = 0x01
 	cpu.reg.L = 0x4D
+
+	cpu.clk.MASTER_CLK = 4194304
 
 	cpu.opcodes = [256]func() int{
 		cpu.cpu00, cpu.cpu01, cpu.cpu02, cpu.cpu03,
@@ -3788,7 +3791,12 @@ func (cpu *CPU) interrupt() int { // handle interrupts
 func (cpu *CPU) handle_timer(cycle byte) {
 	cpu.increase_div(cycle)
 
-	// timer_enabled := Read(0xff07) & 0x04
+	timer_enabled := Read(0xff07)&0x04 == 0x04
+	if !timer_enabled {
+		return
+	}
+
+	// cpu.clk.timer_clocksum +=
 }
 
 func (cpu *CPU) increase_div(cycle byte) {
@@ -3805,5 +3813,5 @@ func (cpu *CPU) get_timer_frequency() int {
 	index := Read(0xff07) & 0b11
 
 	current_divider := dividers[index]
-	return 4194304 / current_divider
+	return cpu.clk.MASTER_CLK / current_divider
 }
