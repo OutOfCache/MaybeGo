@@ -3802,7 +3802,11 @@ func (cpu *CPU) handle_timer(cycle byte) {
 
 	cpu.clk.timer_clocksum = total_ticks % timer_frequency
 
-	cpu.increase_register(0xFF05, timer_increment)
+	tima_overflow := cpu.increase_register(0xFF05, timer_increment)
+
+	if tima_overflow {
+		cpu.set_interrupt_request(0b100)
+	}
 }
 
 func (cpu *CPU) increase_div(cycle byte) {
@@ -3830,4 +3834,11 @@ func (cpu *CPU) increase_register(register uint16, increment byte) bool {
 
 	Write(register, new_value) // change after memory map is properly implemented
 	return overflow
+}
+
+func (cpu *CPU) set_interrupt_request(request_bit byte) {
+	previous_flags := Read(0xFF0F)
+	new_flags := previous_flags | request_bit
+
+	Write(0xFF0F, new_flags)
 }

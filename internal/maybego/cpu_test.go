@@ -1455,3 +1455,27 @@ func TestIncreaseRegister(t *testing.T) {
 
 	}
 }
+
+func TestSetInterruptTimer(t *testing.T) {
+	var tests = []struct {
+		initial_ff0f  byte
+		request_bit   byte
+		expected_ff0f byte
+	}{
+		{0b00000000, 0b00101100, 0b00101100},
+		{0b00000011, 0b00101100, 0b00101111},
+		{0b10000111, 0b01001011, 0b11001111},
+	}
+
+	for _, test := range tests {
+		Write(0xFF0F, test.initial_ff0f)
+
+		cpu.set_interrupt_request(test.request_bit)
+
+		actual_ff0f := Read(0xFF0F)
+
+		if actual_ff0f != test.expected_ff0f {
+			t.Errorf("Current FF0F: %b; expected: %b; request_bits: %b", actual_ff0f, test.expected_ff0f, test.request_bit)
+		}
+	}
+}
