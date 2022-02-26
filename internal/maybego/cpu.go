@@ -30,10 +30,10 @@ type Flags struct {
 }
 
 type Clocks struct {
-	MASTER_CLK     int
-	frequency      int
+	MASTER_CLK     uint
+	frequency      uint
 	div_clocksum   byte
-	timer_clocksum uint16
+	timer_clocksum uint
 }
 
 type CPU struct {
@@ -3796,22 +3796,38 @@ func (cpu *CPU) handle_timer(cycle byte) {
 		return
 	}
 
-	// cpu.clk.timer_clocksum +=
+	total_ticks := cpu.clk.timer_clocksum + (4 * uint(cycle))
+	timer_frequency := cpu.get_timer_frequency()
+	timer_increment := byte(uint(total_ticks) / timer_frequency)
+
+	cpu.clk.timer_clocksum = total_ticks % timer_frequency
+
+	cpu.increase_register(0xFF05, timer_increment)
 }
 
 func (cpu *CPU) increase_div(cycle byte) {
 	overflow := cycle > (255 - cpu.clk.div_clocksum)
 	if overflow {
-		Write(0xff04, 1) // TODO: change after memory map is handled correctly
+		cpu.increase_register(0xff04, 1) // TODO: change after memory map is handled correctly
 	}
 
 	cpu.clk.div_clocksum += cycle
 }
 
-func (cpu *CPU) get_timer_frequency() int {
-	dividers := [4]int{1024, 16, 64, 256}
+func (cpu *CPU) get_timer_frequency() uint {
+	dividers := [4]uint{1024, 16, 64, 256}
 	index := Read(0xff07) & 0b11
 
 	current_divider := dividers[index]
 	return cpu.clk.MASTER_CLK / current_divider
+}
+
+// Increases the register and returns whether this increase caused an overflow.
+func (cpu *CPU) increase_register(register uint16, increment byte) bool {
+	previous_value := Read(register)
+	new_value := previous_value + increment
+	overflow := new_value < previous_value
+
+	Write(register, new_value) // change after memory map is properly implemented
+	return overflow
 }

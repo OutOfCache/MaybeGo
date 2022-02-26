@@ -1385,7 +1385,7 @@ func TestIncreaseDiv(t *testing.T) {
 func TestGetTimerFrequency(t *testing.T) {
 	var tests = []struct {
 		ff07         byte
-		expected_div int
+		expected_div uint
 	}{
 		{0b0000, 1024},
 		{0b0001, 16},
@@ -1410,5 +1410,48 @@ func TestGetTimerFrequency(t *testing.T) {
 		if actual_freq != expected_freq {
 			t.Errorf("Current frequency: %d; expected: %d; FF07: %x, divider: %d", actual_freq, expected_freq, Read(0xFF07), 4194304*actual_freq)
 		}
+	}
+}
+func TestIncreaseRegister(t *testing.T) {
+	var tests = []struct {
+		ff05          byte
+		increment     byte
+		expected_ovfl bool
+	}{
+		{0x00, 0x00, false},
+		{0x00, 0x0F, false},
+		{0x00, 0xFF, false},
+		{0x01, 0x00, false},
+		{0x01, 0x0F, false},
+		{0x01, 0xFF, true},
+		{0x08, 0x00, false},
+		{0x08, 0x0F, false},
+		{0x08, 0xFF, true},
+		{0x0F, 0x00, false},
+		{0x0F, 0x0F, false},
+		{0x0F, 0xFF, true},
+		{0xF0, 0x00, false},
+		{0xF0, 0x0F, false},
+		{0xF0, 0xFF, true},
+		{0xFF, 0x00, false},
+		{0xFF, 0x0F, true},
+		{0xFF, 0xFF, true},
+	}
+
+	for _, test := range tests {
+		Write(0xFF05, test.ff05)
+		expected_ff05 := test.ff05 + test.increment
+
+		actual_ovfl := cpu.increase_register(0xff05, test.increment)
+		actual_ff05 := Read(0xff05)
+
+		if actual_ovfl != test.expected_ovfl {
+			t.Errorf("Current overflow: %t; expected: %t; FF05 before: %x, increment: %x; FF05 after: %x", actual_ovfl, test.expected_ovfl, test.ff05, test.increment, actual_ff05)
+		}
+
+		if actual_ff05 != expected_ff05 {
+			t.Errorf("Current FF05: %x; expected: %x; FF05 before: %x, increment: %x", actual_ff05, expected_ff05, test.ff05, test.increment)
+		}
+
 	}
 }
