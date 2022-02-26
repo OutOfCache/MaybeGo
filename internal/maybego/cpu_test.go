@@ -1343,3 +1343,72 @@ func TestCpuE8(t *testing.T) {
 		}
 	}
 }
+
+func TestIncreaseDiv(t *testing.T) {
+	var tests = []struct {
+		div_clocksum  byte
+		cycle         byte
+		expected_div  byte
+		expected_FF04 byte
+	}{
+		{0x00, 0x01, 0x01, 0x00},
+		{0x01, 0x01, 0x02, 0x00},
+		{0x0F, 0x01, 0x10, 0x00},
+		{0x10, 0x01, 0x11, 0x00},
+		{0x1F, 0x01, 0x20, 0x00},
+		{0x7F, 0x01, 0x80, 0x00},
+		{0x80, 0x01, 0x81, 0x00},
+		{0xFF, 0x01, 0x00, 0x01},
+		{0xF0, 0x11, 0x01, 0x01},
+		{0x80, 0x81, 0x01, 0x01},
+		{0xFF, 0x0F, 0x0E, 0x01},
+		{0xFF, 0xF0, 0xEF, 0x01},
+		{0xFF, 0xFF, 0xFE, 0x01},
+	}
+
+	for _, test := range tests {
+		Write(0xFF04, 0x00)
+		cpu.clk.div_clocksum = test.div_clocksum
+		cpu.increase_div(test.cycle)
+
+		actual_div := cpu.clk.div_clocksum
+		actual_FF04 := Read(0xFF04)
+
+		if actual_div != test.expected_div {
+			t.Errorf("Current div_clocksum: %x; expected: %x", actual_div, test.expected_div)
+		}
+		if actual_FF04 != test.expected_FF04 {
+			t.Errorf("Current DIV Register 0xFF04: %x; expected: %x", actual_FF04, test.expected_FF04)
+		}
+	}
+}
+func TestGetTimerFrequency(t *testing.T) {
+	var tests = []struct {
+		ff07         byte
+		expected_div int
+	}{
+		{0b0000, 1024},
+		{0b0001, 16},
+		{0b0010, 64},
+		{0b0011, 256},
+		{0b0100, 1024},
+		{0b0101, 16},
+		{0b0110, 64},
+		{0b0111, 256},
+		{0b1000, 1024},
+		{0b1001, 16},
+		{0b1010, 64},
+		{0b1011, 256},
+	}
+
+	for _, test := range tests {
+		Write(0xFF07, test.ff07)
+		expected_freq := 4194304 / test.expected_div
+
+		actual_freq := cpu.get_timer_frequency()
+
+		if actual_freq != expected_freq {
+			t.Errorf("Current frequency: %d; expected: %d; FF07: %x, divider: %d", actual_freq, expected_freq, Read(0xFF07), 4194304*actual_freq)
+		}
+	}
+}

@@ -4,6 +4,7 @@ import (
 	//	"fmt"
 	"log"
 	"os"
+	//	"time"
 )
 
 type Registers struct {
@@ -28,9 +29,16 @@ type Flags struct {
 	//	ICnt byte // Countdown to activate IME (since delay for one instruction)
 }
 
+type Clocks struct {
+	frequency      int
+	div_clocksum   byte
+	timer_clocksum uint16
+}
+
 type CPU struct {
 	reg           *Registers
 	flg           *Flags
+	clk           *Clocks
 	currentOpcode byte
 	pendingIME    bool
 	opcodes       [256]func() int
@@ -40,7 +48,7 @@ type CPU struct {
 
 // dummy "constructor"
 func NewCPU() *CPU {
-	cpu := &CPU{reg: new(Registers), flg: new(Flags)}
+	cpu := &CPU{reg: new(Registers), flg: new(Flags), clk: new(Clocks)}
 	cpu.reg.PC = 0x100  // to bypass boot rom for now
 	cpu.reg.SP = 0xFFFE // bypassing boot rom
 	cpu.reg.A = 0x1
@@ -3775,4 +3783,27 @@ func (cpu *CPU) interrupt() int { // handle interrupts
 		}
 	}
 	return 20 + int(FlagToBit(cpu.flg.HALT)*4) // according to "The Cycle-Accurate GB" doc, "It takes 20 clocks to dispatch an interrupt. If CPU is in HALT mode, another extra 4 clocks are needed"
+}
+
+func (cpu *CPU) handle_timer(cycle byte) {
+	cpu.increase_div(cycle)
+
+	// timer_enabled := Read(0xff07) & 0x04
+}
+
+func (cpu *CPU) increase_div(cycle byte) {
+	overflow := cycle > (255 - cpu.clk.div_clocksum)
+	if overflow {
+		Write(0xff04, 1) // TODO: change after memory map is handled correctly
+	}
+
+	cpu.clk.div_clocksum += cycle
+}
+
+func (cpu *CPU) get_timer_frequency() int {
+	dividers := [4]int{1024, 16, 64, 256}
+	index := Read(0xff07) & 0b11
+
+	current_divider := dividers[index]
+	return 4194304 / current_divider
 }
