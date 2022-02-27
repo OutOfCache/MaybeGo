@@ -1479,3 +1479,72 @@ func TestSetInterruptTimer(t *testing.T) {
 		}
 	}
 }
+
+func TestHandleTimer(t *testing.T) {
+	var tests = []struct {
+		initial_tma  byte
+		initial_tac  byte
+		initial_tima byte
+		cycles       uint16
+		initial_if   byte
+		expected_if  byte
+	}{
+		// blargg's test rom setup
+		{0b00000000, 0x05, 0x0, 0x00, 0, 0},
+		{0b00000000, 0x05, 0x0, 500, 0, 0},
+		{0b00000000, 0x05, 0x0, 1500, 0, 4},
+		// {0b00000011, 0b00101100, 0b00101111},
+		// {0b10000111, 0b01001011, 0b11001111},
+	}
+
+	for _, test := range tests {
+		Write(0xFF06, test.initial_tma)
+		Write(0xFF07, test.initial_tac)
+		Write(0xFF05, test.initial_tima)
+		Write(0xFF0F, test.initial_if)
+
+		remaining_cycles := test.cycles
+
+		for remaining_cycles/256 > 0 {
+			cpu.Handle_timer(255)
+
+			remaining_cycles -= 255
+		}
+
+		actual_if := Read(0xFF0F)
+
+		if actual_if != test.expected_if {
+			t.Errorf("Current FF0F: %b; expected: %b; cycles: %d; TIMA: %x", actual_if, test.expected_if, test.cycles, Read(0xFF05))
+		}
+	}
+}
+
+// func TestCpuFB(t *testing.T) {
+//     // blargg's test roms
+//     cpu.cpuFB() // ei
+//     cpu.ld16(&cpu.reg.C, &cpu.reg.B, 0, 0) // ld bc, 0
+//     cpu.cpuC5() // push bc
+//     cpu.cpuC1() // pop bc
+//     cpu.cpu04() // inc b
+//
+//     Write(cpu.IF, 0x04) // wreg IF,$04
+//     cpu.cpu05() // dec b
+//     // jp nz, test failed
+//     if !cpu.flg.Z {
+// 	t.Errorf("Zero flag was not set after dec b")
+//     }
+//
+//     cpu.reg.PC = 0x100
+//     Write(PC+1, -2)
+//     cpu.cpuF8() // ld hl, sp-2
+//     cpu.cpu2A() // ldi a, (hl)
+//     cpu.cpu() // cp < interrupt_addr
+//     cpu.cpu() // jp nz, test_failed
+//     cpu.cpu() // ld a,(hl)
+//     cpu.cpu() // cp >interrupt_addr
+//     cpu.cpu() // jp nz, test_failed
+//     cpu.cpu() // lda IF
+//     cpu.cpu() // and $04
+//     cpu.cpu() // jp nz,test_failed
+//
+// }

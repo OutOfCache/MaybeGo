@@ -221,7 +221,7 @@ func NewCPU() *CPU {
 }
 
 func (cpu *CPU) Fetch() {
-	if cpu.flg.IME {
+	if cpu.flg.IME || cpu.flg.HALT {
 		cpu.interrupt()
 	}
 
@@ -230,9 +230,9 @@ func (cpu *CPU) Fetch() {
 		cpu.flg.IME = true
 	}
 
-	if cpu.flg.HALT {
-		return
-	}
+	// if cpu.flg.HALT {
+	// 	return
+	// }
 	cpu.currentOpcode = Read(cpu.reg.PC)
 	log.Printf("PC: %x, Opcode: %x, PC+1:%x, PC+2: %x\tZ: %t, N: %t, H: %t, C: %t\nA: %x, B: %x, C: %x, D: %x, E: %x, H: %x, L: %x",
 		cpu.reg.PC, cpu.currentOpcode, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2), cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C,
@@ -241,7 +241,14 @@ func (cpu *CPU) Fetch() {
 }
 
 func (cpu *CPU) Decode() byte {
-	if cpu.flg.HALT {
+	// interrupt_occurred := false
+
+	// for interrupt_address := range cpu.interrupts {
+	// 	if cpu.currentOpcode == byte(interrupt_address) {
+	// 		interrupt_occurred = true
+	// 	}
+	// }
+	if cpu.flg.HALT { // && !interrupt_occurred {
 		return 1
 	}
 	cycles := cpu.opcodes[cpu.currentOpcode]()
@@ -304,6 +311,9 @@ func (cpu *CPU) ldToAddress16(adrLo byte, adrHi byte, valLo byte, valHi byte) {
 // LD r8, [r16]
 func (cpu *CPU) ldFromAddress(dest *byte, adrLo byte, adrHi byte) {
 	address := uint16(adrHi)<<8 + uint16(adrLo)
+	if address == IF {
+		log.Printf("ld from IF: %x", Read(address))
+	}
 	*dest = Read(address)
 }
 
@@ -497,8 +507,8 @@ func (cpu *CPU) jr(flag bool) byte {
 }
 
 func (cpu *CPU) jp(flag bool) byte {
-	log.Printf("JP")
 	if flag {
+		log.Printf("JPed")
 		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(Read(cpu.reg.PC+2)) << 8)
 		return 4
 	}
@@ -1863,6 +1873,7 @@ func (cpu *CPU) cpuC9() byte { // RET
 }
 
 func (cpu *CPU) cpuCA() byte { // JP Z,u16
+	log.Printf("JP Z")
 	return cpu.jp(cpu.flg.Z)
 }
 
@@ -3785,6 +3796,7 @@ func (cpu *CPU) interrupt() byte { // handle interrupts
 	// check if interrupt occurred
 	// loop through every bit in the interrupt flag register until we find one
 	log.Printf("In interrupt handler")
+	cycles := byte(20 + FlagToBit(cpu.flg.HALT)*4)
 	for i := byte(0); i < 5; i++ {
 		check_bit := byte(0x01 << i)
 		interrupt_occurred := Read(IF)&check_bit > 0
@@ -3795,19 +3807,26 @@ func (cpu *CPU) interrupt() byte { // handle interrupts
 		if !interrupt_enabled {
 			continue
 		}
-		cpu.flg.IME = false
-		reset_interrupt_flag := (check_bit) ^ 0xFF
-		updated_interrupt_flags := Read(IF) & reset_interrupt_flag
-		Write(IF, updated_interrupt_flags)
-		// originally, rst(byte) was just for the RST instruction
-		// however, it allows easy calling of a specific address
-		// and pushing the current PC to stack already
-		// so I won't write the same code here
-		cpu.rst(cpu.interrupts[int(i)], false)
+		// cpu.flg.HALT = false
+		if cpu.flg.IME {
+			reset_interrupt_flag := (check_bit) ^ 0xFF
+			updated_interrupt_flags := Read(IF) & reset_interrupt_flag
+			Write(IF, updated_interrupt_flags)
+			// originally, rst(byte) was just for the RST instruction
+			// however, it allows easy calling of a specific address
+			// and pushing the current PC to stack already
+			// so I won't write the same code here
+			cpu.rst(cpu.interrupts[int(i)], false)
+			cpu.flg.IME = false
+
+		} else if cpu.flg.HALT {
+			cpu.flg.HALT = false
+		}
 		// cpu.ret(true)
 
 	}
-	return byte(20 + FlagToBit(cpu.flg.HALT)*4) // according to "The Cycle-Accurate GB" doc, "It takes 20 clocks to dispatch an interrupt. If CPU is in HALT mode, another extra 4 clocks are needed"
+
+	return cycles // according to "The Cycle-Accurate GB" doc, "It takes 20 clocks to dispatch an interrupt. If CPU is in HALT mode, another extra 4 clocks are needed"
 }
 
 func (cpu *CPU) Handle_timer(cycle byte) {
@@ -3818,24 +3837,29 @@ func (cpu *CPU) Handle_timer(cycle byte) {
 		return
 	}
 
-	total_ticks := cpu.clk.timer_clocksum + (4 * uint(cycle))
-	timer_frequency := cpu.get_timer_frequency()
-	timer_increment := byte(uint(total_ticks) / timer_frequency)
+	total_ticks := uint(cpu.clk.timer_clocksum) + uint(4*uint(cycle))
+	timer_frequency := cpu.clk.MASTER_CLK / cpu.get_timer_frequency()
+	timer_increment := byte(total_ticks / timer_frequency)
+	// timer_increment := byte(uint(4*cycle) / timer_frequency)
 
 	cpu.clk.timer_clocksum = total_ticks % timer_frequency
 
 	tima_overflow := cpu.increase_register(TIMA, timer_increment)
 
-	if tima_overflow {
+	log.Printf("timer_clocksum: %d, cycles: %d, total_ticks: %d, frequency: %d, timer_increment: %d",
+		cpu.clk.timer_clocksum, cycle, total_ticks, timer_frequency, timer_increment)
+	for tima_overflow {
 		cpu.set_interrupt_request(0b100)
-		reset_value := Read(TAC)
-		Write(TIMA, reset_value)
+		reset_value := Read(TAC) // + byte(tima_overflow)
+		tima_overflow = cpu.increase_register(TIMA, reset_value)
 	}
 }
 
 func (cpu *CPU) increase_div(cycle byte) {
 	previous_clocksum := cpu.clk.div_clocksum
+	// new_clocksum := uint16(previous_clocksum) + uint16(cycle)
 	new_clocksum := previous_clocksum + cycle
+	// increment := byte(new_clocksum / 256)
 	overflow := new_clocksum < previous_clocksum
 	if overflow {
 		cpu.increase_register(DIV, 1) // TODO: change after memory map is handled correctly
@@ -3855,14 +3879,20 @@ func (cpu *CPU) get_timer_frequency() uint {
 // Increases the register and returns whether this increase caused an overflow.
 func (cpu *CPU) increase_register(register uint16, increment byte) bool {
 	previous_value := Read(register)
-	new_value := previous_value + increment
-	overflow := new_value < previous_value
+	new_value := uint16(previous_value) + uint16(increment)
+	limited_new_value := byte(new_value % 256)
+	overflow := new_value > 0xFF
 
-	Write(register, new_value) // change after memory map is properly implemented
+	if register == 0xFF05 {
+		log.Printf("increasing timer from %x to: %x, overflow: %t", previous_value, new_value, overflow)
+	}
+	Write(register, limited_new_value) // change after memory map is properly implemented
+
 	return overflow
 }
 
 func (cpu *CPU) set_interrupt_request(request_bit byte) {
+	log.Printf("setting timer interrupt request")
 	previous_flags := Read(0xFF0F)
 	new_flags := previous_flags | request_bit
 
