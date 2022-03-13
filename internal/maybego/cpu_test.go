@@ -1612,3 +1612,60 @@ func TestBytesToFlags(t *testing.T) {
 		}
 	}
 }
+
+func TestLD8(t *testing.T) {
+	var tests = []struct {
+		dest byte
+		src  byte
+	}{
+		{0x73, 0x67},
+		{0x38, 0xA9},
+		{0xBA, 0xF0},
+		{0xFF, 0x3F},
+	}
+
+	var registers = []struct {
+		name  string
+		reg   *byte
+		instr [1]func() byte
+	}{
+		{"B", &cpu.reg.B, [1]func() byte{cpu.cpu06}},
+		{"C", &cpu.reg.C, [1]func() byte{cpu.cpu0E}},
+		{"D", &cpu.reg.D, [1]func() byte{cpu.cpu16}},
+		{"E", &cpu.reg.E, [1]func() byte{cpu.cpu1E}},
+		{"H", &cpu.reg.H, [1]func() byte{cpu.cpu26}},
+		{"L", &cpu.reg.L, [1]func() byte{cpu.cpu2E}},
+		{"A", &cpu.reg.A, [1]func() byte{cpu.cpu3E}},
+	}
+
+	cpu.reg.PC = 0x66
+
+	for _, test := range tests {
+		t.Run("LD register, u8", func(t *testing.T) {
+			for _, register := range registers {
+				*register.reg = test.dest
+
+				Write(cpu.reg.PC+1, test.src)
+
+				cycles := register.instr[0]()
+
+				if *register.reg != test.src {
+					t.Errorf("Current %s: %x, expected: %x", register.name, register.reg, test.src)
+				}
+				if cycles != 2 {
+					t.Errorf("Got %d cycles, expected 2", cycles)
+				}
+			}
+		})
+		// t.Run("LD B, u8", func(t *testing.T) { ... })
+		// t.Run("LD C, u8", func(t *testing.T) { ... })
+		// t.Run("LD D, u8", func(t *testing.T) { ... })
+		// t.Run("LD E, u8", func(t *testing.T) { ... })
+		// t.Run("LD H, u8", func(t *testing.T) { ... })
+		// t.Run("LD L, u8", func(t *testing.T) { ... })
+		// t.Run("LD A, u8", func(t *testing.T) { ... })
+		// t.Run("LD B, u8", func(t *testing.T) { ... })
+		// t.Run("A=2", func(t *testing.T) { ... })
+		// t.Run("B=1", func(t *testing.T) { ... })
+	}
+}
