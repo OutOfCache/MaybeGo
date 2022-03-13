@@ -141,17 +141,17 @@ func TestLD8(t *testing.T) { // {{{
 
 	cpu.reg.PC = 0x66
 
-	for _, test := range tests {
+	for dest_idx, destination := range registers8 {
 		t.Run("LD register, u8", func(t *testing.T) {
-			for index, register := range registers8 {
-				*register.reg = test.dest
+			for _, test := range tests {
+				*destination.reg = test.dest
 
 				Write(cpu.reg.PC+1, test.src)
 
-				cycles := commands[index].instr[0]()
+				cycles := commands[dest_idx].instr[0]()
 
-				if *register.reg != test.src {
-					t.Errorf("Current %s: %x, expected: %x", register.name, register.reg, test.src)
+				if *destination.reg != test.src {
+					t.Errorf("Current %s: %x, expected: %x", destination.name, destination.reg, test.src)
 				}
 				if cycles != 2 {
 					t.Errorf("Got %d cycles, expected 2", cycles)
@@ -160,8 +160,8 @@ func TestLD8(t *testing.T) { // {{{
 		})
 
 		t.Run("LD register, register", func(t *testing.T) {
-			for dest_idx, destination := range registers8 {
-				for src_idx, source := range registers8 {
+			for src_idx, source := range registers8 {
+				for _, test := range tests {
 					*destination.reg = test.dest
 					*source.reg = test.src
 
