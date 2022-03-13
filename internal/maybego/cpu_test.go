@@ -71,7 +71,7 @@ func TestBytesToFlags(t *testing.T) {
 	}
 }
 
-var registers = []struct {
+var registers8 = []struct {
 	name string
 	reg  *byte
 }{
@@ -84,7 +84,17 @@ var registers = []struct {
 	{"A", &cpu.reg.A},
 }
 
-func TestLD8(t *testing.T) {
+var registers16 = []struct {
+	name string
+	hi   *byte
+	lo   *byte
+}{
+	{"BC", &cpu.reg.B, &cpu.reg.C},
+	{"DE", &cpu.reg.D, &cpu.reg.E},
+	{"HL", &cpu.reg.H, &cpu.reg.L},
+}
+
+func TestLD8(t *testing.T) { // {{{
 	var tests = []struct {
 		dest byte
 		src  byte
@@ -133,7 +143,7 @@ func TestLD8(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("LD register, u8", func(t *testing.T) {
-			for index, register := range registers {
+			for index, register := range registers8 {
 				*register.reg = test.dest
 
 				Write(cpu.reg.PC+1, test.src)
@@ -150,8 +160,8 @@ func TestLD8(t *testing.T) {
 		})
 
 		t.Run("LD register, register", func(t *testing.T) {
-			for dest_idx, destination := range registers {
-				for src_idx, source := range registers {
+			for dest_idx, destination := range registers8 {
+				for src_idx, source := range registers8 {
 					*destination.reg = test.dest
 					*source.reg = test.src
 
@@ -168,7 +178,54 @@ func TestLD8(t *testing.T) {
 			}
 		})
 	}
-}
+} // }}}
+func TestLD16(t *testing.T) { // {{{
+	var tests = []struct {
+		dest_hi byte
+		dest_lo byte
+		src_hi  byte
+		src_lo  byte
+	}{
+		{0xDE, 0xAD, 0xBE, 0xEF},
+		{0xCA, 0x55, 0xE7, 0x7E},
+	}
+
+	var commands = []struct {
+		name   string
+		instr  func() byte
+		cycles byte
+	}{
+		{"LD BC, u16", cpu.cpu01, 3},
+		{"LD DE, u16", cpu.cpu11, 3},
+		{"LD HL, u16", cpu.cpu21, 3},
+	}
+	cpu.reg.PC = 0x66
+
+	for index, r16 := range registers16 {
+		t.Run(commands[index].name, func(t *testing.T) {
+			for _, test := range tests {
+				*r16.hi = test.dest_hi
+				*r16.lo = test.dest_lo
+
+				Write(cpu.reg.PC+1, test.src_lo)
+				Write(cpu.reg.PC+2, test.src_hi)
+
+				cycles := commands[index].instr()
+
+				if *r16.hi != test.src_hi {
+					t.Errorf("Current %s: %x, expected: %x", r16.name, r16.hi, test.src_hi)
+				}
+				if *r16.lo != test.src_lo {
+					t.Errorf("Current %s: %x, expected: %x", r16.name, r16.lo, test.src_lo)
+				}
+				if cycles != commands[index].cycles {
+					t.Errorf("Got %d cycles, expected %d", cycles, commands[index].cycles)
+				}
+			}
+		})
+	}
+} // }}}
+
 func TestCpu00(t *testing.T) {
 	var tests = []struct {
 		pc       uint16
