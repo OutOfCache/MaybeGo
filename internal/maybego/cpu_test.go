@@ -249,9 +249,10 @@ func TestLDToAdr(t *testing.T) { // {{{
 			name   string
 			instr  func() byte
 			cycles byte
+			size   uint16
 		}{
-			{"LD (BC), A", cpu.cpu02, 2},
-			{"LD (DE), A", cpu.cpu12, 2},
+			{"LD (BC), A", cpu.cpu02, 2, 1},
+			{"LD (DE), A", cpu.cpu12, 2, 1},
 		}
 		for index, command := range commands {
 			t.Run(commands[index].name, func(t *testing.T) {
@@ -260,18 +261,24 @@ func TestLDToAdr(t *testing.T) { // {{{
 					adress := (uint16(test.dest_hi) << 8) + uint16(test.dest_lo)
 					Write(adress, 0x00)
 
+					expected_pc := cpu.reg.PC + command.size
+
 					*r16.hi = test.dest_hi
 					*r16.lo = test.dest_lo
 					cpu.reg.A = test.src
 
 					cycles := commands[index].instr()
 					actual_byte := Read(adress)
+					actual_pc := cpu.reg.PC
 
 					if actual_byte != test.src {
 						t.Errorf("Current byte at %x: %x, expected: %x", adress, actual_byte, test.src)
 					}
 					if cycles != command.cycles {
 						t.Errorf("Got %d cycles, expected %d", cycles, commands[index].cycles)
+					}
+					if actual_pc != expected_pc {
+						t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
 					}
 				}
 			})
@@ -283,15 +290,16 @@ func TestLDToAdr(t *testing.T) { // {{{
 			name   string
 			instr  func() byte
 			cycles byte
+			size   uint16
 		}{
-			{"LD (HL), u8", cpu.cpu36, 3},
-			{"LD (HL), B", cpu.cpu70, 2},
-			{"LD (HL), C", cpu.cpu71, 2},
-			{"LD (HL), D", cpu.cpu72, 2},
-			{"LD (HL), E", cpu.cpu73, 2},
-			{"LD (HL), H", cpu.cpu74, 2},
-			{"LD (HL), L", cpu.cpu75, 2},
-			{"LD (HL), A", cpu.cpu77, 2},
+			{"LD (HL), u8", cpu.cpu36, 3, 2},
+			{"LD (HL), B", cpu.cpu70, 2, 1},
+			{"LD (HL), C", cpu.cpu71, 2, 1},
+			{"LD (HL), D", cpu.cpu72, 2, 1},
+			{"LD (HL), E", cpu.cpu73, 2, 1},
+			{"LD (HL), H", cpu.cpu74, 2, 1},
+			{"LD (HL), L", cpu.cpu75, 2, 1},
+			{"LD (HL), A", cpu.cpu77, 2, 1},
 		}
 
 		for _, test := range tests {
@@ -303,15 +311,20 @@ func TestLDToAdr(t *testing.T) { // {{{
 			t.Run(commands[0].name, func(t *testing.T) {
 				Write(cpu.reg.PC+1, test.src)
 				expected_cycles := commands[0].cycles
+				expected_pc := cpu.reg.PC + commands[0].size
 
 				actual_cycles := commands[0].instr()
 				actual_byte := Read(adress)
+				actual_pc := cpu.reg.PC
 
 				if actual_byte != test.src {
 					t.Errorf("Got %x at adress %x, expected %x", actual_byte, adress, test.src)
 				}
 				if actual_cycles != expected_cycles {
 					t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
+				}
+				if actual_pc != expected_pc {
+					t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
 				}
 			})
 
@@ -320,15 +333,20 @@ func TestLDToAdr(t *testing.T) { // {{{
 				t.Run(command.name, func(t *testing.T) {
 					*source_register.reg = test.src
 					expected_cycles := command.cycles
+					expected_pc := cpu.reg.PC + command.size
 
 					actual_cycles := command.instr()
 					actual_byte := Read(adress)
+					actual_pc := cpu.reg.PC
 
 					if actual_byte != test.src {
 						t.Errorf("Got %x at adress %x, expected %x", actual_byte, adress, test.src)
 					}
 					if actual_cycles != expected_cycles {
-						t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
+						t.Errorf("Current PC %x; expected: %x", actual_pc, expected_pc)
+					}
+					if actual_pc != expected_pc {
+						t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
 					}
 				})
 			}
