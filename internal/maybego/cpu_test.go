@@ -291,7 +291,7 @@ func TestLDToAdr(t *testing.T) { // {{{
 		}
 	}) // }}}
 
-	t.Run("To (HL)", func(t *testing.T) {
+	t.Run("To (HL)", func(t *testing.T) { // {{{
 		var commands = [8]struct {
 			name   string
 			instr  func() byte
@@ -357,9 +357,9 @@ func TestLDToAdr(t *testing.T) { // {{{
 				})
 			}
 		} // }}}
-	})
+	}) // }}}
 
-	t.Run("LD (HL+), A", func(t *testing.T) {
+	t.Run("LD (HL+), A", func(t *testing.T) { // {{{
 		hlinc_tests := []struct {
 			h          byte
 			l          byte
@@ -404,9 +404,9 @@ func TestLDToAdr(t *testing.T) { // {{{
 				t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
 			}
 		}
-	})
+	}) // }}}
 
-	t.Run("LD (HL-), A", func(t *testing.T) {
+	t.Run("LD (HL-), A", func(t *testing.T) { // {{{
 		hlinc_tests := []struct {
 			h          byte
 			l          byte
@@ -449,6 +449,65 @@ func TestLDToAdr(t *testing.T) { // {{{
 			if actual_pc != expected_pc {
 				t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
 			}
+		}
+	}) // }}}
+
+	t.Run("LD (FF00+u8), A", func(t *testing.T) {
+		offset_tests := []struct {
+			u8 uint16
+			a  byte
+		}{
+			{0x00, 0xDE},
+			{0xFF, 0xAD},
+			{0x08, 0xBE},
+			{0x80, 0xA7},
+		}
+
+		for _, test := range offset_tests {
+			cpu.reg.A = test.a
+			adress := 0xFF00 + test.u8
+
+			t.Run("(FF00+u8)", func(t *testing.T) {
+				Write(cpu.reg.PC+1, byte(test.u8))
+				expected_cycles := byte(3)
+				expected_pc := cpu.reg.PC + 2
+
+				actual_cycles := cpu.cpuE0()
+				actual_pc := cpu.reg.PC
+				actual_byte := Read(adress)
+
+				if actual_byte != test.a {
+					t.Errorf("Current byte at %x: %x, expected: %x", adress, actual_byte, test.a)
+				}
+				if actual_cycles != expected_cycles {
+					t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
+				}
+				if actual_pc != expected_pc {
+					t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
+				}
+
+			})
+
+			t.Run("(FF00+C)", func(t *testing.T) {
+				cpu.reg.C = byte(test.u8)
+				expected_cycles := byte(2)
+				expected_pc := cpu.reg.PC + 1
+
+				actual_cycles := cpu.cpuE2()
+				actual_pc := cpu.reg.PC
+				actual_byte := Read(adress)
+
+				if actual_byte != test.a {
+					t.Errorf("Current byte at %x: %x, expected: %x", adress, actual_byte, test.a)
+				}
+				if actual_cycles != expected_cycles {
+					t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
+				}
+				if actual_pc != expected_pc {
+					t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
+				}
+
+			})
 		}
 	})
 } // }}}

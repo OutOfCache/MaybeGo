@@ -308,9 +308,9 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1966.30,1970.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1972.30,1974.2 1 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1976.28,1979.2 2 0
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1981.30,1985.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1981.30,1985.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1987.30,1991.2 3 0
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1993.30,1997.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1993.30,1997.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1999.30,2001.2 1 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:2003.30,2005.2 1 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:2007.30,2011.2 3 0
