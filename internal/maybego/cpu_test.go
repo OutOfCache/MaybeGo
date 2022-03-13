@@ -142,7 +142,7 @@ func TestLD8(t *testing.T) { // {{{
 	cpu.reg.PC = 0x66
 
 	for dest_idx, destination := range registers8 {
-		t.Run("LD register, u8", func(t *testing.T) {
+		t.Run("LD "+destination.name+", u8", func(t *testing.T) {
 			for _, test := range tests {
 				*destination.reg = test.dest
 
@@ -159,8 +159,8 @@ func TestLD8(t *testing.T) { // {{{
 			}
 		})
 
-		t.Run("LD register, register", func(t *testing.T) {
-			for src_idx, source := range registers8 {
+		for src_idx, source := range registers8 {
+			t.Run("LD "+destination.name+", "+source.name, func(t *testing.T) {
 				for _, test := range tests {
 					*destination.reg = test.dest
 					*source.reg = test.src
@@ -175,8 +175,8 @@ func TestLD8(t *testing.T) { // {{{
 					}
 
 				}
-			}
-		})
+			})
+		}
 	}
 } // }}}
 func TestLD16(t *testing.T) { // {{{
