@@ -26,7 +26,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:320.45,322.11 2 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:322.11,326.3 3 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:329.51,331.18 2 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:331.18,333.3 1 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:331.18,333.3 1 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:336.45,338.11 2 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:338.11,342.3 3 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:345.51,347.21 2 1

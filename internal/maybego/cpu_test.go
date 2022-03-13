@@ -240,6 +240,12 @@ func TestLDToAdr(t *testing.T) { // {{{
 	}{
 		{0xDE, 0xAD, 0xBE},
 		{0xCA, 0x55, 0xE7},
+
+		{0x00, 0x00, 0xE7},
+		{0x00, 0xFF, 0xE7},
+		{0x0F, 0xFF, 0xE7},
+		{0xFF, 0xF0, 0xE7},
+		{0xFF, 0xFF, 0xE7},
 	}
 
 	cpu.reg.PC = 0x66
@@ -302,7 +308,7 @@ func TestLDToAdr(t *testing.T) { // {{{
 			{"LD (HL), A", cpu.cpu77, 2, 1},
 		}
 
-		for _, test := range tests {
+		for _, test := range tests { // {{{
 
 			cpu.reg.H = test.dest_hi
 			cpu.reg.L = test.dest_lo
@@ -349,6 +355,53 @@ func TestLDToAdr(t *testing.T) { // {{{
 						t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
 					}
 				})
+			}
+		} // }}}
+	})
+
+	t.Run("LD (HL+), A", func(t *testing.T) {
+		hlinc_tests := []struct {
+			h          byte
+			l          byte
+			expected_h byte
+			expected_l byte
+			src        byte
+		}{
+			{0x00, 0x00, 0x00, 0x01, 0xDE},
+			{0x00, 0xFF, 0x01, 0x00, 0xAD},
+			{0x0F, 0xFF, 0x10, 0x00, 0xBE},
+			{0xFF, 0xF0, 0xFF, 0xF1, 0xA7},
+			{0xFF, 0xFF, 0x00, 0x00, 0xE7},
+		}
+
+		for _, test := range hlinc_tests {
+			cpu.reg.H = test.h
+			cpu.reg.L = test.l
+			cpu.reg.A = test.src
+
+			expected_cycles := byte(2)
+			expected_pc := cpu.reg.PC + 1
+
+			adress := (uint16(test.h) << 8) + uint16(test.l)
+
+			actual_cycles := cpu.cpu22()
+			actual_pc := cpu.reg.PC
+			actual_byte := Read(adress)
+
+			if actual_byte != test.src {
+				t.Errorf("Current byte at %x: %x, expected: %x", adress, actual_byte, test.src)
+			}
+			if cpu.reg.H != test.expected_h {
+				t.Errorf("Current H: %x, expected %x", cpu.reg.H, test.expected_h)
+			}
+			if cpu.reg.L != test.expected_l {
+				t.Errorf("Current L: %x, expected %x", cpu.reg.L, test.expected_l)
+			}
+			if actual_cycles != expected_cycles {
+				t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
+			}
+			if actual_pc != expected_pc {
+				t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
 			}
 		}
 	})
