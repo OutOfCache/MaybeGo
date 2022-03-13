@@ -512,6 +512,59 @@ func TestLDToAdr(t *testing.T) { // {{{
 	})
 } // }}}
 
+func TestInc16(t *testing.T) {
+	var tests = []struct {
+		hi          byte
+		lo          byte
+		expected_hi byte
+		expected_lo byte
+	}{
+		{0x00, 0x00, 0x00, 0x01},
+		{0x00, 0xFF, 0x01, 0x00},
+		{0x0F, 0xFF, 0x10, 0x00},
+		{0xFF, 0xFF, 0x00, 0x00},
+	}
+
+	var commands = []struct {
+		name   string
+		instr  func() byte
+		cycles byte
+	}{
+		{"INC BC, u16", cpu.cpu03, 2},
+		{"INC DE, u16", cpu.cpu13, 2},
+		{"INC HL, u16", cpu.cpu23, 2},
+	}
+
+	for cmd_idx, command := range commands {
+		r16 := registers16[cmd_idx]
+		t.Run(command.name, func(t *testing.T) {
+			for _, test := range tests {
+				*r16.hi = test.hi
+				*r16.lo = test.lo
+				expected_pc := cpu.reg.PC + 1
+
+				actual_cycles := command.instr()
+				actual_pc := cpu.reg.PC
+				actual_hi := *r16.hi
+				actual_lo := *r16.lo
+
+				if actual_hi != test.expected_hi {
+					t.Errorf("Current %s: %x, expected: %x", r16.name, r16.hi, test.expected_hi)
+				}
+				if actual_lo != test.expected_lo {
+					t.Errorf("Current %s: %x, expected: %x", r16.name, r16.lo, test.expected_lo)
+				}
+				if actual_cycles != command.cycles {
+					t.Errorf("Got %d cycles, expected %d", actual_cycles, command.cycles)
+				}
+				if actual_pc != expected_pc {
+					t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
+				}
+			}
+		})
+	}
+}
+
 func TestCpu00(t *testing.T) {
 	var tests = []struct {
 		pc       uint16
