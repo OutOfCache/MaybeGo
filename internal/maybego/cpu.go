@@ -3822,8 +3822,6 @@ func (cpu *CPU) interrupt() byte { // handle interrupts
 		} else if cpu.flg.HALT {
 			cpu.flg.HALT = false
 		}
-		// cpu.ret(true)
-
 	}
 
 	return cycles // according to "The Cycle-Accurate GB" doc, "It takes 20 clocks to dispatch an interrupt. If CPU is in HALT mode, another extra 4 clocks are needed"
@@ -3840,7 +3838,6 @@ func (cpu *CPU) Handle_timer(cycle byte) {
 	total_ticks := uint(cpu.clk.timer_clocksum) + uint(4*uint(cycle))
 	timer_frequency := cpu.clk.MASTER_CLK / cpu.get_timer_frequency()
 	timer_increment := byte(total_ticks / timer_frequency)
-	// timer_increment := byte(uint(4*cycle) / timer_frequency)
 
 	cpu.clk.timer_clocksum = total_ticks % timer_frequency
 

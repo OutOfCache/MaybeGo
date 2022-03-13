@@ -1548,3 +1548,67 @@ func TestHandleTimer(t *testing.T) {
 //     cpu.cpu() // jp nz,test_failed
 //
 // }
+
+func TestFlagsToBytes(t *testing.T) {
+	var tests = []struct {
+		z            bool
+		n            bool
+		h            bool
+		c            bool
+		expectedByte byte
+	}{
+		{false, false, false, false, 0b00000000},
+		{false, true, false, true, 0b01010000},
+		{true, false, true, false, 0b10100000},
+		{true, true, true, true, 0b11110000},
+	}
+
+	for _, test := range tests {
+		cpu.flg.Z = test.z
+		cpu.flg.N = test.n
+		cpu.flg.H = test.h
+		cpu.flg.C = test.c
+
+		got := cpu.FlagsToBytes()
+		if got != test.expectedByte {
+			t.Errorf("Current byte %b; expected: %b", got, test.expectedByte)
+		}
+	}
+}
+
+func TestBytesToFlags(t *testing.T) {
+	var tests = []struct {
+		Byte      byte
+		expectedZ bool
+		expectedN bool
+		expectedH bool
+		expectedC bool
+	}{
+		{0b00000000, false, false, false, false},
+		{0b01010000, false, true, false, true},
+		{0b10100000, true, false, true, false},
+		{0b11110000, true, true, true, true},
+	}
+
+	for _, test := range tests {
+		cpu.BytesToFlags(test.Byte)
+
+		actualZ := cpu.flg.Z
+		actualN := cpu.flg.N
+		actualH := cpu.flg.H
+		actualC := cpu.flg.C
+
+		if actualZ != test.expectedZ {
+			t.Errorf("Current Z %t; expected: %t", actualZ, test.expectedZ)
+		}
+		if actualN != test.expectedN {
+			t.Errorf("Current N %t; expected: %t", actualN, test.expectedN)
+		}
+		if actualH != test.expectedH {
+			t.Errorf("Current H %t; expected: %t", actualH, test.expectedH)
+		}
+		if actualC != test.expectedC {
+			t.Errorf("Current C %t; expected: %t", actualC, test.expectedC)
+		}
+	}
+}
