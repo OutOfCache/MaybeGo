@@ -512,7 +512,7 @@ func TestLDToAdr(t *testing.T) { // {{{
 	})
 } // }}}
 
-func TestInc16(t *testing.T) {
+func TestInc16(t *testing.T) { // {{{
 	var tests = []struct {
 		hi          byte
 		lo          byte
@@ -563,7 +563,81 @@ func TestInc16(t *testing.T) {
 			}
 		})
 	}
-}
+} // }}}
+func TestInc8(t *testing.T) { // {{{
+	var tests = []struct {
+		register       byte
+		flags          [4]bool
+		expected_reg   byte
+		expected_flags [4]bool
+	}{
+		{0x00, [4]bool{false, true, true, false}, 0x01, [4]bool{false, false, false, false}},
+		{0x0F, [4]bool{true, false, true, false}, 0x10, [4]bool{false, false, true, false}},
+		{0xFF, [4]bool{false, true, false, true}, 0x00, [4]bool{true, false, true, true}},
+		{0xFF, [4]bool{false, true, false, false}, 0x00, [4]bool{true, false, true, false}},
+	}
+
+	var commands = []struct {
+		name   string
+		instr  func() byte
+		cycles byte
+	}{
+		{"INC B", cpu.cpu04, 1},
+		{"INC C", cpu.cpu0C, 1},
+		{"INC D", cpu.cpu14, 1},
+		{"INC E", cpu.cpu1C, 1},
+		{"INC H", cpu.cpu24, 1},
+		{"INC L", cpu.cpu2C, 1},
+		{"INC A", cpu.cpu3C, 1},
+	}
+
+	for cmd_idx, command := range commands {
+		r8 := registers8[cmd_idx]
+		t.Run(command.name, func(t *testing.T) {
+			for _, test := range tests {
+				*r8.reg = test.register
+				cpu.flg.Z = test.flags[0]
+				cpu.flg.N = test.flags[1]
+				cpu.flg.H = test.flags[2]
+				cpu.flg.C = test.flags[3]
+
+				expected_pc := cpu.reg.PC + 1
+				expected_cycles := byte(1)
+
+				actual_cycles := command.instr()
+				actual_pc := cpu.reg.PC
+				actual_reg := *r8.reg
+
+				actual_Z := cpu.flg.Z
+				actual_N := cpu.flg.N
+				actual_H := cpu.flg.H
+				actual_C := cpu.flg.C
+
+				if actual_reg != test.expected_reg {
+					t.Errorf("Current %s: %x, expected: %x", r8.name, r8.reg, test.expected_reg)
+				}
+				if cpu.flg.Z != test.expected_flags[0] {
+					t.Errorf("Current %s: %t, expected: %t", "Z", actual_Z, test.expected_flags[0])
+				}
+				if cpu.flg.N != test.expected_flags[1] {
+					t.Errorf("Current %s: %t, expected: %t", "N", actual_N, test.expected_flags[1])
+				}
+				if cpu.flg.H != test.expected_flags[2] {
+					t.Errorf("Current %s: %t, expected: %t", "H", actual_H, test.expected_flags[2])
+				}
+				if cpu.flg.C != test.expected_flags[3] {
+					t.Errorf("Current %s: %t, expected: %t", "C", actual_C, test.expected_flags[3])
+				}
+				if actual_cycles != expected_cycles {
+					t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
+				}
+				if actual_pc != expected_pc {
+					t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
+				}
+			}
+		})
+	}
+} // }}}
 
 func TestCpu00(t *testing.T) {
 	var tests = []struct {
