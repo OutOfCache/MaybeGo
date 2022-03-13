@@ -1625,35 +1625,87 @@ func TestLD8(t *testing.T) {
 	}
 
 	var registers = []struct {
-		name  string
-		reg   *byte
-		instr [1]func() byte
+		name string
+		reg  *byte
 	}{
-		{"B", &cpu.reg.B, [1]func() byte{cpu.cpu06}},
-		{"C", &cpu.reg.C, [1]func() byte{cpu.cpu0E}},
-		{"D", &cpu.reg.D, [1]func() byte{cpu.cpu16}},
-		{"E", &cpu.reg.E, [1]func() byte{cpu.cpu1E}},
-		{"H", &cpu.reg.H, [1]func() byte{cpu.cpu26}},
-		{"L", &cpu.reg.L, [1]func() byte{cpu.cpu2E}},
-		{"A", &cpu.reg.A, [1]func() byte{cpu.cpu3E}},
+		{"B", &cpu.reg.B},
+		{"C", &cpu.reg.C},
+		{"D", &cpu.reg.D},
+		{"E", &cpu.reg.E},
+		{"H", &cpu.reg.H},
+		{"L", &cpu.reg.L},
+		{"A", &cpu.reg.A},
+	}
+
+	var commands = []struct {
+		name  string
+		instr [8]func() byte
+	}{
+		{"LD B, u8/r8", [8]func() byte{
+			cpu.cpu06, cpu.cpu40, cpu.cpu41, cpu.cpu42,
+			cpu.cpu43, cpu.cpu44, cpu.cpu45, cpu.cpu47},
+		},
+		{"LD C, u8/r8", [8]func() byte{
+			cpu.cpu0E, cpu.cpu48, cpu.cpu49, cpu.cpu4A,
+			cpu.cpu4B, cpu.cpu4C, cpu.cpu4D, cpu.cpu4F},
+		},
+		{"LD D, u8/r8", [8]func() byte{
+			cpu.cpu16, cpu.cpu50, cpu.cpu51, cpu.cpu52,
+			cpu.cpu53, cpu.cpu54, cpu.cpu55, cpu.cpu57},
+		},
+		{"LD E, u8/r8", [8]func() byte{
+			cpu.cpu1E, cpu.cpu58, cpu.cpu59, cpu.cpu5A,
+			cpu.cpu5B, cpu.cpu5C, cpu.cpu5D, cpu.cpu5F},
+		},
+		{"LD H, u8/r8", [8]func() byte{
+			cpu.cpu26, cpu.cpu60, cpu.cpu61, cpu.cpu62,
+			cpu.cpu63, cpu.cpu64, cpu.cpu65, cpu.cpu67},
+		},
+		{"LD L, u8/r8", [8]func() byte{
+			cpu.cpu2E, cpu.cpu68, cpu.cpu69, cpu.cpu6A,
+			cpu.cpu6B, cpu.cpu6C, cpu.cpu6D, cpu.cpu6F},
+		},
+		{"LD A, u8/r8", [8]func() byte{
+			cpu.cpu3E, cpu.cpu78, cpu.cpu79, cpu.cpu7A,
+			cpu.cpu7B, cpu.cpu7C, cpu.cpu7D, cpu.cpu7F},
+		},
 	}
 
 	cpu.reg.PC = 0x66
 
 	for _, test := range tests {
 		t.Run("LD register, u8", func(t *testing.T) {
-			for _, register := range registers {
+			for index, register := range registers {
 				*register.reg = test.dest
 
 				Write(cpu.reg.PC+1, test.src)
 
-				cycles := register.instr[0]()
+				cycles := commands[index].instr[0]()
 
 				if *register.reg != test.src {
 					t.Errorf("Current %s: %x, expected: %x", register.name, register.reg, test.src)
 				}
 				if cycles != 2 {
 					t.Errorf("Got %d cycles, expected 2", cycles)
+				}
+			}
+		})
+
+		t.Run("LD register, register", func(t *testing.T) {
+			for dest_idx, destination := range registers {
+				for src_idx, source := range registers {
+					*destination.reg = test.dest
+					*source.reg = test.src
+
+					cycles := commands[dest_idx].instr[src_idx+1]()
+
+					if *destination.reg != test.src {
+						t.Errorf("Current %s: %x, expected: %x", destination.name, destination.reg, test.src)
+					}
+					if cycles != 1 {
+						t.Errorf("Got %d cycles, expected 1", cycles)
+					}
+
 				}
 			}
 		})
