@@ -318,7 +318,7 @@ func TestLDToAdr(t *testing.T) { // {{{
 			for src_idx, source_register := range registers8 {
 				command := commands[src_idx+1]
 				t.Run(command.name, func(t *testing.T) {
-					registers8[src_idx] = test.src
+					*source_register.reg = test.src
 					expected_cycles := command.cycles
 
 					actual_cycles := command.instr()
