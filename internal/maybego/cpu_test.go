@@ -314,6 +314,24 @@ func TestLDToAdr(t *testing.T) { // {{{
 					t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
 				}
 			})
+
+			for src_idx, source_register := range registers8 {
+				command := commands[src_idx+1]
+				t.Run(command.name, func(t *testing.T) {
+					registers8[src_idx] = test.src
+					expected_cycles := command.cycles
+
+					actual_cycles := command.instr()
+					actual_byte := Read(adress)
+
+					if actual_byte != test.src {
+						t.Errorf("Got %x at adress %x, expected %x", actual_byte, adress, test.src)
+					}
+					if actual_cycles != expected_cycles {
+						t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
+					}
+				})
+			}
 		}
 	})
 } // }}}
