@@ -94,8 +94,7 @@ var registers16 = []struct {
 	{"HL", &cpu.reg.H, &cpu.reg.L},
 }
 
-// {{{
-func TestLD8(t *testing.T) { // {{{}}}
+func TestLD8(t *testing.T) { // {{{
 	var tests = []struct {
 		dest byte
 		src  byte
@@ -233,7 +232,7 @@ func TestLD16(t *testing.T) { // {{{
 		})
 	}
 } // }}}
-func TestLDToAdrFromA(t *testing.T) { // {{{
+func TestLDToAdr(t *testing.T) { // {{{
 	var tests = []struct {
 		dest_hi byte
 		dest_lo byte
@@ -243,39 +242,80 @@ func TestLDToAdrFromA(t *testing.T) { // {{{
 		{0xCA, 0x55, 0xE7},
 	}
 
-	var commands = []struct {
-		name   string
-		instr  func() byte
-		cycles byte
-	}{
-		{"LD (BC), A", cpu.cpu02, 2},
-		{"LD (DE), A", cpu.cpu12, 2},
-		{"LD (HL), A", cpu.cpu22, 2},
-	}
 	cpu.reg.PC = 0x66
 
-	for index, r16 := range registers16 {
-		t.Run(commands[index].name, func(t *testing.T) {
-			for _, test := range tests {
-				adress := (uint16(test.dest_hi) << 8) + uint16(test.dest_lo)
-				Write(adress, 0x00)
+	t.Run("To R16 from A", func(t *testing.T) { // {{{
+		var commands = []struct {
+			name   string
+			instr  func() byte
+			cycles byte
+		}{
+			{"LD (BC), A", cpu.cpu02, 2},
+			{"LD (DE), A", cpu.cpu12, 2},
+		}
+		for index, command := range commands {
+			t.Run(commands[index].name, func(t *testing.T) {
+				r16 := registers16[index]
+				for _, test := range tests {
+					adress := (uint16(test.dest_hi) << 8) + uint16(test.dest_lo)
+					Write(adress, 0x00)
 
-				*r16.hi = test.dest_hi
-				*r16.lo = test.dest_lo
-				cpu.reg.A = test.src
+					*r16.hi = test.dest_hi
+					*r16.lo = test.dest_lo
+					cpu.reg.A = test.src
 
-				cycles := commands[index].instr()
+					cycles := commands[index].instr()
+					actual_byte := Read(adress)
+
+					if actual_byte != test.src {
+						t.Errorf("Current byte at %x: %x, expected: %x", adress, actual_byte, test.src)
+					}
+					if cycles != command.cycles {
+						t.Errorf("Got %d cycles, expected %d", cycles, commands[index].cycles)
+					}
+				}
+			})
+		}
+	}) // }}}
+
+	t.Run("To (HL)", func(t *testing.T) {
+		var commands = [8]struct {
+			name   string
+			instr  func() byte
+			cycles byte
+		}{
+			{"LD (HL), u8", cpu.cpu36, 3},
+			{"LD (HL), B", cpu.cpu70, 2},
+			{"LD (HL), C", cpu.cpu71, 2},
+			{"LD (HL), D", cpu.cpu72, 2},
+			{"LD (HL), E", cpu.cpu73, 2},
+			{"LD (HL), H", cpu.cpu74, 2},
+			{"LD (HL), L", cpu.cpu75, 2},
+			{"LD (HL), A", cpu.cpu77, 2},
+		}
+
+		for _, test := range tests {
+
+			cpu.reg.H = test.dest_hi
+			cpu.reg.L = test.dest_lo
+			adress := (uint16(test.dest_hi) << 8) + uint16(test.dest_lo)
+
+			t.Run(commands[0].name, func(t *testing.T) {
+				Write(cpu.reg.PC+1, test.src)
+				expected_cycles := commands[0].cycles
+
+				actual_cycles := commands[0].instr()
 				actual_byte := Read(adress)
 
 				if actual_byte != test.src {
-					t.Errorf("Current byte at %x: %x, expected: %x", adress, actual_byte, test.src)
+					t.Errorf("Got %x at adress %x, expected %x", actual_byte, adress, test.src)
 				}
-				if cycles != commands[index].cycles {
-					t.Errorf("Got %d cycles, expected %d", cycles, commands[index].cycles)
+				if actual_cycles != expected_cycles {
+					t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
 				}
-			}
-		})
-	}
+			})
+		}
+	})
 } // }}}
 
 func TestCpu00(t *testing.T) {
