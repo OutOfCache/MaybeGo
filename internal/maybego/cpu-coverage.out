@@ -28,7 +28,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:329.51,331.18 2 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:331.18,333.3 1 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:336.45,338.11 2 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:338.11,342.3 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:338.11,342.3 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:345.51,347.21 2 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:347.21,349.3 1 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:352.44,353.11 1 1
@@ -79,7 +79,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:617.30,622.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:624.30,629.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:631.30,635.2 3 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:637.30,641.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:637.30,641.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:643.30,648.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:650.30,657.2 4 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:659.30,665.2 3 1
@@ -87,7 +87,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:675.30,679.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:681.30,686.2 3 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:688.30,693.2 3 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:695.30,700.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:695.30,700.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:702.30,707.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:709.30,715.2 4 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:717.30,720.2 2 0
@@ -95,7 +95,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:730.30,735.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:737.30,742.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:744.30,748.2 3 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:750.30,755.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:750.30,755.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:757.30,761.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:763.30,769.2 4 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:771.30,773.2 1 1
@@ -103,7 +103,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:783.30,788.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:790.30,795.2 3 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:797.30,801.2 3 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:803.30,807.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:803.30,807.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:809.30,814.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:816.30,821.2 4 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:823.30,825.2 1 1
@@ -111,7 +111,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:834.30,839.2 4 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:841.30,845.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:847.30,851.2 3 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:853.30,857.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:853.30,857.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:859.30,863.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:865.30,867.16 1 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:884.2,887.10 4 1
@@ -128,7 +128,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:900.30,906.2 4 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:908.30,913.2 3 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:915.30,920.2 3 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:922.30,927.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:922.30,927.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:929.30,933.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:935.30,941.2 5 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:943.30,945.2 1 1
@@ -144,7 +144,7 @@ mode: set
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1013.30,1018.2 4 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1020.30,1024.2 3 0
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1026.30,1030.2 3 1
-/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1032.30,1036.2 3 0
+/home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1032.30,1036.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1038.30,1042.2 3 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1044.30,1051.2 5 1
 /home/jessica/dev/prs/git/MaybeGo/internal/maybego/cpu.go:1053.30,1057.2 3 1

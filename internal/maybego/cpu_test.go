@@ -94,6 +94,59 @@ var registers16 = []struct {
 	{"HL", &cpu.reg.H, &cpu.reg.L},
 }
 
+var flags = []struct {
+	name string
+	flag *bool
+}{
+	{"Z", &cpu.flg.Z},
+	{"N", &cpu.flg.N},
+	{"H", &cpu.flg.H},
+	{"C", &cpu.flg.C},
+}
+
+func TestCpu00ChangesOnlyPC(t *testing.T) { // {{{
+	var tests = []struct {
+		inputPC    uint16
+		expectedPC uint16
+		flags      [4]bool
+		registers  [7]byte
+	}{
+		{0x0000, 0x0001, [4]bool{false, true, false, true}, [7]byte{0x01, 0x23, 0x34, 0x56, 0x78, 0x89, 0xAB}},
+		{0x002F, 0x0030, [4]bool{true, false, true, false}, [7]byte{0xFF, 0x38, 0xD8, 0xF9, 0xF0, 0x0B, 0xA7}},
+		{0xFFFF, 0x0000, [4]bool{false, true, true, false}, [7]byte{0x01, 0x23, 0x34, 0x56, 0x78, 0x89, 0xAB}},
+	}
+
+	for _, test := range tests {
+		for index, register := range registers8 {
+			*register.reg = test.registers[index]
+		}
+
+		for index, flag := range flags {
+			*flag.flag = test.flags[index]
+		}
+
+		cpu.reg.PC = test.inputPC
+
+		cpu.cpu00()
+
+		if cpu.reg.PC != test.expectedPC {
+			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
+		}
+
+		for index, register := range registers8 {
+			if *register.reg != test.registers[index] {
+				t.Errorf("Current %s: %x; expected: %x", register.name, *register.reg, test.registers[index])
+			}
+		}
+
+		for index, flag := range flags {
+			if *flag.flag != test.flags[index] {
+				t.Errorf("Current %s: %t; expected: %t", flag.name, *flag.flag, test.flags[index])
+			}
+		}
+	}
+} // }}}
+
 func TestLD8(t *testing.T) { // {{{
 	var tests = []struct {
 		dest byte
@@ -638,79 +691,81 @@ func TestInc8(t *testing.T) { // {{{
 		})
 	}
 } // }}}
-
-func TestCpu00(t *testing.T) {
+func TestDec8(t *testing.T) { // {{{
 	var tests = []struct {
-		pc       uint16
-		expected uint16
+		register       byte
+		flags          [4]bool
+		expected_reg   byte
+		expected_flags [4]bool
 	}{
-		{0x0, 0x1},
-		{0x2F, 0x30},
+		{0x00, [4]bool{true, true, true, false}, 0xFF, [4]bool{false, true, true, false}},
+		{0x01, [4]bool{false, true, true, false}, 0x00, [4]bool{true, true, false, false}},
+		{0x0F, [4]bool{true, false, true, false}, 0x0E, [4]bool{false, true, false, false}},
+		{0x10, [4]bool{false, true, false, true}, 0x0F, [4]bool{false, true, true, true}},
+		{0xF0, [4]bool{false, true, false, false}, 0xEF, [4]bool{false, true, true, false}},
 	}
 
-	for _, test := range tests {
-		cpu.reg.PC = test.pc
-		cpu.cpu00()
-		if cpu.reg.PC != test.expected {
-			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expected)
-		}
-	}
-}
-
-func TestCpu01(t *testing.T) {
-	var tests = []struct {
-		pc         uint16
-		expectedB  byte
-		expectedC  byte
-		expectedPC uint16
+	var commands = []struct {
+		name   string
+		instr  func() byte
+		cycles byte
 	}{
-		{0x9432, 0x13, 0x7F, 0x9435},
-		{0x2F3C, 0x30, 0x49, 0x2F3F},
+		{"DEC B", cpu.cpu05, 1},
+		{"DEC C", cpu.cpu0D, 1},
+		{"DEC D", cpu.cpu15, 1},
+		{"DEC E", cpu.cpu1D, 1},
+		{"DEC H", cpu.cpu25, 1},
+		{"DEC L", cpu.cpu2D, 1},
+		{"DEC A", cpu.cpu3D, 1},
 	}
 
-	for _, test := range tests {
-		cpu.reg.PC = test.pc
-		Write(cpu.reg.PC+1, test.expectedC)
-		Write(cpu.reg.PC+2, test.expectedB)
-		cpu.cpu01()
-		if cpu.reg.PC != test.expectedPC {
-			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
-		}
-		if cpu.reg.B != test.expectedB {
-			t.Errorf("Current B: %x; expected: %x", cpu.reg.B, test.expectedB)
-		}
-		if cpu.reg.C != test.expectedC {
-			t.Errorf("Current C: %x; expected: %x", cpu.reg.C, test.expectedC)
-		}
-	}
-}
-func TestCpu02(t *testing.T) {
-	var tests = []struct {
-		pc         uint16
-		B          byte
-		C          byte
-		address    uint16
-		expectedPC uint16
-		A          byte
-	}{
-		{0x9432, 0x13, 0x7F, 0x137F, 0x9433, 0x35},
-		{0x2F3C, 0x30, 0x49, 0x3049, 0x2F3D, 0xF3},
-	}
+	for cmd_idx, command := range commands {
+		r8 := registers8[cmd_idx]
+		t.Run(command.name, func(t *testing.T) {
+			for _, test := range tests {
+				*r8.reg = test.register
+				cpu.flg.Z = test.flags[0]
+				cpu.flg.N = test.flags[1]
+				cpu.flg.H = test.flags[2]
+				cpu.flg.C = test.flags[3]
 
-	for _, test := range tests {
-		cpu.reg.PC = test.pc
-		cpu.reg.A = test.A
-		cpu.reg.B = test.B
-		cpu.reg.C = test.C
-		cpu.cpu02()
-		if cpu.reg.PC != test.expectedPC {
-			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
-		}
-		if Read(test.address) != test.A {
-			t.Errorf("Current [BC]: %x; expected: %x", Read(test.address), test.A)
-		}
+				expected_pc := cpu.reg.PC + 1
+				expected_cycles := byte(1)
+
+				actual_cycles := command.instr()
+				actual_pc := cpu.reg.PC
+				actual_reg := *r8.reg
+
+				actual_Z := cpu.flg.Z
+				actual_N := cpu.flg.N
+				actual_H := cpu.flg.H
+				actual_C := cpu.flg.C
+
+				if actual_reg != test.expected_reg {
+					t.Errorf("Current %s: %x, expected: %x", r8.name, r8.reg, test.expected_reg)
+				}
+				if cpu.flg.Z != test.expected_flags[0] {
+					t.Errorf("Current %s: %t, expected: %t", "Z", actual_Z, test.expected_flags[0])
+				}
+				if cpu.flg.N != test.expected_flags[1] {
+					t.Errorf("Current %s: %t, expected: %t", "N", actual_N, test.expected_flags[1])
+				}
+				if cpu.flg.H != test.expected_flags[2] {
+					t.Errorf("Current %s: %t, expected: %t", "H", actual_H, test.expected_flags[2])
+				}
+				if cpu.flg.C != test.expected_flags[3] {
+					t.Errorf("Current %s: %t, expected: %t", "C", actual_C, test.expected_flags[3])
+				}
+				if actual_cycles != expected_cycles {
+					t.Errorf("Got %d cycles, expected %d", actual_cycles, expected_cycles)
+				}
+				if actual_pc != expected_pc {
+					t.Errorf("Current PC: %x, expected %x", actual_pc, expected_pc)
+				}
+			}
+		})
 	}
-}
+} // }}}
 
 func TestCpu07(t *testing.T) {
 	var tests = []struct {
@@ -887,60 +942,60 @@ func TestCpu0F(t *testing.T) {
 
 }
 
-func TestCpu11(t *testing.T) {
-	var tests = []struct {
-		pc         uint16
-		expectedD  byte
-		expectedE  byte
-		expectedPC uint16
-	}{
-		{0x9432, 0x13, 0x7F, 0x9435},
-		{0x2F3C, 0x30, 0x49, 0x2F3F},
-	}
-
-	for _, test := range tests {
-		cpu.reg.PC = test.pc
-		Write(cpu.reg.PC+1, test.expectedE)
-		Write(cpu.reg.PC+2, test.expectedD)
-		cpu.cpu11()
-		if cpu.reg.PC != test.expectedPC {
-			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
-		}
-		if cpu.reg.D != test.expectedD {
-			t.Errorf("Current B: %x; expected: %x", cpu.reg.D, test.expectedD)
-		}
-		if cpu.reg.E != test.expectedE {
-			t.Errorf("Current C: %x; expected: %x", cpu.reg.E, test.expectedE)
-		}
-	}
-}
-func TestCpu12(t *testing.T) {
-	var tests = []struct {
-		pc         uint16
-		D          byte
-		E          byte
-		address    uint16
-		expectedPC uint16
-		A          byte
-	}{
-		{0x9432, 0x13, 0x7F, 0x137F, 0x9433, 0x35},
-		{0x2F3C, 0x30, 0x49, 0x3049, 0x2F3D, 0xF3},
-	}
-
-	for _, test := range tests {
-		cpu.reg.PC = test.pc
-		cpu.reg.A = test.A
-		cpu.reg.D = test.D
-		cpu.reg.E = test.E
-		cpu.cpu12()
-		if cpu.reg.PC != test.expectedPC {
-			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
-		}
-		if Read(test.address) != test.A {
-			t.Errorf("Current [BC]: %x; expected: %x", Read(test.address), test.A)
-		}
-	}
-}
+//func TestCpu11(t *testing.T) {
+//	var tests = []struct {
+//		pc         uint16
+//		expectedD  byte
+//		expectedE  byte
+//		expectedPC uint16
+//	}{
+//		{0x9432, 0x13, 0x7F, 0x9435},
+//		{0x2F3C, 0x30, 0x49, 0x2F3F},
+//	}
+//
+//	for _, test := range tests {
+//		cpu.reg.PC = test.pc
+//		Write(cpu.reg.PC+1, test.expectedE)
+//		Write(cpu.reg.PC+2, test.expectedD)
+//		cpu.cpu11()
+//		if cpu.reg.PC != test.expectedPC {
+//			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
+//		}
+//		if cpu.reg.D != test.expectedD {
+//			t.Errorf("Current B: %x; expected: %x", cpu.reg.D, test.expectedD)
+//		}
+//		if cpu.reg.E != test.expectedE {
+//			t.Errorf("Current C: %x; expected: %x", cpu.reg.E, test.expectedE)
+//		}
+//	}
+//}
+//func TestCpu12(t *testing.T) {
+//	var tests = []struct {
+//		pc         uint16
+//		D          byte
+//		E          byte
+//		address    uint16
+//		expectedPC uint16
+//		A          byte
+//	}{
+//		{0x9432, 0x13, 0x7F, 0x137F, 0x9433, 0x35},
+//		{0x2F3C, 0x30, 0x49, 0x3049, 0x2F3D, 0xF3},
+//	}
+//
+//	for _, test := range tests {
+//		cpu.reg.PC = test.pc
+//		cpu.reg.A = test.A
+//		cpu.reg.D = test.D
+//		cpu.reg.E = test.E
+//		cpu.cpu12()
+//		if cpu.reg.PC != test.expectedPC {
+//			t.Errorf("Current PC %x; expected: %x", cpu.reg.PC, test.expectedPC)
+//		}
+//		if Read(test.address) != test.A {
+//			t.Errorf("Current [BC]: %x; expected: %x", Read(test.address), test.A)
+//		}
+//	}
+//}
 
 func TestCpu17(t *testing.T) {
 	var tests = []struct {
