@@ -1,23 +1,25 @@
 package main
 
 import (
-	// "../../internal/maybego"
+	"flag"
 	"fmt"
 	"github.com/outofcache/maybego/internal/maybego"
 	"io/ioutil"
 	"os"
-	// "time"
+	"strings"
 )
 
 var cpu *maybego.CPU
 
+// main.go --debug --log-file=logs.txt --log=all
+
 func loadROM() {
-	if len(os.Args) != 2 {
-		fmt.Println("Usage: go run main.go path/to/rom")
+	if len(flag.Args()) != 1 {
+		fmt.Println("Usage: go run main.go [-debug] [-logfile file] path/to/rom")
 		os.Exit(1)
 	}
 
-	var path string = os.Args[1]
+	var path string = flag.Args()[0]
 
 	rom, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -32,7 +34,30 @@ func loadROM() {
 }
 
 func main() {
-	cpu = maybego.NewCPU()
+	debugFlag := flag.Bool("debug", false, "enables logging")
+	logFile := flag.String("logfile", "", "log output file")
+	logContents := flag.String("logcontent", "", "what to log. Can be a combination of the following\npc\t\tlog pc and opcode information\nreg\t\tlog registers\nflags\tlog flags\nall\t\tlog everything")
+
+	flag.Parse()
+	logContentsSplit := strings.Split(*logContents, ",")
+
+	logger := maybego.NewLogger(*debugFlag, *logFile)
+
+	for _, c := range logContentsSplit {
+		if c == "reg" || c == "all" {
+			logger.SetRegFlag(true)
+		}
+
+		if c == "pc" || c == "all" {
+			logger.SetPCFlag(true)
+		}
+
+		if c == "flags" || c == "all" {
+			logger.SetFlagsFlag(true)
+		}
+	}
+
+	cpu = maybego.NewCPU(logger)
 	loadROM()
 
 	for {

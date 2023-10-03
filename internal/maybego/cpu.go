@@ -1,12 +1,5 @@
 package maybego
 
-import (
-	//	"fmt"
-	"log"
-	"os"
-	//	"time"
-)
-
 const (
 	// Timer
 	DIV  uint16 = 0xFF04 // Divider Register
@@ -45,6 +38,7 @@ type Clocks struct {
 	frequency      uint
 	div_clocksum   byte
 	timer_clocksum uint
+	cycles         uint
 }
 
 type CPU struct {
@@ -56,10 +50,13 @@ type CPU struct {
 	opcodes       [256]func() byte
 	cbOps         [256]func() byte
 	interrupts    [5]byte
+
+	// logging
+	logger *Logger
 }
 
 // dummy "constructor"
-func NewCPU() *CPU {
+func NewCPU(logger *Logger) *CPU {
 	cpu := &CPU{reg: new(Registers), flg: new(Flags), clk: new(Clocks)}
 	cpu.reg.PC = 0x100  // to bypass boot rom for now
 	cpu.reg.SP = 0xFFFE // bypassing boot rom
@@ -210,12 +207,7 @@ func NewCPU() *CPU {
 
 	cpu.interrupts = [5]byte{0x40, 0x48, 0x50, 0x58, 0x60}
 
-	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.SetOutput(file)
+	cpu.logger = logger
 
 	return cpu
 }
@@ -234,10 +226,9 @@ func (cpu *CPU) Fetch() {
 	// 	return
 	// }
 	cpu.currentOpcode = Read(cpu.reg.PC)
-	log.Printf("PC: %x, Opcode: %x, PC+1:%x, PC+2: %x\tZ: %t, N: %t, H: %t, C: %t\nA: %x, B: %x, C: %x, D: %x, E: %x, H: %x, L: %x",
-		cpu.reg.PC, cpu.currentOpcode, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2), cpu.flg.Z, cpu.flg.N, cpu.flg.H, cpu.flg.C,
-		cpu.reg.A, cpu.reg.B, cpu.reg.C, cpu.reg.D, cpu.reg.E, cpu.reg.H, cpu.reg.L)
-
+	cpu.logger.LogPC(cpu.reg.PC, cpu.clk.cycles, cpu.currentOpcode, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
+	cpu.logger.LogRegisters(cpu.reg.A, cpu.reg.B, cpu.reg.C, cpu.reg.D, cpu.reg.E, cpu.reg.H, cpu.reg.L)
+	cpu.logger.LogFlags(cpu.flg.Z, cpu.flg.C, cpu.flg.N, cpu.flg.H, cpu.flg.HALT, cpu.flg.IME)
 }
 
 func (cpu *CPU) Decode() byte {
@@ -311,9 +302,6 @@ func (cpu *CPU) ldToAddress16(adrLo byte, adrHi byte, valLo byte, valHi byte) {
 // LD r8, [r16]
 func (cpu *CPU) ldFromAddress(dest *byte, adrLo byte, adrHi byte) {
 	address := uint16(adrHi)<<8 + uint16(adrLo)
-	if address == IF {
-		log.Printf("ld from IF: %x", Read(address))
-	}
 	*dest = Read(address)
 }
 
@@ -497,7 +485,6 @@ func (cpu *CPU) srl8(reg *byte) {
 }
 
 func (cpu *CPU) jr(flag bool) byte {
-	log.Printf("JR")
 	if flag {
 		cpu.reg.PC += uint16(2 + int8(Read(cpu.reg.PC+1)))
 		return 3
@@ -508,7 +495,6 @@ func (cpu *CPU) jr(flag bool) byte {
 
 func (cpu *CPU) jp(flag bool) byte {
 	if flag {
-		log.Printf("JPed")
 		cpu.reg.PC = uint16(Read(cpu.reg.PC+1)) + (uint16(Read(cpu.reg.PC+2)) << 8)
 		return 4
 	}
@@ -517,7 +503,6 @@ func (cpu *CPU) jp(flag bool) byte {
 }
 
 func (cpu *CPU) call(flag bool) byte {
-	log.Printf("CALL")
 	if flag {
 		lo := byte(cpu.reg.PC + 3)
 		hi := byte((cpu.reg.PC + 3) >> 8)
@@ -530,7 +515,6 @@ func (cpu *CPU) call(flag bool) byte {
 }
 
 func (cpu *CPU) ret(flag bool) byte {
-	log.Printf("RET")
 	// return if flag is true, otherwise continue to next instruction
 	if flag {
 		cpu.pop16reg(&cpu.reg.PC)
@@ -541,7 +525,6 @@ func (cpu *CPU) ret(flag bool) byte {
 }
 
 func (cpu *CPU) rst(vec byte, advance_PC bool) byte {
-	log.Printf("RST")
 	saved_pc := cpu.reg.PC + uint16(FlagToBit(advance_PC))
 	lo := byte(saved_pc)
 	hi := byte((saved_pc) >> 8)
@@ -1873,7 +1856,6 @@ func (cpu *CPU) cpuC9() byte { // RET
 }
 
 func (cpu *CPU) cpuCA() byte { // JP Z,u16
-	log.Printf("JP Z")
 	return cpu.jp(cpu.flg.Z)
 }
 
@@ -2134,7 +2116,6 @@ func (cpu *CPU) cpuFA() byte { // LD A,(u16)
 
 func (cpu *CPU) cpuFB() byte { // EI
 	// cpu.flg.IME = true
-	log.Printf("EI")
 	cpu.pendingIME = true
 	cpu.reg.PC++
 	return 1
@@ -3795,7 +3776,6 @@ func (cpu *CPU) cbFF() byte { // SET 7, A
 func (cpu *CPU) interrupt() byte { // handle interrupts
 	// check if interrupt occurred
 	// loop through every bit in the interrupt flag register until we find one
-	log.Printf("In interrupt handler")
 	cycles := byte(20 + FlagToBit(cpu.flg.HALT)*4)
 	for i := byte(0); i < 5; i++ {
 		check_bit := byte(0x01 << i)
@@ -3843,8 +3823,6 @@ func (cpu *CPU) Handle_timer(cycle byte) {
 
 	tima_overflow := cpu.increase_register(TIMA, timer_increment)
 
-	log.Printf("timer_clocksum: %d, cycles: %d, total_ticks: %d, frequency: %d, timer_increment: %d",
-		cpu.clk.timer_clocksum, cycle, total_ticks, timer_frequency, timer_increment)
 	for tima_overflow {
 		cpu.set_interrupt_request(0b100)
 		reset_value := Read(TAC) // + byte(tima_overflow)
@@ -3880,16 +3858,12 @@ func (cpu *CPU) increase_register(register uint16, increment byte) bool {
 	limited_new_value := byte(new_value % 256)
 	overflow := new_value > 0xFF
 
-	if register == 0xFF05 {
-		log.Printf("increasing timer from %x to: %x, overflow: %t", previous_value, new_value, overflow)
-	}
 	Write(register, limited_new_value) // change after memory map is properly implemented
 
 	return overflow
 }
 
 func (cpu *CPU) set_interrupt_request(request_bit byte) {
-	log.Printf("setting timer interrupt request")
 	previous_flags := Read(0xFF0F)
 	new_flags := previous_flags | request_bit
 
