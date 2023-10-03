@@ -3864,8 +3864,8 @@ func (cpu *CPU) increase_register(register uint16, increment byte) bool {
 }
 
 func (cpu *CPU) set_interrupt_request(request_bit byte) {
-	previous_flags := Read(0xFF0F)
+	previous_flags := Read(IF)
 	new_flags := previous_flags | request_bit
 
-	Write(0xFF0F, new_flags)
+	Write(IF, new_flags)
 }
