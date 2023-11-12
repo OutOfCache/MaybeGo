@@ -10,6 +10,10 @@ type PPU struct {
 	logger *Logger
 }
 
+var framebufferRGBA [160 * 144]uint32
+
+const defaultColor = uint32(0xFF8080FF)
+
 var winWidth, winHeight int32 = 160, 144
 var err error
 
@@ -44,15 +48,29 @@ func (ppu *PPU) StartSDL() {
 		fmt.Printf("Could not create Renderer. Error: %s\n", err)
 		os.Exit(4)
 	}
+
+	gTextureA, err = gRenderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_TARGET, 160, 144)
+	if err != nil {
+		fmt.Printf("Could not create Texture. Error: %s\n", err)
+		os.Exit(4)
+	}
 }
 
 func (ppu *PPU) Render() {
 	gRenderer.SetDrawColor(0xFF, 0xFF, 0xFF, 0xFF)
-	gRenderer.Clear()
+
+	for row := 0; row < 144; row += 1 {
+		for col := 0; col < 160; col += 1 {
+			framebufferRGBA[row*160+col] = defaultColor
+		}
+	}
+	gTextureA.UpdateRGBA(nil, framebufferRGBA[:], 160)
+	gRenderer.Copy(gTextureA, nil, nil)
 	gRenderer.Present()
 }
 
 func (ppu *PPU) EndSDL() {
+	gTextureA.Destroy()
 	gRenderer.Destroy()
 	gWindow.Destroy()
 
