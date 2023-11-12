@@ -12,6 +12,7 @@ import (
 )
 
 var cpu *maybego.CPU
+var ppu *maybego.PPU
 
 // main.go --debug --log-file=logs.txt --log=all
 
@@ -60,6 +61,8 @@ func main() {
 	}
 
 	cpu = maybego.NewCPU(logger)
+	ppu = maybego.NewPPU(logger)
+	ppu.StartSDL()
 	loadROM()
 
 	sigs := make(chan os.Signal, 1)
@@ -85,4 +88,5 @@ func main() {
 			maybego.Write(0xff02, 0)
 		}
 	}
+	ppu.EndSDL()
 }
