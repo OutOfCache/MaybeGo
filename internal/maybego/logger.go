@@ -28,9 +28,9 @@ type Logger struct {
 
 func NewLogger(debug bool, filename string) *Logger {
 	logger := &Logger{flags: new(logFlags), debug: debug}
-	log.Printf("filename: %s", filename)
 	log.SetFlags(0)
 	if filename != "" {
+		log.Printf("filename: %s", filename)
 		file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 		if err != nil {
 			log.Fatal(err)
