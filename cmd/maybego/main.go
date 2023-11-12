@@ -6,7 +6,9 @@ import (
 	"github.com/outofcache/maybego/internal/maybego"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
 var cpu *maybego.CPU
@@ -60,7 +62,17 @@ func main() {
 	cpu = maybego.NewCPU(logger)
 	loadROM()
 
-	for {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	quit := false
+
+	go func() {
+		<-sigs
+		quit = true
+	}()
+
+	// FIXME: proper exit handling through SDL
+	for !quit {
 		cpu.Fetch()
 		cycles := cpu.Decode()
 
