@@ -87,6 +87,8 @@ func main() {
 			fmt.Printf("%c", c)
 			maybego.Write(0xff02, 0)
 		}
+
+		ppu.Render()
 	}
 	ppu.EndSDL()
 }
