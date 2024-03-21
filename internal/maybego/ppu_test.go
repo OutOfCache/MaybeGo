@@ -154,3 +154,49 @@ func TestMode2STATInterrupt(t *testing.T) {
 		}
 	}
 }
+
+func TestMode0STATInterrupt(t *testing.T) {
+	var tests = []struct {
+		dots         uint16
+		cycles       byte
+		stat         byte
+		expectedSTAT byte
+		expectedIF   byte
+	}{
+		// stat set, int enabled
+		{369, 0, 0x8, 0xB, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{369, 1, 0x8, 0x8, 0x2},  // mode 0, rows 0-143, ie, stat set
+		{370, 0, 0x8, 0x8, 0x2},  // mode 0, rows 0-143, ie, stat set
+		{370, 87, 0x8, 0xA, 0x0}, // mode 0, rows 0-143, ie, stat set
+		{456, 0, 0x8, 0x8, 0x2},  // mode 0, rows 0-143, ie, stat set
+		{456, 1, 0x8, 0xA, 0x0},  // mode 0, rows 0-143, ie, stat set
+		// stat not enabled
+		{369, 0, 0x3, 0x3, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{369, 1, 0x3, 0x0, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{370, 0, 0x0, 0x0, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{370, 87, 0x0, 0x2, 0x0}, // mode 0, rows 0-143, ie, stat set
+		{456, 0, 0x0, 0x0, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{456, 1, 0x0, 0x2, 0x0},  // mode 0, rows 0-143, ie, stat set
+	}
+
+	cpu.flg.IME = true
+	for _, test := range tests {
+		Write(IF, 0x0)
+		Write(STAT, test.stat)
+		ppu.dots = test.dots
+		ppu.Render(test.cycles)
+
+		actualSTAT := Read(STAT)
+		actualIF := (Read(IF) & 0x2)
+
+		if actualSTAT != test.expectedSTAT {
+			t.Errorf("Wrong STAT. Got %.2X, expected %.2X", actualSTAT, test.expectedSTAT)
+			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X", test.dots, test.cycles, test.stat)
+		}
+
+		if actualIF != test.expectedIF {
+			t.Errorf("Wrong IF. Got %.2X, expected %.2X", actualIF, test.expectedIF)
+			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X", test.dots, test.cycles, test.stat)
+		}
+	}
+}
