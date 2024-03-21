@@ -98,6 +98,9 @@ func (ppu *PPU) RenderRow() {
 	} else {
 		cur_stat := Read(STAT)
 		Write(STAT, (cur_stat&0xFC)|0x1)
+		if cur_stat&0x10 != 0 {
+			RequestInterrupt(1)
+		}
 
 		if cur_row == 144 {
 			RequestInterrupt(0)
@@ -109,7 +112,22 @@ func (ppu *PPU) RenderRow() {
 func (ppu *PPU) Render(cycles byte) {
 	gRenderer.SetDrawColor(0xFF, 0xFF, 0xFF, 0xFF)
 
+	ppu.dots = (ppu.dots + uint16(cycles)) % 457
+
 	cur_lcdc := Read(LCDC)
+	cur_stat := Read(STAT)
+
+	if ppu.dots <= 80 {
+		Write(STAT, (cur_stat&0xFE)|0x2)
+		if cur_stat&0x20 != 0 {
+			RequestInterrupt(1)
+		}
+	} else if ppu.dots <= 456 {
+		Write(STAT, (cur_stat & 0xFC))
+		if cur_stat&0x8 != 0 {
+			RequestInterrupt(1)
+		}
+	}
 
 	if cur_lcdc&0x8 == 0 {
 		ppu.tilemap = 0x9800
@@ -124,9 +142,10 @@ func (ppu *PPU) Render(cycles byte) {
 	}
 
 	RequestInterrupt(0)
-	gTextureA.UpdateRGBA(nil, framebufferRGBA[:], 160)
-	gRenderer.Copy(gTextureA, nil, nil)
-	gRenderer.Present()
+	Write(LCDC, (cur_lcdc&(0xFC))|0x1)
+	if cur_stat&0x10 != 0 {
+		RequestInterrupt(1)
+	}
 }
 
 func (ppu *PPU) EndSDL() {
