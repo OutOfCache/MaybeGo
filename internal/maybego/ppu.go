@@ -122,6 +122,7 @@ func (ppu *PPU) RenderRow() {
 func (ppu *PPU) Render(cycles byte) {
 	gRenderer.SetDrawColor(0xFF, 0xFF, 0xFF, 0xFF)
 
+	render := (ppu.dots + uint16(cycles)) > 456
 	ppu.dots = (ppu.dots + uint16(cycles)) % 457
 
 	cur_lcdc := Read(LCDC)
@@ -139,6 +140,10 @@ func (ppu *PPU) Render(cycles byte) {
 		if cur_stat&0x8 != 0 {
 			RequestInterrupt(1)
 		}
+	}
+
+	if !render {
+		return
 	}
 
 	if cur_lcdc&0x8 == 0 {
