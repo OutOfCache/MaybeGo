@@ -5,7 +5,8 @@ import (
 	"testing"
 )
 
-var cpu *CPU = NewCPU()
+var logger *Logger = NewLogger(false, "")
+var cpu *CPU = NewCPU(logger)
 
 func TestFlagsToBytes(t *testing.T) {
 	var tests = []struct {

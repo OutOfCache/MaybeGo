@@ -63,13 +63,13 @@ func (logger *Logger) LogRegisters(a byte, b byte, c byte, d byte, e byte, h byt
 		Red, a, b, c, d, e, h, l, Reset)
 }
 
-func (logger *Logger) LogPC(pc uint16, cycles uint, op byte, arg0 byte, arg1 byte) {
+func (logger *Logger) LogPC(pc uint16, cycles uint, ppu byte, op byte, arg0 byte, arg1 byte) {
 	if !logger.debug || !logger.flags.pc {
 		return
 	}
 
-	log.Printf("%sPC:%x (cy: %d) |0x%x: %x %x %x%s",
-		Green, pc, cycles, pc, op, arg0, arg1, Reset)
+	log.Printf("%sPC:%x (cy: %d) ppu:+%d |0x%x: %x %x %x%s",
+		Green, pc, cycles*4, ppu, pc, op, arg0, arg1, Reset)
 }
 
 func (logger *Logger) LogFlags(z bool, c bool, n bool, h bool, halt bool, ime bool) {
