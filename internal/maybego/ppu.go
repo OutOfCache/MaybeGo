@@ -95,6 +95,13 @@ func (ppu *PPU) RenderRow() {
 	cur_row := Read(LY)
 	if cur_row < 144 {
 		ppu.RenderBG(cur_row)
+	} else {
+		cur_stat := Read(STAT)
+		Write(STAT, (cur_stat&0xFC)|0x1)
+
+		if cur_row == 144 {
+			RequestInterrupt(0)
+		}
 	}
 	Write(LY, (cur_row+1)%153)
 }
@@ -115,6 +122,8 @@ func (ppu *PPU) Render(cycles byte) {
 	} else {
 		ppu.tiledata = 0x8000
 	}
+
+	RequestInterrupt(0)
 	gTextureA.UpdateRGBA(nil, framebufferRGBA[:], 160)
 	gRenderer.Copy(gTextureA, nil, nil)
 	gRenderer.Present()
