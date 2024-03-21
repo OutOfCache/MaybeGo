@@ -71,6 +71,28 @@ func (ppu *PPU) StartSDL() {
 
 func (ppu *PPU) RenderBG(row byte) {
 	y := int(row)
+	// FIXME: tileID only changes every 8 pixels
+	// for tileID := 0; tileID < 8; tileID += 1 {
+	// 	var tileStart uint16
+	// 	if ppu.tiledata == 0x8800 {
+	// 		tileStart = uint16(0x800 + uint16(int8(tileID*0x10)))
+	// 	} else {
+	// 		tileStart = uint16(tileID * 0x10)
+	// 	}
+	// 	address := ppu.tiledata + tileStart
+	// 	// fmt.Printf("TileID: %d @ %x\n\n", tileID, address)
+	// 	for y := uint16(0); y < 8; y += 1 {
+
+	// 		data1 := int64(Read(address + y*2))
+	// 		if data1 != 0 {
+	// 			fmt.Printf("data1 @ address %x:\t\t%s\n", address+y*2, strconv.FormatInt(data1, 2))
+	// 		}
+	// 		data2 := int64(Read(address + 1 + y*2))
+	// 		if data2 != 0 {
+	// 			fmt.Printf("data2 @ address %x:\t\t%s\n", address+y*2+1, strconv.FormatInt(data2, 2))
+	// 		}
+	// 	}
+	// }
 	for j := 0; j < 256; j += 1 {
 		x := j
 		tileID := Read(ppu.tilemap + uint16((y/8)*32) + uint16(x/8))
@@ -87,6 +109,10 @@ func (ppu *PPU) RenderBG(row byte) {
 
 		pixelcolor := (Read(address) >> (7 - (x % 8)) & 0x1) +
 			(Read(address+1)>>(7-(x%8))&0x1)*2
+		// fmt.Printf("(%d, %d): tileID: %x, address: %x, tiledata: %x, color: %d\n", x, y, tileID, address, ppu.tiledata, pixelcolor)
+		// if pixelcolor != 0 {
+		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
+		// }
 		bgMapRGBA[y*256+x] = palette[pixelcolor]
 	}
 
