@@ -80,15 +80,16 @@ func main() {
 		cycles := cpu.Decode()
 
 		cpu.Handle_timer(cycles)
+		ppu.Render(cycles)
 
 		// blarggs test
 		if maybego.Read(0xff02) == 0x81 {
 			c := maybego.Read(0xff01)
 			fmt.Printf("%c", c)
 			maybego.Write(0xff02, 0)
+
 		}
 
-		ppu.Render()
 	}
 	ppu.EndSDL()
 }
