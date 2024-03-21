@@ -10,6 +10,7 @@ const (
 	LCDC uint16 = 0xFF40
 	STAT uint16 = 0xFF41
 	LY   uint16 = 0xFF44
+	LYC  uint16 = 0xFF45
 )
 
 type PPU struct {
@@ -93,6 +94,15 @@ func (ppu *PPU) RenderBG(row byte) {
 
 func (ppu *PPU) RenderRow() {
 	cur_row := Read(LY)
+	cur_lyc := Read(LYC)
+
+	if cur_row == cur_lyc {
+		cur_stat := Read(STAT)
+		Write(STAT, (cur_stat | 0x4))
+		if cur_stat&0x40 == 0x40 {
+			RequestInterrupt(1)
+		}
+	}
 	if cur_row < 144 {
 		ppu.RenderBG(cur_row)
 	} else {

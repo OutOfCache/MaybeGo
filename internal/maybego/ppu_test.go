@@ -35,7 +35,7 @@ func TestVBlankInterrupt(t *testing.T) {
 		expectedIF   byte
 	}{
 		// stat set, int enabled
-		{0, 0x10, 0x10, 0x0},   // mode 0, rows 0-143, ie, stat set
+		{1, 0x10, 0x10, 0x0},   // mode 0, rows 0-143, ie, stat set
 		{143, 0x10, 0x10, 0x0}, // mode 0, rows 0-143, ie, stat set
 		{144, 0x10, 0x11, 0x1}, // mode 0, row 145-153, ie
 		{145, 0x10, 0x11, 0x0}, // mode 0, row 144, ie
@@ -74,7 +74,7 @@ func TestMode1STATInterrupt(t *testing.T) {
 		expectedIF   byte
 	}{
 		// stat set, int enabled
-		{0, 0x10, 0x10, 0x0},   // mode 0, rows 0-143, ie, stat set
+		{1, 0x10, 0x10, 0x0},   // mode 0, rows 0-143, ie, stat set
 		{143, 0x10, 0x10, 0x0}, // mode 0, rows 0-143, ie, stat set
 		{144, 0x10, 0x11, 0x2}, // mode 0, row 145-153, ie
 		{145, 0x10, 0x11, 0x2}, // mode 0, row 144, ie
@@ -197,6 +197,47 @@ func TestMode0STATInterrupt(t *testing.T) {
 		if actualIF != test.expectedIF {
 			t.Errorf("Wrong IF. Got %.2X, expected %.2X", actualIF, test.expectedIF)
 			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X", test.dots, test.cycles, test.stat)
+		}
+	}
+}
+
+func TestLYCInterrupt(t *testing.T) {
+	var tests = []struct {
+		ly           byte
+		lyc          byte
+		stat         byte
+		expectedIF   byte
+		expectedSTAT byte
+	}{
+		// stat set, int enabled
+		{128, 127, 0x40, 0x0, 0x40}, // mode 0, rows 0-143, ie, stat set
+		{128, 128, 0x40, 0x2, 0x44}, // mode 0, rows 0-143, ie, stat set
+		{128, 129, 0x40, 0x0, 0x40}, // mode 0, rows 0-143, ie, stat set
+		// stat disabled
+		{128, 127, 0x00, 0x0, 0x00}, // mode 0, rows 0-143, ie, stat set
+		{128, 128, 0x00, 0x0, 0x04}, // mode 0, rows 0-143, ie, stat set
+		{128, 129, 0x00, 0x0, 0x00}, // mode 0, rows 0-143, ie, stat set
+	}
+
+	cpu.flg.IME = true
+	for _, test := range tests {
+		Write(IF, 0x0)
+		Write(LY, test.ly)
+		Write(LYC, test.lyc)
+		Write(STAT, test.stat)
+		ppu.RenderRow()
+
+		actualSTAT := Read(STAT)
+		actualIF := (Read(IF) & 0x2)
+
+		if actualSTAT != test.expectedSTAT {
+			t.Errorf("Wrong STAT. Got %.2X, expected %.2X", actualSTAT, test.expectedSTAT)
+			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X", test.ly, test.lyc, test.stat)
+		}
+
+		if actualIF != test.expectedIF {
+			t.Errorf("Wrong IF. Got %.2X, expected %.2X", actualIF, test.expectedIF)
+			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X", test.ly, test.lyc, test.stat)
 		}
 	}
 }
