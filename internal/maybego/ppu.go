@@ -163,6 +163,9 @@ func (ppu *PPU) Render(cycles byte) {
 	if cur_stat&0x10 != 0 {
 		RequestInterrupt(1)
 	}
+	gTextureA.UpdateRGBA(nil, framebufferRGBA[:], 160)
+	gRenderer.Copy(gTextureA, nil, nil)
+	gRenderer.Present()
 }
 
 func (ppu *PPU) EndSDL() {
