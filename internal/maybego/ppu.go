@@ -122,6 +122,8 @@ func (ppu *PPU) Render(cycles byte) {
 		if cur_stat&0x20 != 0 {
 			RequestInterrupt(1)
 		}
+	} else if ppu.dots <= (80 + 289) {
+		Write(STAT, (cur_stat&0xFC)|0x3)
 	} else if ppu.dots <= 456 {
 		Write(STAT, (cur_stat & 0xFC))
 		if cur_stat&0x8 != 0 {
