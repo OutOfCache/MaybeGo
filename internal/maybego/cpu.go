@@ -3775,6 +3775,11 @@ func (cpu *CPU) cbFF() byte { // SET 7, A
 	return 2
 }
 
+func RequestInterrupt(bit byte) {
+	prev := Read(IF)
+	Write(IF, prev|(1<<bit))
+}
+
 func (cpu *CPU) interrupt() byte { // handle interrupts
 	// check if interrupt occurred
 	// loop through every bit in the interrupt flag register until we find one
