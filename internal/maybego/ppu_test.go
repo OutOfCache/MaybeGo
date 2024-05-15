@@ -302,3 +302,44 @@ func TestUnsignedTileData(t *testing.T) {
 		}
 	}
 }
+
+func TestSignedTileData(t *testing.T) {
+	var tests = []struct {
+		tileNr      int
+		tileID      int
+	}{
+		{0, 1},   {31, 1},   {32, 1},   {255, 1},   {1023, 1},   // block 2 (0x9000-0x9FFF)
+		{0, 127}, {31, 127}, {32, 127}, {255, 127}, {1023, 127}, // block 2 (0x9000-0x9FFF)
+		{0, 128}, {31, 128}, {32, 128}, {255, 128}, {1023, 128}, // block 1 (0x8800-0x8FFF)
+		{0, 255}, {31, 255}, {32, 255}, {255, 255}, {1023, 255}, // block 1 (0x8800-0x8FFF)
+	}
+
+	// LCD & PPU enable	// BG data area: 0x8800-0x97FF, signed
+	ppu.tiledata = 0x8800
+
+	cpu.flg.IME = true
+	for _, test := range tests {
+		// Setup tile data for tileID 1
+		for i := 0; i < 16; i+= 1 {
+			Write(uint16(0x9000 + uint16(int8(test.tileID * 0x10)) + uint16(i)), tile[i]);
+		}
+		// Set the tested tiles to the tested tileID.
+		Write(ppu.tilemap + uint16(test.tileNr), byte(test.tileID))
+		startRow := 8 * (test.tileNr / 32);
+		for i := 0; i < 8; i++ {
+		    ppu.RenderBG(byte(startRow + i));
+		}
+
+		y := startRow;
+		x := (test.tileNr % 32) * 8;
+		for i := 0; i < 8; i++ {
+			for j := 0; j < 8; j++ {
+				actualColor := BGMapRGBA[(((y + i) * 256)) + (x + j)];
+				expectedColor := Palette[tileColors[i * 8 + j]];
+				if actualColor != expectedColor {
+					t.Errorf("Wrong color in tile %d, ID %d. Got %.6X @ (%d,%d), expected %.6X", test.tileNr, test.tileID, actualColor, x + j, y + i, expectedColor);
+				}
+			}
+		}
+	}
+}
