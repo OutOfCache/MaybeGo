@@ -105,7 +105,7 @@ func (ppu *PPU) RenderBG(row byte) {
 		} else {
 			tileY = uint16(tileID * 0x10)
 		}
-		address := ppu.tiledata + tileY + tileX
+		address := ppu.tiledata + tileY + uint16((y%8) * 2)
 
 		pixelcolor := (Read(address) >> (7 - (x % 8)) & 0x1) +
 			(Read(address+1)>>(7-(x%8))&0x1)*2

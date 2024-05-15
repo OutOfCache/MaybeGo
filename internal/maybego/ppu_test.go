@@ -241,3 +241,64 @@ func TestLYCInterrupt(t *testing.T) {
 		}
 	}
 }
+
+// tile data from https://gbdev.io/pandocs/Tile_Data.html
+var tile = []byte{
+	0x3C, 0x7E,
+	0x42, 0x42,
+	0x42, 0x42,
+	0x42, 0x42,
+	0x7E, 0x5E,
+	0x7E, 0x0A,
+	0x7C, 0x56,
+	0x38, 0x7C,
+}
+
+var tileColors = []uint32{
+	0, 2, 3, 3, 3, 3, 2, 0,
+	0, 3, 0, 0, 0, 0, 3, 0,
+	0, 3, 0, 0, 0, 0, 3, 0,
+	0, 3, 0, 0, 0, 0, 3, 0,
+	0, 3, 1, 3, 3, 3, 3, 0,
+	0, 1, 1, 1, 3, 1, 3, 0,
+	0, 3, 1, 3, 1, 3, 2, 0,
+	0, 2, 3, 3, 3, 2, 0, 0,
+}
+
+func TestUnsignedTileData(t *testing.T) {
+	var tests = []struct {
+		tileNr      int
+	}{
+		{0}, {31}, {32}, {255}, {1023},
+	}
+
+	// LCD & PPU enable	// BG data area: 8000-8FFF, unsigned
+	// TODO: test settings of LCDC and how they affect ppu.tiledata, tilemap, etc.
+	ppu.tiledata = 0x8000
+	// Setup tile data for tileID 1
+	for i := 0; i < 16; i+= 1 {
+		Write(uint16(0x8010 + i), tile[i]);
+	}
+
+	cpu.flg.IME = true
+	for _, test := range tests {
+		// Set the tested tiles to tileID 1.
+		Write(ppu.tilemap + uint16(test.tileNr), 0x1)
+		startRow := 8 * (test.tileNr / 32);
+		for i := 0; i < 8; i++ {
+		    ppu.RenderBG(byte(startRow + i));
+		}
+
+		y := startRow;
+		x := (test.tileNr % 32) * 8;
+		for i := 0; i < 8; i++ {
+			for j := 0; j < 8; j++ {
+				actualColor := BGMapRGBA[(((y + i) * 256)) + (x + j)];
+				expectedColor := Palette[tileColors[i * 8 + j]];
+				if actualColor != expectedColor {
+					t.Errorf("Wrong color in tile %d. Got %.6X @ (%d,%d), expected %.6X", test.tileNr, actualColor, x + j, y + i, expectedColor);
+				}
+			}
+		}
+	}
+}
