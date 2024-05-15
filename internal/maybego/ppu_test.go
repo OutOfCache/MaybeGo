@@ -273,7 +273,6 @@ func TestUnsignedTileData(t *testing.T) {
 	}
 
 	// LCD & PPU enable	// BG data area: 8000-8FFF, unsigned
-	// TODO: test settings of LCDC and how they affect ppu.tiledata, tilemap, etc.
 	ppu.tiledata = 0x8000
 	// Setup tile data for tileID 1
 	for i := 0; i < 16; i+= 1 {
@@ -340,6 +339,32 @@ func TestSignedTileData(t *testing.T) {
 					t.Errorf("Wrong color in tile %d, ID %d. Got %.6X @ (%d,%d), expected %.6X", test.tileNr, test.tileID, actualColor, x + j, y + i, expectedColor);
 				}
 			}
+		}
+	}
+}
+
+func TestLCDCSettings(t *testing.T) {
+	var tests = []struct {
+		lcdc    byte
+		expectedBGTiledata uint16
+		expectedBGTilemap uint16
+	}{
+	    {0x00, 0x8800, 0x9800},
+	    {0x08, 0x8800, 0x9C00},
+	    {0x10, 0x8000, 0x9800},
+	    {0x18, 0x8000, 0x9C00},
+	}
+
+	for _, test := range tests {
+		Write(LCDC, test.lcdc)
+		ppu.dots = 456
+		ppu.Render(1)
+
+		if ppu.tiledata != test.expectedBGTiledata {
+			t.Errorf("Tiledata is %.4X; expected %.4X for LCDC %.2X", ppu.tiledata, test.expectedBGTiledata, test.lcdc)
+		}
+		if ppu.tilemap != test.expectedBGTilemap {
+			t.Errorf("Tilemap is %.4X; expected %.4X for LCDC %.2X", ppu.tilemap, test.expectedBGTilemap, test.lcdc)
 		}
 	}
 }
