@@ -95,8 +95,8 @@ func (ppu *PPU) RenderBG(row byte) {
 	// }
 	for j := 0; j < 256; j += 1 {
 		x := j
-		tileID := Read(ppu.tilemap + uint16((y/8)*32) + uint16(x/8))
 		tileX := uint16(x / 8)
+		tileID := Read(ppu.tilemap + uint16((y/8)*32) + tileX)
 
 		var tileY uint16
 
