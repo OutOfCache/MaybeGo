@@ -21,11 +21,11 @@ type PPU struct {
 }
 
 var framebufferRGBA [160 * 144]uint32
-var bgMapRGBA [256 * 256]uint32
+var BGMapRGBA [256 * 256]uint32
 
 const defaultColor = uint32(0xFF8080FF)
 
-var palette = []uint32{0x000000FF, 0x080808FF, 0x808080FF, 0xFFFFFFFF}
+var Palette = []uint32{0x000000FF, 0x080808FF, 0x808080FF, 0xFFFFFFFF}
 
 var winWidth, winHeight int32 = 160, 144
 var err error
@@ -113,7 +113,7 @@ func (ppu *PPU) RenderBG(row byte) {
 		// if pixelcolor != 0 {
 		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
 		// }
-		bgMapRGBA[y*256+x] = palette[pixelcolor]
+		BGMapRGBA[y*256+x] = Palette[pixelcolor]
 	}
 
 }
