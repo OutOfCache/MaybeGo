@@ -222,9 +222,9 @@ func (cpu *CPU) Fetch() {
 		cpu.flg.IME = true
 	}
 
-	// if cpu.flg.HALT {
-	// 	return
-	// }
+	if cpu.flg.HALT {
+		return
+	}
 	cpu.currentOpcode = Read(cpu.reg.PC)
 	cpu.logger.LogPC(cpu.reg.PC, cpu.clk.cycles, byte(Read(0xFF41)&0x3), cpu.currentOpcode, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
 	cpu.logger.LogRegisters(cpu.reg.A, cpu.reg.B, cpu.reg.C, cpu.reg.D, cpu.reg.E, cpu.reg.H, cpu.reg.L)
