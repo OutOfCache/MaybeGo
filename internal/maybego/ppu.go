@@ -44,7 +44,7 @@ func NewPPU(logger *Logger) *PPU {
 }
 
 func (ppu *PPU) StartSDL() {
-	if err = sdl.Init(sdl.INIT_VIDEO); err != nil {
+	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		fmt.Printf("SDL could not initialize! Error: %s\n", err)
 		os.Exit(4)
 	}
