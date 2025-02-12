@@ -115,22 +115,22 @@ func TestMode2STATInterrupt(t *testing.T) {
 	}{
 		// stat set, int enabled
 		{0, 1, 0x20, 0x22, 0x2},   // mode 0, rows 0-143, ie, stat set
-		{0, 80, 0x20, 0x22, 0x2},  // mode 0, rows 0-143, ie, stat set
-		{0, 81, 0x20, 0x23, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{0, 20, 0x20, 0x22, 0x2},  // mode 0, rows 0-143, ie, stat set
+		{0, 21, 0x20, 0x23, 0x0},  // mode 0, rows 0-143, ie, stat set
 		{80, 0, 0x20, 0x22, 0x2},  // mode 0, rows 0-143, ie, stat set
 		{80, 1, 0x20, 0x23, 0x0},  // mode 0, rows 0-143, ie, stat set
 		{128, 0, 0x20, 0x23, 0x0}, // mode 0, rows 0-143, ie, stat set
-		{456, 0, 0x20, 0x20, 0x0}, // mode 0, rows 0-143, ie, stat set
-		{456, 1, 0x20, 0x22, 0x2}, // mode 0, rows 0-143, ie, stat set
+		{455, 0, 0x20, 0x20, 0x0}, // mode 0, rows 0-143, ie, stat set
+		{455, 1, 0x20, 0x22, 0x2}, // mode 0, rows 0-143, ie, stat set
 		// stat not enabled
 		{0, 1, 0x00, 0x02, 0x0},   // mode 0, rows 0-143, ie, stat set
-		{0, 80, 0x00, 0x02, 0x0},  // mode 0, rows 0-143, ie, stat set
-		{0, 81, 0x00, 0x03, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{0, 20, 0x00, 0x02, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{0, 21, 0x00, 0x03, 0x0},  // mode 0, rows 0-143, ie, stat set
 		{80, 0, 0x00, 0x02, 0x0},  // mode 0, rows 0-143, ie, stat set
 		{80, 1, 0x00, 0x03, 0x0},  // mode 0, rows 0-143, ie, stat set
 		{128, 0, 0x00, 0x03, 0x0}, // mode 0, rows 0-143, ie, stat set
-		{456, 0, 0x00, 0x00, 0x0}, // mode 0, rows 0-143, ie, stat set
-		{456, 1, 0x00, 0x02, 0x0}, // mode 0, rows 0-143, ie, stat set
+		{455, 0, 0x00, 0x00, 0x0}, // mode 0, rows 0-143, ie, stat set
+		{455, 1, 0x00, 0x02, 0x0}, // mode 0, rows 0-143, ie, stat set
 	}
 
 	cpu.flg.IME = true
@@ -168,15 +168,15 @@ func TestMode0STATInterrupt(t *testing.T) {
 		{369, 1, 0x8, 0x8, 0x2},  // mode 0, rows 0-143, ie, stat set
 		{370, 0, 0x8, 0x8, 0x2},  // mode 0, rows 0-143, ie, stat set
 		{370, 87, 0x8, 0xA, 0x0}, // mode 0, rows 0-143, ie, stat set
-		{456, 0, 0x8, 0x8, 0x2},  // mode 0, rows 0-143, ie, stat set
-		{456, 1, 0x8, 0xA, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{455, 0, 0x8, 0x8, 0x2},  // mode 0, rows 0-143, ie, stat set
+		{455, 1, 0x8, 0xA, 0x0},  // mode 0, rows 0-143, ie, stat set
 		// stat not enabled
 		{369, 0, 0x3, 0x3, 0x0},  // mode 0, rows 0-143, ie, stat set
 		{369, 1, 0x3, 0x0, 0x0},  // mode 0, rows 0-143, ie, stat set
 		{370, 0, 0x0, 0x0, 0x0},  // mode 0, rows 0-143, ie, stat set
 		{370, 87, 0x0, 0x2, 0x0}, // mode 0, rows 0-143, ie, stat set
-		{456, 0, 0x0, 0x0, 0x0},  // mode 0, rows 0-143, ie, stat set
-		{456, 1, 0x0, 0x2, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{455, 0, 0x0, 0x0, 0x0},  // mode 0, rows 0-143, ie, stat set
+		{455, 1, 0x0, 0x2, 0x0},  // mode 0, rows 0-143, ie, stat set
 	}
 
 	cpu.flg.IME = true

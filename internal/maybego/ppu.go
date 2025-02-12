@@ -149,8 +149,10 @@ func (ppu *PPU) RenderRow() {
 func (ppu *PPU) Render(cycles byte) {
 	gRenderer.SetDrawColor(0xFF, 0xFF, 0xFF, 0xFF)
 
-	render := (ppu.dots + uint16(cycles)) > 456
-	ppu.dots = (ppu.dots + uint16(cycles)) % 457
+	new_dots := uint16(cycles * 4)
+	render := (ppu.dots + new_dots) > 455
+	ppu.dots = (ppu.dots + new_dots) % 456
+	// ppu.logger.LogValue("dots", ppu.dots)
 
 	cur_lcdc := Read(LCDC)
 	cur_stat := Read(STAT)
