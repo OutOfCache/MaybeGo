@@ -226,9 +226,9 @@ func (cpu *CPU) Fetch() {
 		return
 	}
 	cpu.currentOpcode = Read(cpu.reg.PC)
-	cpu.logger.LogPC(cpu.reg.PC, cpu.clk.cycles, byte(Read(0xFF41)&0x3), cpu.currentOpcode, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
-	cpu.logger.LogRegisters(cpu.reg.A, cpu.reg.B, cpu.reg.C, cpu.reg.D, cpu.reg.E, cpu.reg.H, cpu.reg.L)
+	cpu.logger.LogRegisters(cpu.reg.A, cpu.reg.B, cpu.reg.C, cpu.reg.D, cpu.reg.E, cpu.reg.H, cpu.reg.L, cpu.reg.SP)
 	cpu.logger.LogFlags(cpu.flg.Z, cpu.flg.C, cpu.flg.N, cpu.flg.H, cpu.flg.HALT, cpu.flg.IME)
+	cpu.logger.LogPC(cpu.reg.PC, cpu.clk.cycles, byte(Read(0xFF41)&0x3), cpu.currentOpcode, Read(cpu.reg.PC+1), Read(cpu.reg.PC+2))
 }
 
 func (cpu *CPU) Decode() byte {

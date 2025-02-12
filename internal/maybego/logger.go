@@ -3,6 +3,9 @@ package maybego
 import (
 	"log"
 	"os"
+	"io"
+	"fmt"
+	"bufio"
 )
 
 var Reset = "\033[0m"
@@ -24,10 +27,11 @@ type logFlags struct {
 type Logger struct {
 	flags *logFlags
 	debug bool
+	writer io.Writer
 }
 
 func NewLogger(debug bool, filename string) *Logger {
-	logger := &Logger{flags: new(logFlags), debug: debug}
+	logger := &Logger{flags: new(logFlags), debug: debug, writer: os.Stdout}
 	log.SetFlags(0)
 	if filename != "" {
 		log.Printf("filename: %s", filename)
@@ -36,7 +40,19 @@ func NewLogger(debug bool, filename string) *Logger {
 			log.Fatal(err)
 		}
 
-		log.SetOutput(file)
+		Reset = ""
+		Red = ""
+		Green = ""
+		Yellow = ""
+		Blue = ""
+		Purple = ""
+		Cyan = ""
+		Gray = ""
+		White = ""
+
+		// log.SetOutput(file)
+		logger.writer = bufio.NewWriter(file)
+
 	}
 	return logger
 }
@@ -54,13 +70,15 @@ func (logger *Logger) SetFlagsFlag(flag bool) {
 	logger.flags.flags = flag
 }
 
-func (logger *Logger) LogRegisters(a byte, b byte, c byte, d byte, e byte, h byte, l byte) {
+func (logger *Logger) LogRegisters(a byte, b byte, c byte, d byte, e byte, h byte, l byte, sp uint16) {
 	if !logger.debug || !logger.flags.registers {
 		return
 	}
 
-	log.Printf("%sA:%X BC:%X%X DE:%x%x HL:%x%x%s",
-		Red, a, b, c, d, e, h, l, Reset)
+	// log.Printf("%sA:%02x BC:%02x%02x DE:%02x%02x HL:%02x%s",
+	// 	Red, a, b, c, d, e, h, l, Reset)
+	fmt.Fprintf(logger.writer, "%sA:%02x BC:%02X%02X DE:%02x%02x HL:%02x%02x SP:%4x%s ",
+		Red, a, b, c, d, e, h, l, sp, Reset)
 }
 
 func (logger *Logger) LogPC(pc uint16, cycles uint, ppu byte, op byte, arg0 byte, arg1 byte) {
@@ -68,7 +86,9 @@ func (logger *Logger) LogPC(pc uint16, cycles uint, ppu byte, op byte, arg0 byte
 		return
 	}
 
-	log.Printf("%sPC:%x (cy: %d) ppu:+%d |0x%x: %x %x %x%s",
+	// log.Printf("%sPC:%02x (cy: %d) ppu:+%d |0x%02x: %02x %02x %02x%s",
+	// 	Green, pc, cycles*4, ppu, pc, op, arg0, arg1, Reset)
+	fmt.Fprintf(logger.writer, "%sPC:%04x (cy: %d) ppu:+%d |0x%02x: %02x %02x %02x%s\n",
 		Green, pc, cycles*4, ppu, pc, op, arg0, arg1, Reset)
 }
 
@@ -101,6 +121,15 @@ func (logger *Logger) LogFlags(z bool, c bool, n bool, h bool, halt bool, ime bo
 		imef = "IME"
 	}
 
-	log.Printf("%sF:%s%s%s%s %s %s%s",
-		Cyan, zf, cf, nf, hf, haltf, imef, Reset)
+	fmt.Fprintf(logger.writer, "%sF:%s%s%s%s %s %s%s ",
+		Cyan, zf, nf, hf, cf, haltf, imef, Reset)
+}
+
+func (logger *Logger) LogValue(label string, val uint16) {
+	if !logger.debug {
+		return
+	}
+
+	fmt.Fprintf(logger.writer, "%s%s: %d%s\n",
+		Green, label, val, Reset)
 }
