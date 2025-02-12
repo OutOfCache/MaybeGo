@@ -26,7 +26,7 @@ var BGMapRGBA [256 * 256]uint32
 
 const defaultColor = uint32(0xFF8080FF)
 
-var Palette = []uint32{0x000000FF, 0x080808FF, 0x808080FF, 0xFFFFFFFF}
+var Palette = []uint32{0xFFFFFFFF, 0x808080FF, 0x080808FF, 0x000000FF}
 
 var winWidth, winHeight int32 = 160, 144
 var err error
