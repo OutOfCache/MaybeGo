@@ -17,6 +17,7 @@ type PPU struct {
 	tilemap  uint16
 	tiledata uint16
 	dots     uint16
+	scanline byte
 	logger   *Logger
 }
 
@@ -37,7 +38,7 @@ var gRenderer *sdl.Renderer
 var gTextureA *sdl.Texture
 
 func NewPPU(logger *Logger) *PPU {
-	ppu := &PPU{logger: logger, dots: 0}
+	ppu := &PPU{logger: logger, dots: 0, scanline: 0}
 
 	return ppu
 }
@@ -189,6 +190,13 @@ func (ppu *PPU) Render(cycles byte) {
 	if cur_stat&0x10 != 0 {
 		RequestInterrupt(1)
 	}
+
+	cur_row := Read(LY)
+	// ppu.logger.LogValue("LY", uint16(cur_row))
+	ppu.RenderBG(ppu.scanline)
+	ppu.scanline = (ppu.scanline + byte(1)) % 144
+	Write(LY, (cur_row+1)%153)
+	
 	gTextureA.UpdateRGBA(nil, framebufferRGBA[:], 160)
 	gRenderer.Copy(gTextureA, nil, nil)
 	gRenderer.Present()
