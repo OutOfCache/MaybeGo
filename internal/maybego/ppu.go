@@ -109,12 +109,33 @@ func (ppu *PPU) RenderBG(row byte) {
 		address := ppu.tiledata + tileY + uint16((y%8) * 2)
 
 		pixelcolor := (Read(address) >> (7 - (x % 8)) & 0x1) +
-			(Read(address+1)>>(7-(x%8))&0x1)*2
+		 (Read(address+1)>>(7-(x%8))&0x1)*2
+		// pixelcolor := address
+		// fmt.Printf("")
+		// pixelcolor := (Read(address) >> (7 - (x % 8)) & 0x1) +
+		// 	(Read(address+1)>>(7-(x%8))&0x1)*2
+		// if (x >= (2 * 8) && x < (3 * 8) && y < 8) {
+		// 	pixelcolor := Read(uint16(0x82d0 + y * 2))
+		// 	fmt.Printf("(%d, %d): tileID: %x, tileY: %x, tileID * 0x10: %x, address: %x, tiledata: %x, color: %x\n", x, y, tileID, tileY, uint16(tileID) * uint16(0x10), address, ppu.tiledata, pixelcolor)
+		// }
 		// fmt.Printf("(%d, %d): tileID: %x, address: %x, tiledata: %x, color: %d\n", x, y, tileID, address, ppu.tiledata, pixelcolor)
 		// if pixelcolor != 0 {
 		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
 		// }
 		BGMapRGBA[y*256+x] = Palette[pixelcolor]
+		// BGMapRGBA[y*256+x] = uint32(pixelcolor)
+		if (x /* - SCX */ < 160 && y < 144) {
+			framebufferRGBA[(int(ppu.scanline) * 160) + x] = Palette[3];
+			color := Palette[pixelcolor]
+			// if Read(address) != 0 {
+			// 	color = 0xFF0000FF
+			// }
+			framebufferRGBA[(int(ppu.scanline) * 160) + x] = color
+			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = uint32(pixelcolor) * 0xF0000
+			// if x % 8 == 0 || y % 8 == 0 {
+			// 	framebufferRGBA[(int(ppu.scanline) * 160) + x] = 0x00FF00FF
+			// }
+		}
 	}
 }
 
