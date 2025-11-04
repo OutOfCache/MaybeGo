@@ -94,17 +94,17 @@ func (ppu *PPU) RenderBG(row byte) {
 	// 		}
 	// 	}
 	// }
-	for j := 0; j < 256; j += 1 {
-		x := j
+	for j := 0; j < /*(SCX + */256; j += 1 {
+		x := j // + SCX
 		tileX := uint16(x / 8)
 		tileID := Read(ppu.tilemap + uint16((y/8)*32) + tileX)
 
 		var tileY uint16
 
 		if ppu.tiledata == 0x8800 {
-			tileY = uint16(0x800 + uint16(int8(tileID*0x10)))
+			tileY = uint16(0x800 + uint16(int8(uint16(tileID)*0x10)))
 		} else {
-			tileY = uint16(tileID * 0x10)
+			tileY = uint16(tileID) * uint16(0x10)
 		}
 		address := ppu.tiledata + tileY + uint16((y%8) * 2)
 
