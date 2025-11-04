@@ -225,7 +225,7 @@ func (ppu *PPU) Render(cycles byte) {
 	if cur_row < 144 {
 		ppu.scanline = (ppu.scanline + byte(1)) % 144
 	}
-	Write(LY, (cur_row+1)%153)
+	Write(LY, (cur_row+1)%154)
 	
 	gTextureA.UpdateRGBA(nil, framebufferRGBA[:], 160)
 	gRenderer.Copy(gTextureA, nil, nil)
