@@ -32,8 +32,17 @@ func loadROM() {
 	}
 
 	for i, buffer := range rom {
-		maybego.Write(uint16( /*0x100+*/ i), buffer)
+		maybego.Write(uint16(i), buffer)
 	}
+
+	// for i, buffer := range rom[0x100:] {
+	// 	maybego.Write(uint16(i + 0x100), buffer)
+	// }
+
+	// for i, buffer := range rom {
+	// 	maybego.Write(uint16(i + 0x100), buffer)
+	// }
+
 }
 
 func main() {
