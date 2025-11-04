@@ -178,6 +178,11 @@ func (ppu *PPU) Render(cycles byte) {
 	cur_lcdc := Read(LCDC)
 	cur_stat := Read(STAT)
 
+	// if LCD is turned off
+	// if cur_lcdc & 0x80 == 0 {
+	// 	return
+	// }
+	
 	if ppu.dots <= 80 {
 		Write(STAT, (cur_stat&0xFE)|0x2)
 		if cur_stat&0x20 != 0 {
