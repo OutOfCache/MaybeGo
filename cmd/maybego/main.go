@@ -46,6 +46,7 @@ func loadROM() {
 }
 
 func main() {
+	// fmt.Print("Starting main");
 	debugFlag := flag.Bool("debug", false, "enables logging")
 	logFile := flag.String("logfile", "", "log output file")
 	logContents := flag.String("logcontent", "", "what to log. Can be a combination of the following\npc\t\tlog pc and opcode information\nreg\t\tlog registers\nflags\tlog flags\nall\t\tlog everything")
@@ -84,6 +85,7 @@ func main() {
 	}()
 
 	// FIXME: proper exit handling through SDL
+	// fmt.Print("Entering loop");
 	for !quit {
 		cpu.Fetch()
 		cycles := cpu.Decode()
@@ -101,4 +103,5 @@ func main() {
 
 	}
 	ppu.EndSDL()
+	// fmt.Print("quitting");
 }

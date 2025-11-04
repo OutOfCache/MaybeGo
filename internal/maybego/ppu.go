@@ -116,11 +116,11 @@ func (ppu *PPU) RenderBG(row byte) {
 		// }
 		BGMapRGBA[y*256+x] = Palette[pixelcolor]
 	}
-
 }
 
 func (ppu *PPU) RenderRow() {
 	cur_row := Read(LY)
+	// ppu.logger.LogValue("LY", ppu.dots)
 	cur_lyc := Read(LYC)
 
 	if cur_row == cur_lyc {

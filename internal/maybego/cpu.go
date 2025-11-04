@@ -1,5 +1,7 @@
 package maybego
 
+// import "fmt"
+
 const (
 	// Timer
 	DIV  uint16 = 0xFF04 // Divider Register
@@ -214,10 +216,12 @@ func NewCPU(logger *Logger) *CPU {
 
 func (cpu *CPU) Fetch() {
 	if cpu.flg.IME || cpu.flg.HALT {
+		// fmt.Println("entering interrupt handling")
 		cpu.interrupt()
 	}
 
 	if cpu.pendingIME {
+		// fmt.Println("pendingIME was true, setting IME to true")
 		cpu.pendingIME = false
 		cpu.flg.IME = true
 	}
@@ -1926,6 +1930,7 @@ func (cpu *CPU) cpuD8() byte { // RET C
 }
 
 func (cpu *CPU) cpuD9() byte { // RETI
+	// fmt.Println("Setting IME to true")
 	cpu.flg.IME = true
 	cpu.ret(true)
 	return 4
@@ -2067,6 +2072,7 @@ func (cpu *CPU) cpuF2() byte { // LD A,(FF00+C)
 }
 
 func (cpu *CPU) cpuF3() byte { // DI
+	// fmt.Println("Setting IME to false")
 	cpu.flg.IME = false
 	cpu.reg.PC++
 	return 1
@@ -2118,6 +2124,7 @@ func (cpu *CPU) cpuFA() byte { // LD A,(u16)
 
 func (cpu *CPU) cpuFB() byte { // EI
 	// cpu.flg.IME = true
+	// fmt.Println("Setting pendingIME to true")
 	cpu.pendingIME = true
 	cpu.reg.PC++
 	return 1
@@ -3776,6 +3783,7 @@ func (cpu *CPU) cbFF() byte { // SET 7, A
 }
 
 func RequestInterrupt(bit byte) {
+	// fmt.Printf("Requested interrupt: %d\n", bit)
 	prev := Read(IF)
 	Write(IF, prev|(1<<bit))
 }
@@ -3784,16 +3792,21 @@ func (cpu *CPU) interrupt() byte { // handle interrupts
 	// check if interrupt occurred
 	// loop through every bit in the interrupt flag register until we find one
 	cycles := byte(20 + FlagToBit(cpu.flg.HALT)*4)
+	// fmt.Printf("cycles: %d\n", cycles)
 	for i := byte(0); i < 5; i++ {
 		check_bit := byte(0x01 << i)
 		interrupt_occurred := Read(IF)&check_bit > 0
 		if !interrupt_occurred {
 			continue
 		}
+		// fmt.Printf("interrupt_occured: %d\n", i)
+		// fmt.Printf("IF: %X\n", Read(IF))
 		interrupt_enabled := Read(IE)&check_bit > 0
 		if !interrupt_enabled {
 			continue
 		}
+		// fmt.Printf("interrupt_enabled\n")
+		// fmt.Printf("IME: %t\n", cpu.flg.IME)
 		// cpu.flg.HALT = false
 		if cpu.flg.IME {
 			reset_interrupt_flag := (check_bit) ^ 0xFF
@@ -3803,6 +3816,7 @@ func (cpu *CPU) interrupt() byte { // handle interrupts
 			// however, it allows easy calling of a specific address
 			// and pushing the current PC to stack already
 			// so I won't write the same code here
+			// fmt.Printf("Before cpu.rst at cycles %d, jumping to %d\n", cpu.clk.cycles, cpu.interrupts[int(i)])
 			cpu.rst(cpu.interrupts[int(i)], false)
 			cpu.flg.IME = false
 
