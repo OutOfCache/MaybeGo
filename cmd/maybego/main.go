@@ -13,6 +13,7 @@ import (
 
 var cpu *maybego.CPU
 var ppu *maybego.PPU
+var ui  *maybego.Interface
 
 // main.go --debug --log-file=logs.txt --log=all
 
@@ -72,7 +73,9 @@ func main() {
 
 	cpu = maybego.NewCPU(logger)
 	ppu = maybego.NewPPU(logger)
-	ppu.StartSDL()
+	ui  = maybego.NewUI()
+	// ppu.StartSDL()
+	// ui.Setup()
 	loadROM()
 
 	sigs := make(chan os.Signal, 1)
@@ -92,6 +95,7 @@ func main() {
 
 		cpu.Handle_timer(cycles)
 		ppu.Render(cycles)
+		ui.Update(cycles)
 
 		// blarggs test
 		if maybego.Read(0xff02) == 0x81 {

@@ -10,6 +10,14 @@ pkgs.mkShell {
     pkgs.pkg-config
     pkgs.SDL2
     pkgs.xorg.libX11.dev
+    pkgs.libGL
+    pkgs.xorg.libXcursor
+    pkgs.xorg.libXi
+    pkgs.xorg.libXinerama
+    pkgs.xorg.libXrandr
+    pkgs.xorg.libXxf86vm
+    pkgs.libxkbcommon
+    pkgs.wayland
   ];
 
   hardeningDisable = [ "fortify" ];
