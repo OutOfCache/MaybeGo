@@ -23,10 +23,12 @@ type PPU struct {
 
 var framebufferRGBA [160 * 144]uint32
 var BGMapRGBA [256 * 256]uint32
+var framebufferPalette [160 * 144]byte
+var BGMapPalette [256 * 256]byte
 
-const defaultColor = uint32(0xFF8080FF)
+// const defaultColor = uint32(0xFF8080FF)
 
-var Palette = []uint32{0xFFFFFFFF, 0x808080FF, 0x080808FF, 0x000000FF}
+// var Palette = []uint32{0xFFFFFFFF, 0x808080FF, 0x080808FF, 0x000000FF}
 
 var winWidth, winHeight int32 = 160, 144
 var err error
@@ -41,6 +43,10 @@ func NewPPU(logger *Logger) *PPU {
 	ppu := &PPU{logger: logger, dots: 0, scanline: 0}
 
 	return ppu
+}
+
+func (ppu *PPU) GetCurrentFrame() [160 * 144]byte {
+	return framebufferPalette
 }
 
 func (ppu *PPU) StartSDL() {
@@ -122,15 +128,17 @@ func (ppu *PPU) RenderBG(row byte) {
 		// if pixelcolor != 0 {
 		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
 		// }
-		BGMapRGBA[y*256+x] = Palette[pixelcolor]
+		// BGMapRGBA[y*256+x] = Palette[pixelcolor]
+		BGMapPalette[y*256+x] = pixelcolor
 		// BGMapRGBA[y*256+x] = uint32(pixelcolor)
 		if (x /* - SCX */ < 160 && y < 144) {
-			framebufferRGBA[(int(ppu.scanline) * 160) + x] = Palette[3];
-			color := Palette[pixelcolor]
+			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = Palette[3];
+			// color := Palette[pixelcolor]
 			// if Read(address) != 0 {
 			// 	color = 0xFF0000FF
 			// }
-			framebufferRGBA[(int(ppu.scanline) * 160) + x] = color
+			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = color
+			framebufferPalette[(int(ppu.scanline) * 160) + x] = pixelcolor
 			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = uint32(pixelcolor) * 0xF0000
 			// if x % 8 == 0 || y % 8 == 0 {
 			// 	framebufferRGBA[(int(ppu.scanline) * 160) + x] = 0x00FF00FF

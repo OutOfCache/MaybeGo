@@ -95,7 +95,7 @@ func main() {
 
 		cpu.Handle_timer(cycles)
 		ppu.Render(cycles)
-		ui.Update(cycles)
+		ui.Update(ppu.GetCurrentFrame())
 
 		// blarggs test
 		if maybego.Read(0xff02) == 0x81 {
