@@ -5,10 +5,10 @@
 pkgs.mkShell {
   packages = [
     pkgs.go
+    pkgs.gopls
     pkgs.delve
     pkgs.gcc
     pkgs.pkg-config
-    pkgs.SDL2
     pkgs.xorg.libX11.dev
     pkgs.libGL
     pkgs.xorg.libXcursor

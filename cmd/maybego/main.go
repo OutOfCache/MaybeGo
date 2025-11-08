@@ -10,9 +10,6 @@ import (
 	"syscall"
 )
 
-// var cpu *maybego.CPU
-// var ppu *maybego.PPU
-var emulator *maybego.Emulator
 var ui *maybego.Interface
 
 // main.go --debug --log-file=logs.txt --log=all
@@ -32,7 +29,7 @@ func loadROM() {
 		os.Exit(2)
 	}
 
-	emulator.LoadRom(&rom)
+	ui.LoadRom(&rom)
 }
 
 func main() {
@@ -59,13 +56,8 @@ func main() {
 		}
 	}
 
-	// a := app.New()
-	// display := a.NewWindow("Hello World")
-
-	emulator = maybego.NewEmulator(logger)
-	// ui = maybego.NewUI()
-	// ppu.StartSDL()
-	// ui.Setup()
+	ui = maybego.NewUI(logger)
+	// TODO: optional argument
 	loadROM()
 
 	sigs := make(chan os.Signal, 1)
@@ -79,20 +71,6 @@ func main() {
 
 	// FIXME: proper exit handling through SDL
 	for !quit {
-		emulator.FetchDecodeExec()
-		// ui.Update(emulator.GetPPU().GetCurrentFrame())
-
-		// blarggs test
-		// if maybego.Read(0xff02) == 0x81 {
-		// 	c := maybego.Read(0xff01)
-		// 	fmt.Printf("%c", c)
-		// 	maybego.Write(0xff02, 0)
-
-		// }
-		// display.SetContent(widget.NewLabel("Hello World!"))
-		// display.Show()
-		// a.Run()
+		ui.Update()
 	}
-	// ppu.EndSDL()
-	// fmt.Print("quitting");
 }

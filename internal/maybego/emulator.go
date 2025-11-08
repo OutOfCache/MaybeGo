@@ -31,19 +31,12 @@ func (emu *Emulator) Reset() {
 	// ppu.Reset()
 }
 
-// FIX: belongs in UI
-func (emu *Emulator) LoadRom(rom *[]byte) {
-	for i, buffer := range *rom {
-		Write(uint16(i), buffer)
-	}
-}
-
-func (emu *Emulator) FetchDecodeExec() {
+func (emu *Emulator) FetchDecodeExec() bool {
 	emu.cpu.Fetch()
 	cycles := emu.cpu.Decode()
 
 	emu.cpu.Handle_timer(cycles)
-	emu.ppu.Render(cycles)
+	frame_ready := emu.ppu.Render(cycles)
 
 	// FIX: belongs in UI
 	// for blarggs tests:
@@ -52,4 +45,5 @@ func (emu *Emulator) FetchDecodeExec() {
 		fmt.Printf("%c", c)
 		Write(0xff02, 0)
 	}
+	return frame_ready
 }

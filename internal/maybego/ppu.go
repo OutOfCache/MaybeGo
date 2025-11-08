@@ -1,11 +1,5 @@
 package maybego
 
-import (
-	"fmt"
-	"github.com/veandco/go-sdl2/sdl"
-	"os"
-)
-
 const (
 	LCDC uint16 = 0xFF40
 	STAT uint16 = 0xFF41
@@ -21,23 +15,11 @@ type PPU struct {
 	logger   *Logger
 }
 
-var framebufferRGBA [160 * 144]uint32
-var BGMapRGBA [256 * 256]uint32
 var framebufferPalette [160 * 144]byte
 var BGMapPalette [256 * 256]byte
 
-// const defaultColor = uint32(0xFF8080FF)
-
-// var Palette = []uint32{0xFFFFFFFF, 0x808080FF, 0x080808FF, 0x000000FF}
-
 var winWidth, winHeight int32 = 160, 144
 var err error
-
-var gWindow *sdl.Window
-var gRenderer *sdl.Renderer
-
-// var gTexture *sdl.Texture
-var gTextureA *sdl.Texture
 
 func NewPPU(logger *Logger) *PPU {
 	ppu := &PPU{logger: logger, dots: 0, scanline: 0}
@@ -47,33 +29,6 @@ func NewPPU(logger *Logger) *PPU {
 
 func (ppu *PPU) GetCurrentFrame() *[160 * 144]byte {
 	return &framebufferPalette
-}
-
-func (ppu *PPU) StartSDL() {
-	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		fmt.Printf("SDL could not initialize! Error: %s\n", err)
-		os.Exit(4)
-	}
-
-	gWindow, err = sdl.CreateWindow("MaybeGo", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, winWidth, winHeight, sdl.WINDOW_SHOWN)
-
-	if err != nil {
-		fmt.Printf("Could not create Window! Error: %s\n", err)
-		os.Exit(4)
-	}
-
-	gRenderer, err = sdl.CreateRenderer(gWindow, -1, sdl.RENDERER_ACCELERATED)
-
-	if err != nil {
-		fmt.Printf("Could not create Renderer. Error: %s\n", err)
-		os.Exit(4)
-	}
-
-	gTextureA, err = gRenderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_TARGET, 160, 144)
-	if err != nil {
-		fmt.Printf("Could not create Texture. Error: %s\n", err)
-		os.Exit(4)
-	}
 }
 
 func (ppu *PPU) RenderBG(row byte) {
@@ -100,7 +55,7 @@ func (ppu *PPU) RenderBG(row byte) {
 	// 		}
 	// 	}
 	// }
-	for j := 0; j < /*(SCX + */256; j += 1 {
+	for j := 0; j < /*(SCX + */ 256; j += 1 {
 		x := j // + SCX
 		tileX := uint16(x / 8)
 		tileID := Read(ppu.tilemap + uint16((y/8)*32) + tileX)
@@ -112,10 +67,10 @@ func (ppu *PPU) RenderBG(row byte) {
 		} else {
 			tileY = uint16(tileID) * uint16(0x10)
 		}
-		address := ppu.tiledata + tileY + uint16((y%8) * 2)
+		address := ppu.tiledata + tileY + uint16((y%8)*2)
 
 		pixelcolor := (Read(address) >> (7 - (x % 8)) & 0x1) +
-		 (Read(address+1)>>(7-(x%8))&0x1)*2
+			(Read(address+1)>>(7-(x%8))&0x1)*2
 		// pixelcolor := address
 		// fmt.Printf("")
 		// pixelcolor := (Read(address) >> (7 - (x % 8)) & 0x1) +
@@ -128,21 +83,9 @@ func (ppu *PPU) RenderBG(row byte) {
 		// if pixelcolor != 0 {
 		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
 		// }
-		// BGMapRGBA[y*256+x] = Palette[pixelcolor]
 		BGMapPalette[y*256+x] = pixelcolor
-		// BGMapRGBA[y*256+x] = uint32(pixelcolor)
-		if (x /* - SCX */ < 160 && y < 144) {
-			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = Palette[3];
-			// color := Palette[pixelcolor]
-			// if Read(address) != 0 {
-			// 	color = 0xFF0000FF
-			// }
-			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = color
-			framebufferPalette[(int(ppu.scanline) * 160) + x] = 2; // pixelcolor
-			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = uint32(pixelcolor) * 0xF0000
-			// if x % 8 == 0 || y % 8 == 0 {
-			// 	framebufferRGBA[(int(ppu.scanline) * 160) + x] = 0x00FF00FF
-			// }
+		if x /* - SCX */ < 160 && y < 144 {
+			framebufferPalette[(int(ppu.scanline)*160)+x] = pixelcolor
 		}
 	}
 }
@@ -175,9 +118,7 @@ func (ppu *PPU) RenderRow() {
 	Write(LY, (cur_row+1)%153)
 }
 
-func (ppu *PPU) Render(cycles byte) {
-	gRenderer.SetDrawColor(0xFF, 0xFF, 0xFF, 0xFF)
-
+func (ppu *PPU) Render(cycles byte) bool {
 	new_dots := uint16(cycles * 4)
 	render := (ppu.dots + new_dots) > 455
 	ppu.dots = (ppu.dots + new_dots) % 456
@@ -190,7 +131,7 @@ func (ppu *PPU) Render(cycles byte) {
 	// if cur_lcdc & 0x80 == 0 {
 	// 	return
 	// }
-	
+
 	if ppu.dots <= 80 {
 		Write(STAT, (cur_stat&0xFE)|0x2)
 		if cur_stat&0x20 != 0 {
@@ -206,7 +147,7 @@ func (ppu *PPU) Render(cycles byte) {
 	}
 
 	if !render {
-		return
+		return false
 	}
 
 	if cur_lcdc&0x8 == 0 {
@@ -229,21 +170,12 @@ func (ppu *PPU) Render(cycles byte) {
 
 	cur_row := Read(LY)
 	// ppu.logger.LogValue("LY", uint16(cur_row))
+	frame_ready := cur_row == 144
 	ppu.RenderBG(cur_row)
 	if cur_row < 144 {
 		ppu.scanline = (ppu.scanline + byte(1)) % 144
 	}
 	Write(LY, (cur_row+1)%154)
-	
-	gTextureA.UpdateRGBA(nil, framebufferRGBA[:], 160)
-	gRenderer.Copy(gTextureA, nil, nil)
-	gRenderer.Present()
-}
 
-func (ppu *PPU) EndSDL() {
-	gTextureA.Destroy()
-	gRenderer.Destroy()
-	gWindow.Destroy()
-
-	sdl.Quit()
+	return frame_ready
 }
