@@ -45,8 +45,8 @@ func NewPPU(logger *Logger) *PPU {
 	return ppu
 }
 
-func (ppu *PPU) GetCurrentFrame() [160 * 144]byte {
-	return framebufferPalette
+func (ppu *PPU) GetCurrentFrame() *[160 * 144]byte {
+	return &framebufferPalette
 }
 
 func (ppu *PPU) StartSDL() {
@@ -138,7 +138,7 @@ func (ppu *PPU) RenderBG(row byte) {
 			// 	color = 0xFF0000FF
 			// }
 			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = color
-			framebufferPalette[(int(ppu.scanline) * 160) + x] = pixelcolor
+			framebufferPalette[(int(ppu.scanline) * 160) + x] = 2; // pixelcolor
 			// framebufferRGBA[(int(ppu.scanline) * 160) + x] = uint32(pixelcolor) * 0xF0000
 			// if x % 8 == 0 || y % 8 == 0 {
 			// 	framebufferRGBA[(int(ppu.scanline) * 160) + x] = 0x00FF00FF

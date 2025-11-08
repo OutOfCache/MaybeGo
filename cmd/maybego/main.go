@@ -4,16 +4,16 @@ import (
 	"flag"
 	"fmt"
 	"github.com/outofcache/maybego/internal/maybego"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 )
 
-var cpu *maybego.CPU
-var ppu *maybego.PPU
-var ui  *maybego.Interface
+// var cpu *maybego.CPU
+// var ppu *maybego.PPU
+var emulator *maybego.Emulator
+var ui *maybego.Interface
 
 // main.go --debug --log-file=logs.txt --log=all
 
@@ -25,29 +25,17 @@ func loadROM() {
 
 	var path string = flag.Args()[0]
 
-	rom, err := ioutil.ReadFile(path)
+	rom, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Println("File could not be read")
 		fmt.Println(err)
 		os.Exit(2)
 	}
 
-	for i, buffer := range rom {
-		maybego.Write(uint16(i), buffer)
-	}
-
-	// for i, buffer := range rom[0x100:] {
-	// 	maybego.Write(uint16(i + 0x100), buffer)
-	// }
-
-	// for i, buffer := range rom {
-	// 	maybego.Write(uint16(i + 0x100), buffer)
-	// }
-
+	emulator.LoadRom(&rom)
 }
 
 func main() {
-	// fmt.Print("Starting main");
 	debugFlag := flag.Bool("debug", false, "enables logging")
 	logFile := flag.String("logfile", "", "log output file")
 	logContents := flag.String("logcontent", "", "what to log. Can be a combination of the following\npc\t\tlog pc and opcode information\nreg\t\tlog registers\nflags\tlog flags\nall\t\tlog everything")
@@ -71,9 +59,11 @@ func main() {
 		}
 	}
 
-	cpu = maybego.NewCPU(logger)
-	ppu = maybego.NewPPU(logger)
-	ui  = maybego.NewUI()
+	// a := app.New()
+	// display := a.NewWindow("Hello World")
+
+	emulator = maybego.NewEmulator(logger)
+	// ui = maybego.NewUI()
 	// ppu.StartSDL()
 	// ui.Setup()
 	loadROM()
@@ -88,24 +78,21 @@ func main() {
 	}()
 
 	// FIXME: proper exit handling through SDL
-	// fmt.Print("Entering loop");
 	for !quit {
-		cpu.Fetch()
-		cycles := cpu.Decode()
-
-		cpu.Handle_timer(cycles)
-		ppu.Render(cycles)
-		ui.Update(ppu.GetCurrentFrame())
+		emulator.FetchDecodeExec()
+		// ui.Update(emulator.GetPPU().GetCurrentFrame())
 
 		// blarggs test
-		if maybego.Read(0xff02) == 0x81 {
-			c := maybego.Read(0xff01)
-			fmt.Printf("%c", c)
-			maybego.Write(0xff02, 0)
+		// if maybego.Read(0xff02) == 0x81 {
+		// 	c := maybego.Read(0xff01)
+		// 	fmt.Printf("%c", c)
+		// 	maybego.Write(0xff02, 0)
 
-		}
-
+		// }
+		// display.SetContent(widget.NewLabel("Hello World!"))
+		// display.Show()
+		// a.Run()
 	}
-	ppu.EndSDL()
+	// ppu.EndSDL()
 	// fmt.Print("quitting");
 }
