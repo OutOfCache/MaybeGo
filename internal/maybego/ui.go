@@ -2,7 +2,7 @@ package maybego
 
 import (
 	"image/color"
-	"math/rand"
+	// "math/rand"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	// "fyne.io/fyne/v2/widget"
@@ -15,18 +15,19 @@ const (
 )
 
 var defaultColor = color.RGBA{R: 0xFF, G: 0x80, B: 0x80, A: 0xFF}
-var Palette = []color.RGBA {
-		{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF },
-		{R: 0x80, G: 0x80, B: 0x80, A: 0xFF },
-		{R: 0x08, G: 0x08, B: 0x08, A: 0xFF },
-		{R: 0x00, G: 0x00, B: 0x00, A: 0xFF },
-	}
+var Palette = []color.RGBA{
+	{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF},
+	{R: 0x80, G: 0x80, B: 0x80, A: 0xFF},
+	{R: 0x08, G: 0x08, B: 0x08, A: 0xFF},
+	{R: 0x00, G: 0x00, B: 0x00, A: 0xFF},
+}
+var frame = [160 * 144]byte{}
 
 type Interface struct {
-	app      fyne.App
-	window   fyne.Window
-	display  *canvas.Raster
-	ppu      *PPU
+	app     fyne.App
+	window  fyne.Window
+	display *canvas.Raster
+	// frame    [160 * 144]byte
 }
 
 func NewUI() *Interface {
@@ -43,7 +44,9 @@ func NewUI() *Interface {
 	return ui
 }
 
-func (ui *Interface) Update(frame [160 * 144]byte) {
+func (ui *Interface) Update(ppuFrame *[160 * 144]byte) {
+	// frame = ppuFrame
+	// ui.display.Refresh()
 	ui.window.SetContent(ui.display)
 	ui.window.Show()
 }
