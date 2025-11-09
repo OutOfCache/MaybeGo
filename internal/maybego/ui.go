@@ -1,6 +1,7 @@
 package maybego
 
 import (
+	// "fmt"
 	"image/color"
 	// "math/rand"
 	"fyne.io/fyne/v2"
@@ -33,14 +34,16 @@ type Interface struct {
 	emu     *Emulator
 }
 
-func GenerateVramTile(tileID int) func(x, y, w, h int) color.Color {
+func GenerateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
 	return func(x, y, w, h int) color.Color {
-		if x > 7 || y > 7 {
+		x_conv := (x / scale)
+		y_conv := (y / scale)
+		if x_conv > 7 || y_conv > 7 {
 			return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 		}
 
-		address := uint16(0x8000 + (tileID * 16) + (y * 2))
-		pixelcolor := (Read(address) >> (7 - x) & 0x1) + (Read(address+1)>>(7-x)&0x1)*2
+		address := uint16(0x8000 + (tileID * 16) + (y_conv * 2))
+		pixelcolor := (Read(address) >> (7 - x_conv) & 0x1) + (Read(address+1)>>(7-x_conv)&0x1)*2
 
 		return Palette[pixelcolor]
 	}
@@ -62,13 +65,16 @@ func NewUI(logger *Logger) *Interface {
 		})
 
 	vram := container.New(layout.NewGridLayout(16))
+	scale := 2
+	tile_size := float32(scale * 8)
 	for i := 0; i < 384; i++ {
-		tile := canvas.NewRasterWithPixels(GenerateVramTile(i))
-		tile.SetMinSize(fyne.NewSize(8, 8))
+		tile := canvas.NewRasterWithPixels(GenerateVramTile(i, scale))
+		tile.SetMinSize(fyne.NewSize(tile_size, tile_size))
 		vram.Add(tile)
 	}
 	// TODO: scaling factor
 	display.SetMinSize(fyne.NewSize(160, 144))
+	// display_content := container.New(layout.NewCenterLayout(), display)
 	content := container.New(layout.NewHBoxLayout(), display, layout.NewSpacer(), vram)
 	w.SetContent(content)
 
@@ -80,7 +86,7 @@ func NewUI(logger *Logger) *Interface {
 func (ui *Interface) Update() {
 	frame_ready := ui.emu.FetchDecodeExec()
 	if frame_ready {
-		ui.vram.Refresh()
+		ui.vram.Refresh() // TODO: refresh vram data only if there was a write to tiledata memory
 		ui.display.Refresh()
 		ui.window.Show()
 	}
