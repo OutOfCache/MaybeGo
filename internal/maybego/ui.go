@@ -5,6 +5,8 @@ import (
 	// "math/rand"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 
 	// "fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/canvas"
@@ -27,7 +29,21 @@ type Interface struct {
 	app     fyne.App
 	window  fyne.Window
 	display *canvas.Raster
+	vram    *fyne.Container
 	emu     *Emulator
+}
+
+func GenerateVramTile(tileID int) func(x, y, w, h int) color.Color {
+	return func(x, y, w, h int) color.Color {
+		if x > 7 || y > 7 {
+			return color.RGBA{R: 0, G: 0, B: 0, A: 0}
+		}
+
+		address := uint16(0x8000 + (tileID * 16) + (y * 2))
+		pixelcolor := (Read(address) >> (7 - x) & 0x1) + (Read(address+1)>>(7-x)&0x1)*2
+
+		return Palette[pixelcolor]
+	}
 }
 
 func NewUI(logger *Logger) *Interface {
@@ -38,16 +54,25 @@ func NewUI(logger *Logger) *Interface {
 	display := canvas.NewRasterWithPixels(
 		func(x, y, w, h int) color.Color {
 			// TODO: wtf out-of-bounds??
+			// TODO: center layout to set to minimum size?
 			if x > 159 || y > 143 {
 				return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 			}
 			return Palette[e.ppu.GetCurrentFrame()[(160*y)+x]]
 		})
-	// TODO: scaling factor
-	display.Resize(fyne.NewSize(160, 144))
-	w.SetContent(display)
 
-	ui := &Interface{app: a, window: w, display: display, emu: e}
+	vram := container.New(layout.NewGridLayout(16))
+	for i := 0; i < 384; i++ {
+		tile := canvas.NewRasterWithPixels(GenerateVramTile(i))
+		tile.SetMinSize(fyne.NewSize(8, 8))
+		vram.Add(tile)
+	}
+	// TODO: scaling factor
+	display.SetMinSize(fyne.NewSize(160, 144))
+	content := container.New(layout.NewHBoxLayout(), display, layout.NewSpacer(), vram)
+	w.SetContent(content)
+
+	ui := &Interface{app: a, window: w, display: display, vram: vram, emu: e}
 
 	return ui
 }
@@ -55,6 +80,7 @@ func NewUI(logger *Logger) *Interface {
 func (ui *Interface) Update() {
 	frame_ready := ui.emu.FetchDecodeExec()
 	if frame_ready {
+		ui.vram.Refresh()
 		ui.display.Refresh()
 		ui.window.Show()
 	}
@@ -67,12 +93,12 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 
 	// TODO: option to skip boot rom or not?
 
-	// for i, buffer := range rom[0x100:] {
-	// 	maybego.Write(uint16(i + 0x100), buffer)
+	// for i, buffer := range (*rom)[0x100:] {
+	// 	Write(uint16(i+0x100), buffer)
 	// }
 
-	// for i, buffer := range rom {
-	// 	maybego.Write(uint16(i + 0x100), buffer)
+	// for i, buffer := range *rom {
+	// 	Write(uint16(i+0x100), buffer)
 	// }
 
 }
