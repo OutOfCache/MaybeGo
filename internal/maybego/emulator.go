@@ -6,6 +6,7 @@ type Emulator struct {
 	cpu    *CPU
 	ppu    *PPU
 	logger *Logger
+	rom_loaded bool
 }
 
 func NewEmulator(logger *Logger) *Emulator {
@@ -32,6 +33,9 @@ func (emu *Emulator) Reset() {
 }
 
 func (emu *Emulator) FetchDecodeExec() bool {
+	if !emu.rom_loaded {
+		return false
+	}
 	emu.cpu.Fetch()
 	cycles := emu.cpu.Decode()
 

@@ -3,6 +3,7 @@ package maybego
 import (
 	// "fmt"
 	"image/color"
+	"time"
 	// "math/rand"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -53,7 +54,6 @@ func NewUI(logger *Logger) *Interface {
 	a := app.New()
 	w := a.NewWindow("MaybeGo")
 	e := NewEmulator(logger)
-	w.Resize(fyne.NewSize(160, 144))
 	display := canvas.NewRasterWithPixels(
 		func(x, y, w, h int) color.Color {
 			// TODO: wtf out-of-bounds??
@@ -76,6 +76,7 @@ func NewUI(logger *Logger) *Interface {
 	display.SetMinSize(fyne.NewSize(160, 144))
 	// display_content := container.New(layout.NewCenterLayout(), display)
 	content := container.New(layout.NewHBoxLayout(), display, layout.NewSpacer(), vram)
+	vram.Hide()
 	w.SetContent(content)
 
 	ui := &Interface{app: a, window: w, display: display, vram: vram, emu: e}
@@ -86,9 +87,8 @@ func NewUI(logger *Logger) *Interface {
 func (ui *Interface) Update() {
 	frame_ready := ui.emu.FetchDecodeExec()
 	if frame_ready {
-		ui.vram.Refresh() // TODO: refresh vram data only if there was a write to tiledata memory
 		ui.display.Refresh()
-		ui.window.Show()
+		// ui.window.Show()
 	}
 }
 
@@ -97,6 +97,18 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 		Write(uint16(i), buffer)
 	}
 
+	ui.emu.rom_loaded = true
+	go func() {
+		for range time.NewTicker(time.Microsecond).C {
+			frame_ready := ui.emu.FetchDecodeExec()
+			if frame_ready {
+				fmt.Println("after frame: ", ctr/1000)
+				fyne.DoAndWait(func() { ui.display.Refresh() })
+			}
+		}
+	}()
+
+	ui.window.ShowAndRun()
 	// TODO: option to skip boot rom or not?
 
 	// for i, buffer := range (*rom)[0x100:] {
