@@ -77,6 +77,18 @@ func NewUI(logger *Logger) *Interface {
 	// display_content := container.New(layout.NewCenterLayout(), display)
 	content := container.New(layout.NewHBoxLayout(), display, layout.NewSpacer(), vram)
 	vram.Hide()
+	vram_visibility := fyne.NewMenuItem("VRAM viewer", func() {
+		if vram.Hidden {
+			vram.Refresh()
+			vram.Show()
+		} else {
+			vram.Hide()
+		}
+	})
+
+	debug_menu := fyne.NewMenu("Debug", vram_visibility)
+	main_menu := fyne.NewMainMenu(debug_menu)
+	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
 	ui := &Interface{app: a, window: w, display: display, vram: vram, emu: e}
