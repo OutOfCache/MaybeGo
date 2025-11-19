@@ -2,8 +2,10 @@ package maybego
 
 import (
 	// "fmt"
+	"fmt"
 	"image/color"
 	"time"
+
 	// "math/rand"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -56,8 +58,19 @@ func NewUI(logger *Logger) *Interface {
 	e := NewEmulator(logger)
 	display := canvas.NewRasterWithPixels(
 		func(x, y, w, h int) color.Color {
+			// frame_ready := e.FetchDecodeExec()
+			// if frame_ready {
+			// if ui.vram.Hidden {
+			// 	ui.vram.Refresh()
+			// 	ui.vram.Show()
+			// }
+			// ui.vram.Hide()
+			// ui.vram.Refresh() // TODO: refresh vram data only if there was a write to tiledata memory
+			// ui.display.Refresh()
+			// ui.window.Show()
 			// TODO: wtf out-of-bounds??
 			// TODO: center layout to set to minimum size?
+			// }
 			if x > 159 || y > 143 {
 				return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 			}
@@ -99,6 +112,12 @@ func NewUI(logger *Logger) *Interface {
 func (ui *Interface) Update() {
 	frame_ready := ui.emu.FetchDecodeExec()
 	if frame_ready {
+		// if ui.vram.Hidden {
+		// 	ui.vram.Refresh()
+		// 	ui.vram.Show()
+		// }
+		// ui.vram.Hide()
+		// ui.vram.Refresh() // TODO: refresh vram data only if there was a write to tiledata memory
 		ui.display.Refresh()
 		// ui.window.Show()
 	}
@@ -110,16 +129,63 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 	}
 
 	ui.emu.rom_loaded = true
+	// go ui.emu.FetchDecodeExec()
 	go func() {
+		// var
+		// tick := 0
+		// exec_cy := 0
+		// timer := time.NewTicker(time.Microsecond)
+		// select {
+		// 	case <- timer.C:
+		// 		tick++
+		// 		if !exec_done
+		// }
+		ctr := 0
+		cyc := 1
 		for range time.NewTicker(time.Microsecond).C {
-			frame_ready := ui.emu.FetchDecodeExec()
-			if frame_ready {
-				fmt.Println("after frame: ", ctr/1000)
-				fyne.DoAndWait(func() { ui.display.Refresh() })
+			fmt.Println("tick")
+			ctr++
+			if cyc != ctr {
+				fmt.Printf("cycles req: %d, got: %d\n", cyc, ctr)
+				continue
 			}
+			// fmt.Println("tick")
+			// done := <-ui.emu.signals.exec_cy
+			// fmt.Println("done: ", done) // if done {
+
+			// select {
+			// case cy := <-ui.emu.signals.exec_cy:
+			// fmt.Println("done", cy)
+			select {
+			case cyc = <-ui.emu.signals.exec_cy:
+				frame_ready := ui.emu.FetchDecodeExec()
+				if frame_ready {
+					fmt.Println("after frame: ", ctr/1000)
+					ctr = 0
+					fyne.DoAndWait(func() { ui.display.Refresh() })
+				}
+			default:
+				fmt.Println("not executing")
+				continue
+			}
+
+			// <-ui.emu.signals.exec_ready
+			// frame_ready := ui.emu.FetchDecodeExec()
+			// if frame_ready {
+			// 	fmt.Println("after frame: ", ctr/1000)
+			// 	ctr = 0
+			// 	fyne.DoAndWait(func() { ui.display.Refresh() })
+			// }
+			// default:
+			// continue
+			// }
+			// if done > 0 {
+			// }
 		}
 	}()
 
+	fmt.Println("here")
+	// ui.emu.signals.exec_cy <- 1
 	ui.window.ShowAndRun()
 	// TODO: option to skip boot rom or not?
 
