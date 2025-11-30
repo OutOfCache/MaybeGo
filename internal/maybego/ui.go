@@ -132,7 +132,7 @@ func (ui *Interface) Run() {
 
 				frame_ready := false
 				for _ = range 10 {
-					frame_ready = ui.emu.FetchDecodeExec()
+					frame_ready = ui.emu.Run()
 					if frame_ready {
 						break
 					}
