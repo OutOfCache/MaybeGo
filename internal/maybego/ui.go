@@ -127,11 +127,13 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 
 func (ui *Interface) Run() {
 	go func() {
-		for range time.NewTicker(time.Microsecond).C {
+		frame_time := 16 * time.Millisecond // for 60 fps
+		for range time.NewTicker(frame_time).C {
 			fyne.DoAndWait(func() {
 
 				frame_ready := false
-				for _ = range 10 {
+				max_render_time := (456 /* dots */ * 153 /* lines */ / 4 /* cpu cyc */)
+				for _ = range max_render_time {
 					frame_ready = ui.emu.Run()
 					if frame_ready {
 						break
