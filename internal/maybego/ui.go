@@ -1,7 +1,6 @@
 package maybego
 
 import (
-	"fmt"
 	"image/color"
 	"time"
 
@@ -113,7 +112,20 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 		Write(uint16(i), buffer)
 	}
 
+	// TODO: option to skip boot rom or not?
+
+	// for i, buffer := range (*rom)[0x100:] {
+	// 	Write(uint16(i+0x100), buffer)
+	// }
+
+	// for i, buffer := range *rom {
+	// 	Write(uint16(i+0x100), buffer)
+	// }
 	ui.emu.rom_loaded = true
+
+}
+
+func (ui *Interface) Run() {
 	go func() {
 		for range time.NewTicker(time.Microsecond).C {
 			fyne.DoAndWait(func() {
@@ -132,14 +144,5 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 		}
 	}()
 	ui.window.ShowAndRun()
-	// TODO: option to skip boot rom or not?
-
-	// for i, buffer := range (*rom)[0x100:] {
-	// 	Write(uint16(i+0x100), buffer)
-	// }
-
-	// for i, buffer := range *rom {
-	// 	Write(uint16(i+0x100), buffer)
-	// }
 
 }

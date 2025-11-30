@@ -57,4 +57,5 @@ func main() {
 	ui = maybego.NewUI(logger)
 	// TODO: optional argument
 	loadROM()
+	ui.Run()
 }
