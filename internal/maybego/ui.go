@@ -109,20 +109,6 @@ func NewUI(logger *Logger) *Interface {
 	return ui
 }
 
-func (ui *Interface) Update() {
-	frame_ready := ui.emu.FetchDecodeExec()
-	if frame_ready {
-		// if ui.vram.Hidden {
-		// 	ui.vram.Refresh()
-		// 	ui.vram.Show()
-		// }
-		// ui.vram.Hide()
-		// ui.vram.Refresh() // TODO: refresh vram data only if there was a write to tiledata memory
-		ui.display.Refresh()
-		// ui.window.Show()
-	}
-}
-
 func (ui *Interface) LoadRom(rom *[]byte) {
 	for i, buffer := range *rom {
 		Write(uint16(i), buffer)

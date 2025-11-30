@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"github.com/outofcache/maybego/internal/maybego"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 )
 
 var ui *maybego.Interface
@@ -59,18 +57,4 @@ func main() {
 	ui = maybego.NewUI(logger)
 	// TODO: optional argument
 	loadROM()
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	quit := false
-
-	go func() {
-		<-sigs
-		quit = true
-	}()
-
-	// FIXME: proper exit handling through SDL
-	for !quit {
-		ui.Update()
-	}
 }
