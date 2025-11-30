@@ -1,29 +1,17 @@
 package maybego
 
-import "fmt"
-
-type Signals struct {
-	exec_cy    chan int
-	exec_ready chan bool
-	frame_done chan bool
-}
-
 type Emulator struct {
 	cpu        *CPU
 	ppu        *PPU
 	rom_loaded bool
 	logger     *Logger
-	signals    *Signals
 }
 
 func NewEmulator(logger *Logger) *Emulator {
 	// TODO: no logger in CPU or PPU
 	cpu := NewCPU(logger)
 	ppu := NewPPU(logger)
-	// signals := &Signals{exec_cy: make(chan int, 1)}
-	// signals := &Signals{exec_ready: make(chan bool, 1)}
-	signals := &Signals{}
-	e := &Emulator{cpu: cpu, ppu: ppu, logger: logger, signals: signals}
+	e := &Emulator{cpu: cpu, ppu: ppu, logger: logger}
 
 	return e
 }
@@ -50,9 +38,7 @@ func (emu *Emulator) FetchDecodeExec() bool {
 	cycles := emu.cpu.Decode()
 
 	emu.cpu.Handle_timer(cycles)
-	fmt.Println("after handle timer")
 	frame_ready := emu.ppu.Render(cycles)
-	fmt.Println("after render: ", frame_ready)
 
 	// FIX: belongs in UI
 	// for blarggs tests:
@@ -61,11 +47,6 @@ func (emu *Emulator) FetchDecodeExec() bool {
 		fmt.Printf("%c", c)
 		Write(0xff02, 0)
 	}
-	emu.signals.exec_cy <- int(cycles)
-	fmt.Println("exec_done")
-	// emu.signals.exec_ready <- true
-	// emu.signals.frame_done <- frame_ready
-	// fmt.Println("frame ready")
 	return frame_ready
 }
 

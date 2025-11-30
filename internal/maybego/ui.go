@@ -1,7 +1,6 @@
 package maybego
 
 import (
-	// "fmt"
 	"fmt"
 	"image/color"
 	"time"
@@ -115,63 +114,23 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 	}
 
 	ui.emu.rom_loaded = true
-	// go ui.emu.FetchDecodeExec()
 	go func() {
-		// var
-		// tick := 0
-		// exec_cy := 0
-		// timer := time.NewTicker(time.Microsecond)
-		// select {
-		// 	case <- timer.C:
-		// 		tick++
-		// 		if !exec_done
-		// }
-		ctr := 0
-		cyc := 1
 		for range time.NewTicker(time.Microsecond).C {
-			fmt.Println("tick")
-			ctr++
-			if cyc != ctr {
-				fmt.Printf("cycles req: %d, got: %d\n", cyc, ctr)
-				continue
-			}
-			// fmt.Println("tick")
-			// done := <-ui.emu.signals.exec_cy
-			// fmt.Println("done: ", done) // if done {
+			fyne.DoAndWait(func() {
 
-			// select {
-			// case cy := <-ui.emu.signals.exec_cy:
-			// fmt.Println("done", cy)
-			select {
-			case cyc = <-ui.emu.signals.exec_cy:
-				frame_ready := ui.emu.FetchDecodeExec()
-				if frame_ready {
-					fmt.Println("after frame: ", ctr/1000)
-					ctr = 0
-					fyne.DoAndWait(func() { ui.display.Refresh() })
+				frame_ready := false
+				for _ = range 10 {
+					frame_ready = ui.emu.FetchDecodeExec()
+					if frame_ready {
+						break
+					}
 				}
-			default:
-				fmt.Println("not executing")
-				continue
-			}
-
-			// <-ui.emu.signals.exec_ready
-			// frame_ready := ui.emu.FetchDecodeExec()
-			// if frame_ready {
-			// 	fmt.Println("after frame: ", ctr/1000)
-			// 	ctr = 0
-			// 	fyne.DoAndWait(func() { ui.display.Refresh() })
-			// }
-			// default:
-			// continue
-			// }
-			// if done > 0 {
-			// }
+				if frame_ready {
+					ui.display.Refresh()
+				}
+			})
 		}
 	}()
-
-	fmt.Println("here")
-	// ui.emu.signals.exec_cy <- 1
 	ui.window.ShowAndRun()
 	// TODO: option to skip boot rom or not?
 
