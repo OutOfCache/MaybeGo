@@ -8,10 +8,10 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
-	// "fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/canvas"
 )
 
@@ -28,12 +28,18 @@ var Palette = []color.RGBA{
 	{R: 0x00, G: 0x00, B: 0x00, A: 0xFF},
 }
 
+type cpu_state_vars struct {
+	cycles binding.Int
+}
+
 type Interface struct {
-	app     fyne.App
-	window  fyne.Window
-	display *canvas.Raster
-	vram    *fyne.Container
-	emu     *Emulator
+	app       fyne.App
+	window    fyne.Window
+	display   *canvas.Raster
+	vram      *fyne.Container
+	cpu       *fyne.Container
+	cpu_state *cpu_state_vars
+	emu       *Emulator
 }
 
 func GenerateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
@@ -78,7 +84,12 @@ func NewUI(logger *Logger) *Interface {
 
 	cpu_state := container.New(layout.NewVBoxLayout())
 	cpu_state_label := widget.NewLabel("CPU State")
+	cpu_state_content := binding.NewInt()
+	cpu_state_content.Set(0)
+	cpu_state_vars := &cpu_state_vars{cycles: cpu_state_content}
 	cpu_state.Add(cpu_state_label)
+	cpu_state.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state_content, "cpu cycle: %d")))
+
 	vram := container.New(layout.NewGridLayout(16))
 	scale := 2
 	tile_size := float32(scale * 8)
@@ -116,7 +127,7 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	ui := &Interface{app: a, window: w, display: display, vram: vram, emu: e}
+	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state, cpu_state: cpu_state_vars, emu: e}
 
 	return ui
 }
@@ -155,6 +166,11 @@ func (ui *Interface) Run() {
 				}
 				if frame_ready {
 					ui.display.Refresh()
+				}
+
+				if ui.cpu.Visible() {
+					// fmt.Printf("Running for %d cycles\n", ui.emu.GetCPUState())
+					ui.cpu_state.cycles.Set(int(ui.emu.GetCPUState()))
 				}
 			})
 		}

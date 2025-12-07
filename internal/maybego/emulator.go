@@ -24,6 +24,10 @@ func (emu *Emulator) GetCPU() *CPU {
 	return emu.cpu
 }
 
+func (emu *Emulator) GetCPUState() uint {
+	return emu.cpu.clk.cycles
+}
+
 // TODO: for loading roms during runtime
 func (emu *Emulator) Reset() {
 	// cpu.Reset()
