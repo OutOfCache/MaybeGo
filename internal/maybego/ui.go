@@ -28,7 +28,7 @@ var Palette = []color.RGBA{
 	{R: 0x00, G: 0x00, B: 0x00, A: 0xFF},
 }
 
-type cpu_state_vars struct {
+type cpu_state_bindings struct {
 	cycles binding.Int
 }
 
@@ -38,7 +38,7 @@ type Interface struct {
 	display   *canvas.Raster
 	vram      *fyne.Container
 	cpu       *fyne.Container
-	cpu_state *cpu_state_vars
+	cpu_state *cpu_state_bindings
 	emu       *Emulator
 }
 
@@ -82,13 +82,22 @@ func NewUI(logger *Logger) *Interface {
 			return Palette[e.ppu.GetCurrentFrame()[(160*y)+x]]
 		})
 
-	cpu_state := container.New(layout.NewVBoxLayout())
+	// ============= Debugger: CPU State =============
+	cpu_state_container := container.New(layout.NewVBoxLayout())
 	cpu_state_label := widget.NewLabel("CPU State")
-	cpu_state_content := binding.NewInt()
-	cpu_state_content.Set(0)
-	cpu_state_vars := &cpu_state_vars{cycles: cpu_state_content}
-	cpu_state.Add(cpu_state_label)
-	cpu_state.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state_content, "cpu cycle: %d")))
+	cpu_state := &cpu_state_bindings{cycles: binding.NewInt()}
+	cpu_state_container.Add(cpu_state_label)
+	cpu_state_container.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.cycles, "cpu cycle: %d")))
+	cpu_state_container.Hide()
+	cpu_state_visibility := fyne.NewMenuItem("CPU state", func() {
+		if cpu_state_container.Hidden {
+			cpu_state_container.Refresh()
+			cpu_state_container.Show()
+		} else {
+			cpu_state_container.Hide()
+		}
+	})
+	// ============= Debugger: CPU State =============
 
 	vram := container.New(layout.NewGridLayout(16))
 	scale := 2
@@ -101,16 +110,7 @@ func NewUI(logger *Logger) *Interface {
 	// TODO: scaling factor
 	display.SetMinSize(fyne.NewSize(160, 144))
 	// display_content := container.New(layout.NewCenterLayout(), display)
-	content := container.New(layout.NewHBoxLayout(), cpu_state, layout.NewSpacer(), display, layout.NewSpacer(), vram)
-	cpu_state.Hide()
-	cpu_state_visibility := fyne.NewMenuItem("CPU state", func() {
-		if cpu_state.Hidden {
-			cpu_state.Refresh()
-			cpu_state.Show()
-		} else {
-			cpu_state.Hide()
-		}
-	})
+	content := container.New(layout.NewHBoxLayout(), cpu_state_container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
 
 	vram.Hide()
 	vram_visibility := fyne.NewMenuItem("VRAM viewer", func() {
@@ -127,7 +127,7 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state, cpu_state: cpu_state_vars, emu: e}
+	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e}
 
 	return ui
 }
@@ -150,6 +150,11 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 
 }
 
+func (ui *Interface) SetCPUState() {
+	current_state := ui.emu.GetCPUState()
+	ui.cpu_state.cycles.Set(int(current_state.cycles))
+}
+
 func (ui *Interface) Run() {
 	go func() {
 		frame_time := 16 * time.Millisecond // for 60 fps
@@ -169,8 +174,7 @@ func (ui *Interface) Run() {
 				}
 
 				if ui.cpu.Visible() {
-					// fmt.Printf("Running for %d cycles\n", ui.emu.GetCPUState())
-					ui.cpu_state.cycles.Set(int(ui.emu.GetCPUState()))
+					ui.SetCPUState()
 				}
 			})
 		}
