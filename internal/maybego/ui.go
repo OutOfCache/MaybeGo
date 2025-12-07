@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/widget"
 
 	// "fyne.io/fyne/v2/widget"
 	"fyne.io/fyne/v2/canvas"
@@ -75,6 +76,9 @@ func NewUI(logger *Logger) *Interface {
 			return Palette[e.ppu.GetCurrentFrame()[(160*y)+x]]
 		})
 
+	cpu_state := container.New(layout.NewVBoxLayout())
+	cpu_state_label := widget.NewLabel("CPU State")
+	cpu_state.Add(cpu_state_label)
 	vram := container.New(layout.NewGridLayout(16))
 	scale := 2
 	tile_size := float32(scale * 8)
@@ -86,7 +90,17 @@ func NewUI(logger *Logger) *Interface {
 	// TODO: scaling factor
 	display.SetMinSize(fyne.NewSize(160, 144))
 	// display_content := container.New(layout.NewCenterLayout(), display)
-	content := container.New(layout.NewHBoxLayout(), display, layout.NewSpacer(), vram)
+	content := container.New(layout.NewHBoxLayout(), cpu_state, layout.NewSpacer(), display, layout.NewSpacer(), vram)
+	cpu_state.Hide()
+	cpu_state_visibility := fyne.NewMenuItem("CPU state", func() {
+		if cpu_state.Hidden {
+			cpu_state.Refresh()
+			cpu_state.Show()
+		} else {
+			cpu_state.Hide()
+		}
+	})
+
 	vram.Hide()
 	vram_visibility := fyne.NewMenuItem("VRAM viewer", func() {
 		if vram.Hidden {
@@ -97,7 +111,7 @@ func NewUI(logger *Logger) *Interface {
 		}
 	})
 
-	debug_menu := fyne.NewMenu("Debug", vram_visibility)
+	debug_menu := fyne.NewMenu("Debug", cpu_state_visibility, vram_visibility)
 	main_menu := fyne.NewMainMenu(debug_menu)
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
