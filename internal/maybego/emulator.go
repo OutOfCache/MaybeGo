@@ -7,6 +7,11 @@ type Emulator struct {
 	logger     *Logger
 }
 
+type cpu_state struct {
+	cycles    uint
+	registers *Registers
+}
+
 func NewEmulator(logger *Logger) *Emulator {
 	// TODO: no logger in CPU or PPU
 	cpu := NewCPU(logger)
@@ -24,8 +29,8 @@ func (emu *Emulator) GetCPU() *CPU {
 	return emu.cpu
 }
 
-func (emu *Emulator) GetCPUState() uint {
-	return emu.cpu.clk.cycles
+func (emu *Emulator) GetCPUState() cpu_state {
+	return cpu_state{cycles: emu.cpu.clk.cycles, registers: emu.cpu.reg}
 }
 
 // TODO: for loading roms during runtime

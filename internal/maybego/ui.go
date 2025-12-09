@@ -1,6 +1,7 @@
 package maybego
 
 import (
+	// "fmt"
 	"image/color"
 	"time"
 
@@ -29,7 +30,26 @@ var Palette = []color.RGBA{
 }
 
 type cpu_state_bindings struct {
-	cycles binding.Int
+	cycles    binding.Int
+	registers struct {
+		a  binding.Int
+		b  binding.Int
+		c  binding.Int
+		d  binding.Int
+		e  binding.Int
+		h  binding.Int
+		l  binding.Int
+		sp binding.Int
+		pc binding.Int
+	}
+	flags struct {
+		z    binding.Bool
+		c    binding.Bool
+		n    binding.Bool
+		h    binding.Bool
+		halt binding.Bool
+		ime  binding.Bool
+	}
 }
 
 type Interface struct {
@@ -85,9 +105,49 @@ func NewUI(logger *Logger) *Interface {
 	// ============= Debugger: CPU State =============
 	cpu_state_container := container.New(layout.NewVBoxLayout())
 	cpu_state_label := widget.NewLabel("CPU State")
+	cpu_state_label.TextStyle.Bold = true
 	cpu_state := &cpu_state_bindings{cycles: binding.NewInt()}
 	cpu_state_container.Add(cpu_state_label)
+	register_container := container.NewHBox()
+	register_container_lo := container.NewVBox()
+	register_container_hi := container.NewVBox()
 	cpu_state_container.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.cycles, "cpu cycle: %d")))
+	cpu_state.registers.a = binding.NewInt()
+	cpu_state.registers.b = binding.NewInt()
+	cpu_state.registers.c = binding.NewInt()
+	cpu_state.registers.d = binding.NewInt()
+	cpu_state.registers.e = binding.NewInt()
+	cpu_state.registers.h = binding.NewInt()
+	cpu_state.registers.l = binding.NewInt()
+	cpu_state.registers.pc = binding.NewInt()
+	cpu_state.registers.sp = binding.NewInt()
+	registers_label := widget.NewLabel("Registers")
+	registers_label.TextStyle.Bold = true
+	cpu_state_container.Add(registers_label)
+	// registers := binding.BindIntList(
+	// 	&[]int{},
+	// )
+	// list := widget.NewListWithData(registers,
+	// 	func() fyne.CanvasObject {
+	// 		return canvas.NewText("template")
+	// 	},
+	// 	func(i binding.DataItem, o fyne.CanvasObject) {
+	// 		o.(*canvas.Text).Text = binding.IntToStringWithFormat(i.(binding.Int), "A: %X")
+	// 	})
+
+	// cpu_state_container.Add(widget.NewRichTextWithText(binding.IntToStringWithFormat(cpu_state.registers.a, "A: %X")))
+	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.registers.a, "A: %X")))
+	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.registers.pc, "PC: %X")))
+	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.registers.b, "B: %X")))
+	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.registers.c, "C: %X")))
+	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.registers.d, "D: %X")))
+	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.registers.e, "E: %X")))
+	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.registers.h, "H: %X")))
+	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu_state.registers.l, "L: %X")))
+	register_container.Add(register_container_lo)
+	register_container.Add(register_container_hi)
+	register_container.Resize(fyne.NewSize(160, 160))
+	cpu_state_container.Add(register_container)
 	cpu_state_container.Hide()
 	cpu_state_visibility := fyne.NewMenuItem("CPU state", func() {
 		if cpu_state_container.Hidden {
@@ -109,7 +169,6 @@ func NewUI(logger *Logger) *Interface {
 	}
 	// TODO: scaling factor
 	display.SetMinSize(fyne.NewSize(160, 144))
-	// display_content := container.New(layout.NewCenterLayout(), display)
 	content := container.New(layout.NewHBoxLayout(), cpu_state_container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
 
 	vram.Hide()
@@ -153,6 +212,14 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 func (ui *Interface) SetCPUState() {
 	current_state := ui.emu.GetCPUState()
 	ui.cpu_state.cycles.Set(int(current_state.cycles))
+	ui.cpu_state.registers.a.Set(int(current_state.registers.A))
+	ui.cpu_state.registers.b.Set(int(current_state.registers.B))
+	ui.cpu_state.registers.c.Set(int(current_state.registers.C))
+	ui.cpu_state.registers.d.Set(int(current_state.registers.D))
+	ui.cpu_state.registers.e.Set(int(current_state.registers.E))
+	ui.cpu_state.registers.h.Set(int(current_state.registers.H))
+	ui.cpu_state.registers.l.Set(int(current_state.registers.L))
+	ui.cpu_state.registers.pc.Set(int(current_state.registers.PC))
 }
 
 func (ui *Interface) Run() {
