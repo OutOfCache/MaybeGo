@@ -10,6 +10,7 @@ type Emulator struct {
 type cpu_state struct {
 	cycles    uint
 	registers *Registers
+	flags     *Flags
 }
 
 func NewEmulator(logger *Logger) *Emulator {
@@ -30,7 +31,7 @@ func (emu *Emulator) GetCPU() *CPU {
 }
 
 func (emu *Emulator) GetCPUState() cpu_state {
-	return cpu_state{cycles: emu.cpu.clk.cycles, registers: emu.cpu.reg}
+	return cpu_state{cycles: emu.cpu.clk.cycles, registers: emu.cpu.reg, flags: emu.cpu.flg}
 }
 
 // TODO: for loading roms during runtime
