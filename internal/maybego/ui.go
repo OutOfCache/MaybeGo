@@ -42,14 +42,15 @@ type cpu_state_bindings struct {
 		sp binding.Int
 		pc binding.Int
 	}
-	flags struct {
-		z    binding.Bool
-		c    binding.Bool
-		n    binding.Bool
-		h    binding.Bool
-		halt binding.Bool
-		ime  binding.Bool
-	}
+	// flags struct {
+	// z    binding.Bool
+	// c    binding.Bool
+	// n    binding.Bool
+	// h    binding.Bool
+	// halt binding.Bool
+	// ime  binding.Bool
+	// }
+	flagstring binding.String
 }
 
 type Interface struct {
@@ -148,7 +149,19 @@ func NewUI(logger *Logger) *Interface {
 	register_container.Add(register_container_hi)
 	register_container.Resize(fyne.NewSize(160, 160))
 	cpu_state_container.Add(register_container)
-	cpu_state_container.Hide()
+
+	cpu_state.flagstring = binding.NewString()
+
+	flag_container := container.NewVBox()
+	flag_label := widget.NewLabel("Flags")
+	flag_label.TextStyle.Bold = true
+	flagstring_label := widget.NewLabelWithData(cpu_state.flagstring)
+	flagstring_label.TextStyle.Monospace = true
+	flag_container.Add(flag_label)
+	flag_container.Add(flagstring_label)
+	cpu_state_container.Add(flag_container)
+
+	// cpu_state_container.Hide()
 	cpu_state_visibility := fyne.NewMenuItem("CPU state", func() {
 		if cpu_state_container.Hidden {
 			cpu_state_container.Refresh()
@@ -220,6 +233,51 @@ func (ui *Interface) SetCPUState() {
 	ui.cpu_state.registers.h.Set(int(current_state.registers.H))
 	ui.cpu_state.registers.l.Set(int(current_state.registers.L))
 	ui.cpu_state.registers.pc.Set(int(current_state.registers.PC))
+
+	renderFlags := func() string {
+		flags := ""
+
+		if current_state.flags.C {
+			flags += "C"
+		} else {
+			flags += "-"
+		}
+		if current_state.flags.H {
+			flags += "H"
+		} else {
+			flags += "-"
+		}
+		if current_state.flags.N {
+			flags += "N"
+		} else {
+			flags += "-"
+		}
+		if current_state.flags.Z {
+			flags += "Z"
+		} else {
+			flags += "-"
+		}
+
+		flags += " "
+
+		if current_state.flags.IME {
+			flags += "IME"
+		} else {
+			flags += "---"
+		}
+
+		flags += " "
+
+		if current_state.flags.HALT {
+			flags += "HALT"
+		} else {
+			flags += "----"
+		}
+
+		return flags
+	}
+
+	ui.cpu_state.flagstring.Set(renderFlags())
 }
 
 func (ui *Interface) Run() {
