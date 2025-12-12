@@ -42,14 +42,6 @@ type cpu_state_bindings struct {
 		sp binding.Int
 		pc binding.Int
 	}
-	// flags struct {
-	// z    binding.Bool
-	// c    binding.Bool
-	// n    binding.Bool
-	// h    binding.Bool
-	// halt binding.Bool
-	// ime  binding.Bool
-	// }
 	flagstring binding.String
 }
 
@@ -85,19 +77,6 @@ func NewUI(logger *Logger) *Interface {
 	e := NewEmulator(logger)
 	display := canvas.NewRasterWithPixels(
 		func(x, y, w, h int) color.Color {
-			// frame_ready := e.FetchDecodeExec()
-			// if frame_ready {
-			// if ui.vram.Hidden {
-			// 	ui.vram.Refresh()
-			// 	ui.vram.Show()
-			// }
-			// ui.vram.Hide()
-			// ui.vram.Refresh() // TODO: refresh vram data only if there was a write to tiledata memory
-			// ui.display.Refresh()
-			// ui.window.Show()
-			// TODO: wtf out-of-bounds??
-			// TODO: center layout to set to minimum size?
-			// }
 			if x > 159 || y > 143 {
 				return color.RGBA{R: 0, G: 0, B: 0, A: 0}
 			}
