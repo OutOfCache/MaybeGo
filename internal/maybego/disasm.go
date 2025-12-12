@@ -284,12 +284,10 @@ func (dis *Disasm) SetFile(file *[]byte) {
 }
 
 func (dis *Disasm) Disassemble() {
-	for _, opc := range /*uint(len(dis.file)) */ *dis.file {
-		// opc := (*dis.file)[dis.current_addr]
-		// dis.lines[]&Opcode{}
-		fmt.Printf("%s", dis.opcodes[opc]())
+	for dis.current_addr < uint(len(*dis.file)) {
+		opc := (*dis.file)[dis.current_addr]
+		fmt.Printf("0x%X\t| %s", dis.current_addr, dis.opcodes[opc]())
 	}
-	fmt.Printf("finished at %x", dis.current_addr)
 }
 
 func (dis *Disasm) not_implemented() string {
