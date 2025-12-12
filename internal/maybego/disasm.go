@@ -18,7 +18,7 @@ type Disasm struct {
 func NewDisasm() *Disasm {
 	disasm := &Disasm{current_addr: 0x0}
 	disasm.opcodes = [256]func() string{
-		func() string { return disasm.not_implemented() },
+		func() string { disasm.current_addr++; return "nop\n" },
 		func() string { return disasm.not_implemented() },
 		func() string { return disasm.not_implemented() },
 		func() string { return disasm.not_implemented() },
