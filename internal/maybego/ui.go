@@ -61,6 +61,7 @@ type Interface struct {
 	cpu       *fyne.Container
 	cpu_state *cpu_state_bindings
 	emu       *Emulator
+	disasm    *Disasm
 }
 
 func GenerateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
@@ -199,7 +200,8 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e}
+	disasm := NewDisasm()
+	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, disasm: disasm}
 
 	return ui
 }
@@ -208,6 +210,9 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 	for i, buffer := range *rom {
 		Write(uint16(i), buffer)
 	}
+
+	ui.disasm.SetFile(rom)
+	ui.disasm.Disassemble()
 
 	// TODO: option to skip boot rom or not?
 
