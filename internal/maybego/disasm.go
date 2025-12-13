@@ -26,7 +26,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.dec("B") },                /* 0x05 */
 		func() string { return disasm.ldImm8("B") },             /* 0x06 */
 		func() string { disasm.current_addr++; return "RLCA" },  /* 0x07 */
-		func() string { return disasm.not_implemented() },       /* 0x08 */
+		func() string { return disasm.ldImm16Reg("SP") },        /* 0x08 */
 		func() string { return disasm.not_implemented() },       /* 0x09 */
 		func() string { return disasm.not_implemented() },       /* 0x0A */
 		func() string { return disasm.dec("BC") },               /* 0x0B */
@@ -252,7 +252,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.not_implemented() },       /* 0xE7 */
 		func() string { return disasm.not_implemented() },       /* 0xE8 */
 		func() string { return disasm.not_implemented() },       /* 0xE9 */
-		func() string { return disasm.not_implemented() },       /* 0xEA */
+		func() string { return disasm.ldImm16Reg("A") },         /* 0xEA */
 		func() string { return disasm.not_implemented() },       /* 0xEB */
 		func() string { return disasm.not_implemented() },       /* 0xEC */
 		func() string { return disasm.not_implemented() },       /* 0xED */
@@ -268,7 +268,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.not_implemented() },       /* 0xF7 */
 		func() string { return disasm.not_implemented() },       /* 0xF8 */
 		func() string { return disasm.not_implemented() },       /* 0xF9 */
-		func() string { return disasm.not_implemented() },       /* 0xFA */
+		func() string { return disasm.ldRegImm16("A") },         /* 0xFA */
 		func() string { return disasm.not_implemented() },       /* 0xFB */
 		func() string { return disasm.not_implemented() },       /* 0xFC */
 		func() string { return disasm.not_implemented() },       /* 0xFD */
@@ -323,6 +323,18 @@ func (dis *Disasm) inc(reg string) string {
 func (dis *Disasm) dec(reg string) string {
 	dis.current_addr++
 	return "DEC " + reg + "\n"
+}
+
+// Load [a16], reg
+func (dis *Disasm) ldImm16Reg(reg string) string {
+	dis.current_addr++
+	return "LD [" + dis.printImm16At(dis.current_addr) + "], " + reg + "\n"
+}
+
+// Load reg, [a16]
+func (dis *Disasm) ldRegImm16(reg string) string {
+	dis.current_addr++
+	return "LD " + reg + ", [" + dis.printImm16At(dis.current_addr) + "] " + "\n"
 }
 
 func (dis *Disasm) not_implemented() string {
