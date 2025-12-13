@@ -300,6 +300,11 @@ func (dis *Disasm) ldImm16(reg string) string {
 	return "LD " + reg + " " + dis.printImm16At(dis.current_addr) + "\n"
 }
 
+func (dis *Disasm) ldAddrReg(addr string, reg string) string {
+	dis.current_addr++
+	return "LD (" + reg + ") " + reg + "\n"
+}
+
 func (dis *Disasm) not_implemented() string {
 	dis.current_addr++
 	return "not implemented yet!\n"
