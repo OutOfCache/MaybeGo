@@ -23,15 +23,15 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.ldAddrReg("BC", "A") },    /* 0x02 */
 		func() string { return disasm.inc("BC") },               /* 0x03 */
 		func() string { return disasm.inc("B") },                /* 0x04 */
-		func() string { return disasm.not_implemented() },       /* 0x05 */
+		func() string { return disasm.dec("B") },                /* 0x05 */
 		func() string { return disasm.not_implemented() },       /* 0x06 */
 		func() string { return disasm.not_implemented() },       /* 0x07 */
 		func() string { return disasm.not_implemented() },       /* 0x08 */
 		func() string { return disasm.not_implemented() },       /* 0x09 */
 		func() string { return disasm.not_implemented() },       /* 0x0A */
-		func() string { return disasm.not_implemented() },       /* 0x0B */
+		func() string { return disasm.dec("BC") },               /* 0x0B */
 		func() string { return disasm.inc("C") },                /* 0x0C */
-		func() string { return disasm.not_implemented() },       /* 0x0D */
+		func() string { return disasm.dec("C") },                /* 0x0D */
 		func() string { return disasm.not_implemented() },       /* 0x0E */
 		func() string { return disasm.not_implemented() },       /* 0x0F */
 		func() string { return disasm.not_implemented() },       /* 0x10 */
@@ -39,15 +39,15 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.ldAddrReg("DE", "A") },    /* 0x12 */
 		func() string { return disasm.inc("DE") },               /* 0x13 */
 		func() string { return disasm.inc("D") },                /* 0x14 */
-		func() string { return disasm.not_implemented() },       /* 0x15 */
+		func() string { return disasm.dec("D") },                /* 0x15 */
 		func() string { return disasm.not_implemented() },       /* 0x16 */
 		func() string { return disasm.not_implemented() },       /* 0x17 */
 		func() string { return disasm.not_implemented() },       /* 0x18 */
 		func() string { return disasm.not_implemented() },       /* 0x19 */
 		func() string { return disasm.not_implemented() },       /* 0x1A */
-		func() string { return disasm.not_implemented() },       /* 0x1B */
+		func() string { return disasm.dec("DE") },               /* 0x1B */
 		func() string { return disasm.inc("E") },                /* 0x1C */
-		func() string { return disasm.not_implemented() },       /* 0x1D */
+		func() string { return disasm.dec("E") },                /* 0x1D */
 		func() string { return disasm.not_implemented() },       /* 0x1E */
 		func() string { return disasm.not_implemented() },       /* 0x1F */
 		func() string { return disasm.not_implemented() },       /* 0x20 */
@@ -55,15 +55,15 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.ldAddrReg("HL+", "A") },   /* 0x22 */
 		func() string { return disasm.inc("HL") },               /* 0x23 */
 		func() string { return disasm.inc("H") },                /* 0x24 */
-		func() string { return disasm.not_implemented() },       /* 0x25 */
+		func() string { return disasm.dec("H") },                /* 0x25 */
 		func() string { return disasm.not_implemented() },       /* 0x26 */
 		func() string { return disasm.not_implemented() },       /* 0x27 */
 		func() string { return disasm.not_implemented() },       /* 0x28 */
 		func() string { return disasm.not_implemented() },       /* 0x29 */
 		func() string { return disasm.not_implemented() },       /* 0x2A */
-		func() string { return disasm.not_implemented() },       /* 0x2B */
+		func() string { return disasm.dec("HL") },               /* 0x2B */
 		func() string { return disasm.inc("L") },                /* 0x2C */
-		func() string { return disasm.not_implemented() },       /* 0x2D */
+		func() string { return disasm.dec("L") },                /* 0x2D */
 		func() string { return disasm.not_implemented() },       /* 0x2E */
 		func() string { return disasm.not_implemented() },       /* 0x2F */
 		func() string { return disasm.not_implemented() },       /* 0x30 */
@@ -71,15 +71,15 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.ldAddrReg("HL-", "A") },   /* 0x32 */
 		func() string { return disasm.inc("SP") },               /* 0x33 */
 		func() string { return disasm.inc("(HL)") },             /* 0x34 */
-		func() string { return disasm.not_implemented() },       /* 0x35 */
+		func() string { return disasm.dec("(HL)") },             /* 0x35 */
 		func() string { return disasm.not_implemented() },       /* 0x36 */
 		func() string { return disasm.not_implemented() },       /* 0x37 */
 		func() string { return disasm.not_implemented() },       /* 0x38 */
 		func() string { return disasm.not_implemented() },       /* 0x39 */
 		func() string { return disasm.not_implemented() },       /* 0x3A */
-		func() string { return disasm.not_implemented() },       /* 0x3B */
+		func() string { return disasm.dec("SP") },               /* 0x3B */
 		func() string { return disasm.inc("A") },                /* 0x3C */
-		func() string { return disasm.not_implemented() },       /* 0x3D */
+		func() string { return disasm.dec("A") },                /* 0x3D */
 		func() string { return disasm.not_implemented() },       /* 0x3E */
 		func() string { return disasm.not_implemented() },       /* 0x3F */
 		func() string { return disasm.not_implemented() },       /* 0x40 */
@@ -308,6 +308,11 @@ func (dis *Disasm) ldAddrReg(addr string, reg string) string {
 func (dis *Disasm) inc(reg string) string {
 	dis.current_addr++
 	return "INC " + reg + "\n"
+}
+
+func (dis *Disasm) dec(reg string) string {
+	dis.current_addr++
+	return "DEC " + reg + "\n"
 }
 
 func (dis *Disasm) not_implemented() string {
