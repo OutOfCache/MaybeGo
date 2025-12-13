@@ -57,7 +57,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.inc("H") },                /* 0x24 */
 		func() string { return disasm.dec("H") },                /* 0x25 */
 		func() string { return disasm.ldImm8("H") },             /* 0x26 */
-		func() string { return disasm.not_implemented() },       /* 0x27 */
+		func() string { disasm.current_addr++; return "DAA" },   /* 0x27 */
 		func() string { return disasm.not_implemented() },       /* 0x28 */
 		func() string { return disasm.not_implemented() },       /* 0x29 */
 		func() string { return disasm.not_implemented() },       /* 0x2A */
@@ -65,7 +65,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.inc("L") },                /* 0x2C */
 		func() string { return disasm.dec("L") },                /* 0x2D */
 		func() string { return disasm.ldImm8("L") },             /* 0x2E */
-		func() string { return disasm.not_implemented() },       /* 0x2F */
+		func() string { disasm.current_addr++; return "CPL" },   /* 0x2F */
 		func() string { return disasm.not_implemented() },       /* 0x30 */
 		func() string { return disasm.ldImm16("SP") },           /* 0x31 */
 		func() string { return disasm.ldAddrReg("HL-", "A") },   /* 0x32 */
@@ -73,7 +73,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.inc("(HL)") },             /* 0x34 */
 		func() string { return disasm.dec("(HL)") },             /* 0x35 */
 		func() string { return disasm.ldImm8("(HL)") },          /* 0x36 */
-		func() string { return disasm.not_implemented() },       /* 0x37 */
+		func() string { disasm.current_addr++; return "SCF" },   /* 0x37 */
 		func() string { return disasm.not_implemented() },       /* 0x38 */
 		func() string { return disasm.not_implemented() },       /* 0x39 */
 		func() string { return disasm.not_implemented() },       /* 0x3A */
@@ -81,7 +81,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.inc("A") },                /* 0x3C */
 		func() string { return disasm.dec("A") },                /* 0x3D */
 		func() string { return disasm.ldImm8("A") },             /* 0x3E */
-		func() string { return disasm.not_implemented() },       /* 0x3F */
+		func() string { disasm.current_addr++; return "CCF" },   /* 0x3F */
 		func() string { return disasm.not_implemented() },       /* 0x40 */
 		func() string { return disasm.not_implemented() },       /* 0x41 */
 		func() string { return disasm.not_implemented() },       /* 0x42 */
