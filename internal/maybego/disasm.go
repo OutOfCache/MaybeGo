@@ -154,14 +154,14 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.addReg("A", "L") },        /* 0x85 */
 		func() string { return disasm.addReg("A", "(HL)") },     /* 0x86 */
 		func() string { return disasm.addReg("A", "A") },        /* 0x87 */
-		func() string { return disasm.not_implemented() },       /* 0x88 */
-		func() string { return disasm.not_implemented() },       /* 0x89 */
-		func() string { return disasm.not_implemented() },       /* 0x8A */
-		func() string { return disasm.not_implemented() },       /* 0x8B */
-		func() string { return disasm.not_implemented() },       /* 0x8C */
-		func() string { return disasm.not_implemented() },       /* 0x8D */
-		func() string { return disasm.not_implemented() },       /* 0x8E */
-		func() string { return disasm.not_implemented() },       /* 0x8F */
+		func() string { return disasm.adcReg("B") },             /* 0x88 */
+		func() string { return disasm.adcReg("C") },             /* 0x89 */
+		func() string { return disasm.adcReg("D") },             /* 0x8A */
+		func() string { return disasm.adcReg("E") },             /* 0x8B */
+		func() string { return disasm.adcReg("H") },             /* 0x8C */
+		func() string { return disasm.adcReg("L") },             /* 0x8D */
+		func() string { return disasm.adcReg("[HL]") },          /* 0x8E */
+		func() string { return disasm.adcReg("A") },             /* 0x8F */
 		func() string { return disasm.not_implemented() },       /* 0x90 */
 		func() string { return disasm.not_implemented() },       /* 0x91 */
 		func() string { return disasm.not_implemented() },       /* 0x92 */
@@ -360,6 +360,11 @@ func (dis *Disasm) jr_flag(flag string) string {
 func (dis *Disasm) addReg(dst string, src string) string {
 	dis.current_addr++
 	return "ADD " + dst + ", " + src + "\n"
+}
+
+func (dis *Disasm) adcReg(src string) string {
+	dis.current_addr++
+	return "ADC A, " + src + "\n"
 }
 
 func (dis *Disasm) addImm8(dst string) string {
