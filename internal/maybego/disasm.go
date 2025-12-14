@@ -286,13 +286,13 @@ func (dis *Disasm) SetFile(file *[]byte) {
 func (dis *Disasm) Disassemble() {
 	for dis.current_addr < uint(len(*dis.file)) {
 		opc := (*dis.file)[dis.current_addr]
-		fmt.Printf("0x%X\t| %s", dis.current_addr, dis.opcodes[opc]())
+		fmt.Printf("0x%02X\t| %s", dis.current_addr, dis.opcodes[opc]())
 	}
 }
 
 func (dis *Disasm) printImm8At(addr uint) string {
 	dis.current_addr++
-	return fmt.Sprintf("%02X %02X", (*dis.file)[addr])
+	return fmt.Sprintf("%02X", (*dis.file)[addr])
 }
 
 func (dis *Disasm) printImm16At(start_addr uint) string {
