@@ -216,7 +216,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.not_implemented() },       /* 0xC3 */
 		func() string { return disasm.not_implemented() },       /* 0xC4 */
 		func() string { return disasm.not_implemented() },       /* 0xC5 */
-		func() string { return disasm.not_implemented() },       /* 0xC6 */
+		func() string { return disasm.addImm8("A") },            /* 0xC6 */
 		func() string { return disasm.not_implemented() },       /* 0xC7 */
 		func() string { return disasm.not_implemented() },       /* 0xC8 */
 		func() string { return disasm.not_implemented() },       /* 0xC9 */
@@ -250,7 +250,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.not_implemented() },       /* 0xE5 */
 		func() string { return disasm.not_implemented() },       /* 0xE6 */
 		func() string { return disasm.not_implemented() },       /* 0xE7 */
-		func() string { return disasm.not_implemented() },       /* 0xE8 */
+		func() string { return disasm.addImm8("SP") },           /* 0xE8 */
 		func() string { return disasm.not_implemented() },       /* 0xE9 */
 		func() string { return disasm.ldImm16Reg("A") },         /* 0xEA */
 		func() string { return disasm.not_implemented() },       /* 0xEB */
@@ -350,6 +350,11 @@ func (dis *Disasm) jr_flag(flag string) string {
 func (dis *Disasm) addReg(dst string, src string) string {
 	dis.current_addr++
 	return "ADD " + dst + ", " + src + "\n"
+}
+
+func (dis *Disasm) addImm8(dst string) string {
+	dis.current_addr++
+	return "ADD " + dst + ", " + dis.printImm16At(dis.current_addr) + "\n"
 }
 
 func (dis *Disasm) not_implemented() string {
