@@ -162,22 +162,22 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.adcReg("L") },             /* 0x8D */
 		func() string { return disasm.adcReg("[HL]") },          /* 0x8E */
 		func() string { return disasm.adcReg("A") },             /* 0x8F */
-		func() string { return disasm.not_implemented() },       /* 0x90 */
-		func() string { return disasm.not_implemented() },       /* 0x91 */
-		func() string { return disasm.not_implemented() },       /* 0x92 */
-		func() string { return disasm.not_implemented() },       /* 0x93 */
-		func() string { return disasm.not_implemented() },       /* 0x94 */
-		func() string { return disasm.not_implemented() },       /* 0x95 */
-		func() string { return disasm.not_implemented() },       /* 0x96 */
-		func() string { return disasm.not_implemented() },       /* 0x97 */
-		func() string { return disasm.not_implemented() },       /* 0x98 */
-		func() string { return disasm.not_implemented() },       /* 0x99 */
-		func() string { return disasm.not_implemented() },       /* 0x9A */
-		func() string { return disasm.not_implemented() },       /* 0x9B */
-		func() string { return disasm.not_implemented() },       /* 0x9C */
-		func() string { return disasm.not_implemented() },       /* 0x9D */
-		func() string { return disasm.not_implemented() },       /* 0x9E */
-		func() string { return disasm.not_implemented() },       /* 0x9F */
+		func() string { return disasm.subReg("B") },             /* 0x90 */
+		func() string { return disasm.subReg("C") },             /* 0x91 */
+		func() string { return disasm.subReg("D") },             /* 0x92 */
+		func() string { return disasm.subReg("E") },             /* 0x93 */
+		func() string { return disasm.subReg("H") },             /* 0x94 */
+		func() string { return disasm.subReg("L") },             /* 0x95 */
+		func() string { return disasm.subReg("[HL]") },          /* 0x96 */
+		func() string { return disasm.subReg("A") },             /* 0x97 */
+		func() string { return disasm.sbcReg("B") },             /* 0x98 */
+		func() string { return disasm.sbcReg("C") },             /* 0x99 */
+		func() string { return disasm.sbcReg("D") },             /* 0x9A */
+		func() string { return disasm.sbcReg("E") },             /* 0x9B */
+		func() string { return disasm.sbcReg("H") },             /* 0x9C */
+		func() string { return disasm.sbcReg("L") },             /* 0x9D */
+		func() string { return disasm.sbcReg("[HL]") },          /* 0x9E */
+		func() string { return disasm.sbcReg("A") },             /* 0x9F */
 		func() string { return disasm.not_implemented() },       /* 0xA0 */
 		func() string { return disasm.not_implemented() },       /* 0xA1 */
 		func() string { return disasm.not_implemented() },       /* 0xA2 */
@@ -365,6 +365,16 @@ func (dis *Disasm) addReg(dst string, src string) string {
 func (dis *Disasm) adcReg(src string) string {
 	dis.current_addr++
 	return "ADC A, " + src + "\n"
+}
+
+func (dis *Disasm) subReg(src string) string {
+	dis.current_addr++
+	return "SUB A, " + src + "\n"
+}
+
+func (dis *Disasm) sbcReg(src string) string {
+	dis.current_addr++
+	return "SBC A, " + src + "\n"
 }
 
 func (dis *Disasm) addImm8(dst string) string {
