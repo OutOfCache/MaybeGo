@@ -313,7 +313,7 @@ func (dis *Disasm) ldImm8(reg string) string {
 
 func (dis *Disasm) ldAddrReg(addr string, reg string) string {
 	dis.current_addr++
-	return "LD [" + reg + "], " + reg + "\n"
+	return "LD [" + addr + "], " + reg + "\n"
 }
 
 func (dis *Disasm) inc(reg string) string {
