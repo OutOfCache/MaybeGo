@@ -287,7 +287,12 @@ func (dis *Disasm) Disassemble() {
 	for dis.current_addr < uint(len(*dis.file)) {
 		opc := (*dis.file)[dis.current_addr]
 		offset := dis.current_addr
-		fmt.Printf("0x%02X\t| %s", offset, dis.opcodes[opc]())
+		dis.lines = append(dis.lines, Opcode{offset: offset, disasm: dis.opcodes[opc]()})
+		// fmt.Printf("0x%02X\t| %s", offset, dis.opcodes[opc]())
+	}
+
+	for _, line := range dis.lines {
+		fmt.Printf("0x%02X\t| %s", line.offset, line.disasm)
 	}
 }
 
