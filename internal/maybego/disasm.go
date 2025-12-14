@@ -211,11 +211,11 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.cpReg("[HL]") },            /* 0xBE */
 		func() string { return disasm.cpReg("A") },               /* 0xBF */
 		func() string { return disasm.ret("NZ") },                /* 0xC0 */
-		func() string { return disasm.not_implemented() },        /* 0xC1 */
+		func() string { return disasm.pop("BC") },                /* 0xC1 */
 		func() string { return disasm.not_implemented() },        /* 0xC2 */
 		func() string { return disasm.not_implemented() },        /* 0xC3 */
 		func() string { return disasm.not_implemented() },        /* 0xC4 */
-		func() string { return disasm.not_implemented() },        /* 0xC5 */
+		func() string { return disasm.push("BC") },               /* 0xC5 */
 		func() string { return disasm.addImm8("A") },             /* 0xC6 */
 		func() string { return disasm.not_implemented() },        /* 0xC7 */
 		func() string { return disasm.ret("Z") },                 /* 0xC8 */
@@ -227,11 +227,11 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.not_implemented() },        /* 0xCE */
 		func() string { return disasm.not_implemented() },        /* 0xCF */
 		func() string { return disasm.ret("NC") },                /* 0xD0 */
-		func() string { return disasm.not_implemented() },        /* 0xD1 */
+		func() string { return disasm.pop("DE") },                /* 0xD1 */
 		func() string { return disasm.not_implemented() },        /* 0xD2 */
 		func() string { return disasm.not_implemented() },        /* 0xD3 */
 		func() string { return disasm.not_implemented() },        /* 0xD4 */
-		func() string { return disasm.not_implemented() },        /* 0xD5 */
+		func() string { return disasm.push("DE") },               /* 0xD5 */
 		func() string { return disasm.not_implemented() },        /* 0xD6 */
 		func() string { return disasm.not_implemented() },        /* 0xD7 */
 		func() string { return disasm.ret("C") },                 /* 0xD8 */
@@ -243,11 +243,11 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.not_implemented() },        /* 0xDE */
 		func() string { return disasm.not_implemented() },        /* 0xDF */
 		func() string { return disasm.not_implemented() },        /* 0xE0 */
-		func() string { return disasm.not_implemented() },        /* 0xE1 */
+		func() string { return disasm.pop("HL") },                /* 0xE1 */
 		func() string { return disasm.not_implemented() },        /* 0xE2 */
 		func() string { return disasm.not_implemented() },        /* 0xE3 */
 		func() string { return disasm.not_implemented() },        /* 0xE4 */
-		func() string { return disasm.not_implemented() },        /* 0xE5 */
+		func() string { return disasm.push("HL") },               /* 0xE5 */
 		func() string { return disasm.not_implemented() },        /* 0xE6 */
 		func() string { return disasm.not_implemented() },        /* 0xE7 */
 		func() string { return disasm.addImm8("SP") },            /* 0xE8 */
@@ -259,11 +259,11 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.not_implemented() },        /* 0xEE */
 		func() string { return disasm.not_implemented() },        /* 0xEF */
 		func() string { return disasm.not_implemented() },        /* 0xF0 */
-		func() string { return disasm.not_implemented() },        /* 0xF1 */
+		func() string { return disasm.pop("AF") },                /* 0xF1 */
 		func() string { return disasm.not_implemented() },        /* 0xF2 */
 		func() string { disasm.current_addr++; return "DI\n" },   /* 0xF3 */
 		func() string { return disasm.not_implemented() },        /* 0xF4 */
-		func() string { return disasm.not_implemented() },        /* 0xF5 */
+		func() string { return disasm.push("AF") },               /* 0xF5 */
 		func() string { return disasm.not_implemented() },        /* 0xF6 */
 		func() string { return disasm.not_implemented() },        /* 0xF7 */
 		func() string { return disasm.not_implemented() },        /* 0xF8 */
@@ -406,6 +406,16 @@ func (dis *Disasm) cpReg(src string) string {
 func (dis *Disasm) ret(flag string) string {
 	dis.current_addr++
 	return "RET " + flag + "\n"
+}
+
+func (dis *Disasm) pop(dst string) string {
+	dis.current_addr++
+	return "POP " + dst + "\n"
+}
+
+func (dis *Disasm) push(src string) string {
+	dis.current_addr++
+	return "PUSH " + src + "\n"
 }
 
 func (dis *Disasm) not_implemented() string {
