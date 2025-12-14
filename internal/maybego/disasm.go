@@ -178,38 +178,38 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.sbcReg("L") },             /* 0x9D */
 		func() string { return disasm.sbcReg("[HL]") },          /* 0x9E */
 		func() string { return disasm.sbcReg("A") },             /* 0x9F */
-		func() string { return disasm.not_implemented() },       /* 0xA0 */
-		func() string { return disasm.not_implemented() },       /* 0xA1 */
-		func() string { return disasm.not_implemented() },       /* 0xA2 */
-		func() string { return disasm.not_implemented() },       /* 0xA3 */
-		func() string { return disasm.not_implemented() },       /* 0xA4 */
-		func() string { return disasm.not_implemented() },       /* 0xA5 */
-		func() string { return disasm.not_implemented() },       /* 0xA6 */
-		func() string { return disasm.not_implemented() },       /* 0xA7 */
-		func() string { return disasm.not_implemented() },       /* 0xA8 */
-		func() string { return disasm.not_implemented() },       /* 0xA9 */
-		func() string { return disasm.not_implemented() },       /* 0xAA */
-		func() string { return disasm.not_implemented() },       /* 0xAB */
-		func() string { return disasm.not_implemented() },       /* 0xAC */
-		func() string { return disasm.not_implemented() },       /* 0xAD */
-		func() string { return disasm.not_implemented() },       /* 0xAE */
-		func() string { return disasm.not_implemented() },       /* 0xAF */
-		func() string { return disasm.not_implemented() },       /* 0xB0 */
-		func() string { return disasm.not_implemented() },       /* 0xB1 */
-		func() string { return disasm.not_implemented() },       /* 0xB2 */
-		func() string { return disasm.not_implemented() },       /* 0xB3 */
-		func() string { return disasm.not_implemented() },       /* 0xB4 */
-		func() string { return disasm.not_implemented() },       /* 0xB5 */
-		func() string { return disasm.not_implemented() },       /* 0xB6 */
-		func() string { return disasm.not_implemented() },       /* 0xB7 */
-		func() string { return disasm.not_implemented() },       /* 0xB8 */
-		func() string { return disasm.not_implemented() },       /* 0xB9 */
-		func() string { return disasm.not_implemented() },       /* 0xBA */
-		func() string { return disasm.not_implemented() },       /* 0xBB */
-		func() string { return disasm.not_implemented() },       /* 0xBC */
-		func() string { return disasm.not_implemented() },       /* 0xBD */
-		func() string { return disasm.not_implemented() },       /* 0xBE */
-		func() string { return disasm.not_implemented() },       /* 0xBF */
+		func() string { return disasm.andReg("B") },             /* 0xA0 */
+		func() string { return disasm.andReg("C") },             /* 0xA1 */
+		func() string { return disasm.andReg("D") },             /* 0xA2 */
+		func() string { return disasm.andReg("E") },             /* 0xA3 */
+		func() string { return disasm.andReg("H") },             /* 0xA4 */
+		func() string { return disasm.andReg("L") },             /* 0xA5 */
+		func() string { return disasm.andReg("[HL]") },          /* 0xA6 */
+		func() string { return disasm.andReg("A") },             /* 0xA7 */
+		func() string { return disasm.xorReg("B") },             /* 0xA8 */
+		func() string { return disasm.xorReg("C") },             /* 0xA9 */
+		func() string { return disasm.xorReg("D") },             /* 0xAA */
+		func() string { return disasm.xorReg("E") },             /* 0xAB */
+		func() string { return disasm.xorReg("H") },             /* 0xAC */
+		func() string { return disasm.xorReg("L") },             /* 0xAD */
+		func() string { return disasm.xorReg("[HL]") },          /* 0xAE */
+		func() string { return disasm.xorReg("A") },             /* 0xAF */
+		func() string { return disasm.orReg("B") },              /* 0xB0 */
+		func() string { return disasm.orReg("C") },              /* 0xB1 */
+		func() string { return disasm.orReg("D") },              /* 0xB2 */
+		func() string { return disasm.orReg("E") },              /* 0xB3 */
+		func() string { return disasm.orReg("H") },              /* 0xB4 */
+		func() string { return disasm.orReg("L") },              /* 0xB5 */
+		func() string { return disasm.orReg("[HL]") },           /* 0xB6 */
+		func() string { return disasm.orReg("A") },              /* 0xB7 */
+		func() string { return disasm.cpReg("B") },              /* 0xB8 */
+		func() string { return disasm.cpReg("C") },              /* 0xB9 */
+		func() string { return disasm.cpReg("D") },              /* 0xBA */
+		func() string { return disasm.cpReg("E") },              /* 0xBB */
+		func() string { return disasm.cpReg("H") },              /* 0xBC */
+		func() string { return disasm.cpReg("L") },              /* 0xBD */
+		func() string { return disasm.cpReg("[HL]") },           /* 0xBE */
+		func() string { return disasm.cpReg("A") },              /* 0xBF */
 		func() string { return disasm.not_implemented() },       /* 0xC0 */
 		func() string { return disasm.not_implemented() },       /* 0xC1 */
 		func() string { return disasm.not_implemented() },       /* 0xC2 */
@@ -357,6 +357,11 @@ func (dis *Disasm) jr_flag(flag string) string {
 	return "JR " + flag + ", " + dis.printImm8At(dis.current_addr) + "\n"
 }
 
+func (dis *Disasm) addImm8(dst string) string {
+	dis.current_addr++
+	return "ADD " + dst + ", " + dis.printImm16At(dis.current_addr) + "\n"
+}
+
 func (dis *Disasm) addReg(dst string, src string) string {
 	dis.current_addr++
 	return "ADD " + dst + ", " + src + "\n"
@@ -377,9 +382,24 @@ func (dis *Disasm) sbcReg(src string) string {
 	return "SBC A, " + src + "\n"
 }
 
-func (dis *Disasm) addImm8(dst string) string {
+func (dis *Disasm) andReg(src string) string {
 	dis.current_addr++
-	return "ADD " + dst + ", " + dis.printImm16At(dis.current_addr) + "\n"
+	return "AND A, " + src + "\n"
+}
+
+func (dis *Disasm) xorReg(src string) string {
+	dis.current_addr++
+	return "XOR A, " + src + "\n"
+}
+
+func (dis *Disasm) orReg(src string) string {
+	dis.current_addr++
+	return "OR A, " + src + "\n"
+}
+
+func (dis *Disasm) cpReg(src string) string {
+	dis.current_addr++
+	return "CP A, " + src + "\n"
 }
 
 func (dis *Disasm) not_implemented() string {
