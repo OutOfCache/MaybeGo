@@ -3,7 +3,6 @@ package maybego
 import (
 	// "fmt"
 	"image/color"
-	"strings"
 	"time"
 
 	// "math/rand"
@@ -201,7 +200,7 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 	ui.disasm.Disassemble()
 
 	for _, line := range ui.disasm.lines {
-		ui.disasm_container.Append(strings.Trim(line.disasm, "\n"))
+		ui.disasm_container.Append(line.disasm)
 	}
 
 	// TODO: option to skip boot rom or not?
