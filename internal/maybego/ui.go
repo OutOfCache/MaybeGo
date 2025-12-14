@@ -3,6 +3,7 @@ package maybego
 import (
 	// "fmt"
 	"image/color"
+	"strings"
 	"time"
 
 	// "math/rand"
@@ -46,14 +47,15 @@ type cpu_state_bindings struct {
 }
 
 type Interface struct {
-	app       fyne.App
-	window    fyne.Window
-	display   *canvas.Raster
-	vram      *fyne.Container
-	cpu       *fyne.Container
-	cpu_state *cpu_state_bindings
-	emu       *Emulator
-	disasm    *Disasm
+	app              fyne.App
+	window           fyne.Window
+	display          *canvas.Raster
+	vram             *fyne.Container
+	cpu              *fyne.Container
+	cpu_state        *cpu_state_bindings
+	emu              *Emulator
+	disasm           *Disasm
+	disasm_container *widget.TextGrid
 }
 
 func GenerateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
@@ -151,6 +153,12 @@ func NewUI(logger *Logger) *Interface {
 		}
 	})
 	// ============= Debugger: CPU State =============
+	// ============= Debugger: Disassembler =============
+	disasm := NewDisasm()
+	disasm_container := widget.NewTextGrid()
+	disasm_container.Scroll = fyne.ScrollVerticalOnly
+
+	// ============= Debugger: Disassembler =============
 
 	vram := container.New(layout.NewGridLayout(16))
 	scale := 2
@@ -162,7 +170,7 @@ func NewUI(logger *Logger) *Interface {
 	}
 	// TODO: scaling factor
 	display.SetMinSize(fyne.NewSize(160, 144))
-	content := container.New(layout.NewHBoxLayout(), cpu_state_container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
+	content := container.New(layout.NewHBoxLayout(), disasm_container, layout.NewSpacer(), cpu_state_container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
 
 	vram.Hide()
 	vram_visibility := fyne.NewMenuItem("VRAM viewer", func() {
@@ -179,8 +187,7 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	disasm := NewDisasm()
-	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, disasm: disasm}
+	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, disasm: disasm, disasm_container: disasm_container}
 
 	return ui
 }
@@ -192,6 +199,10 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 
 	ui.disasm.SetFile(rom)
 	ui.disasm.Disassemble()
+
+	for _, line := range ui.disasm.lines {
+		ui.disasm_container.Append(strings.Trim(line.disasm, "\n"))
+	}
 
 	// TODO: option to skip boot rom or not?
 
