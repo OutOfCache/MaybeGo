@@ -1,7 +1,7 @@
 package maybego
 
 import (
-	// "fmt"
+	"fmt"
 	"image/color"
 	"time"
 
@@ -45,6 +45,10 @@ type cpu_state_bindings struct {
 	flagstring binding.String
 }
 
+type disasmWindow struct {
+	*widget.TextGrid
+}
+
 type Interface struct {
 	app              fyne.App
 	window           fyne.Window
@@ -54,7 +58,7 @@ type Interface struct {
 	cpu_state        *cpu_state_bindings
 	emu              *Emulator
 	disasm           *Disasm
-	disasm_container *widget.TextGrid
+	disasm_container *disasmWindow
 }
 
 func GenerateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
@@ -154,7 +158,7 @@ func NewUI(logger *Logger) *Interface {
 	// ============= Debugger: CPU State =============
 	// ============= Debugger: Disassembler =============
 	disasm := NewDisasm()
-	disasm_container := widget.NewTextGrid()
+	disasm_container := &disasmWindow{widget.NewTextGrid()}
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
 
 	// ============= Debugger: Disassembler =============
@@ -187,6 +191,7 @@ func NewUI(logger *Logger) *Interface {
 	w.SetContent(content)
 
 	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, disasm: disasm, disasm_container: disasm_container}
+	ui.disasm_container.ExtendBaseWidget(disasm_container)
 
 	return ui
 }
@@ -300,4 +305,16 @@ func (ui *Interface) Run() {
 	}()
 	ui.window.ShowAndRun()
 
+}
+
+func (dw *disasmWindow) Tapped(ev *fyne.PointEvent) {
+	fmt.Println("Tapped at", ev.Position.X, ", ", ev.Position.Y)
+	xpos, ypos := dw.CursorLocationForPosition(ev.Position)
+	if ev.Position.X < 0 || ev.Position.Y < 0 || xpos >= int(dw.Size().Width) || ypos >= int(dw.Size().Height) {
+		return
+	}
+
+	selectedStyle := widget.CustomTextGridStyle{}
+	selectedStyle.BGColor = color.Black
+	dw.SetRowStyle(ypos, &selectedStyle)
 }
