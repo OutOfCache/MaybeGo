@@ -286,7 +286,8 @@ func (dis *Disasm) SetFile(file *[]byte) {
 func (dis *Disasm) Disassemble() {
 	for dis.current_addr < uint(len(*dis.file)) {
 		opc := (*dis.file)[dis.current_addr]
-		fmt.Printf("0x%02X\t| %s", dis.current_addr, dis.opcodes[opc]())
+		offset := dis.current_addr
+		fmt.Printf("0x%02X\t| %s", offset, dis.opcodes[opc]())
 	}
 }
 
