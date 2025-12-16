@@ -1,7 +1,6 @@
 package maybego
 
 import (
-	"fmt"
 	"image/color"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	"fyne.io/fyne/v2/canvas"
@@ -311,13 +311,11 @@ func (ui *Interface) Run() {
 }
 
 func (dw *disasmWindow) Tapped(ev *fyne.PointEvent) {
-	fmt.Println("Tapped at", ev.Position.X, ", ", ev.Position.Y)
-	xpos, ypos := dw.CursorLocationForPosition(ev.Position)
-	if ev.Position.X < 0 || ev.Position.Y < 0 || xpos >= int(dw.Size().Width) || ypos >= int(dw.Size().Height) {
-		return
-	}
+	xpos, _ := dw.CursorLocationForPosition(ev.Position)
 
 	selectedStyle := widget.CustomTextGridStyle{}
-	selectedStyle.BGColor = color.Black
-	dw.SetRowStyle(ypos, &selectedStyle)
+	selectedStyle.BGColor = theme.Color(theme.ColorNameFocus)
+	// TODO visual indication that it is selected instantly
+	dw.SetRowStyle(xpos, &selectedStyle)
+	dw.BaseWidget.Refresh()
 }
