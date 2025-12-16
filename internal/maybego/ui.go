@@ -202,11 +202,14 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 	}
 
 	ui.disasm.SetFile(rom)
-	ui.disasm.Disassemble()
 
-	for _, line := range ui.disasm.lines {
-		ui.disasm_container.Append(line.disasm)
-	}
+	go func() {
+		ui.disasm.Disassemble()
+
+		for _, line := range ui.disasm.lines {
+			ui.disasm_container.Append(line.disasm)
+		}
+	}()
 
 	// TODO: option to skip boot rom or not?
 
