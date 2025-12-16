@@ -4,7 +4,6 @@ import (
 	"image/color"
 	"time"
 
-	// "math/rand"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
