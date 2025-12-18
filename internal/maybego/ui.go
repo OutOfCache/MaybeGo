@@ -1,6 +1,7 @@
 package maybego
 
 import (
+	"fmt"
 	"image/color"
 	"time"
 
@@ -206,7 +207,7 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 		ui.disasm.Disassemble()
 
 		for _, line := range ui.disasm.lines {
-			ui.disasm_container.Append(line.disasm)
+			ui.disasm_container.Append(fmt.Sprintf("%04X|\t%s", line.offset, line.disasm))
 		}
 	}()
 
