@@ -47,6 +47,7 @@ type cpu_state_bindings struct {
 
 type disasmWindow struct {
 	*widget.TextGrid
+	disasm *Disasm
 }
 
 type Interface struct {
@@ -57,7 +58,6 @@ type Interface struct {
 	cpu              *fyne.Container
 	cpu_state        *cpu_state_bindings
 	emu              *Emulator
-	disasm           *Disasm
 	disasm_container *disasmWindow
 }
 
@@ -157,8 +157,10 @@ func NewUI(logger *Logger) *Interface {
 	})
 	// ============= Debugger: CPU State =============
 	// ============= Debugger: Disassembler =============
-	disasm := NewDisasm()
-	disasm_container := &disasmWindow{widget.NewTextGrid()}
+	disasm_container := &disasmWindow{
+		TextGrid: &widget.TextGrid{},
+		disasm:   NewDisasm(),
+	}
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
 
 	// ============= Debugger: Disassembler =============
@@ -190,7 +192,7 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, disasm: disasm, disasm_container: disasm_container}
+	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, disasm_container: disasm_container}
 	ui.disasm_container.ExtendBaseWidget(disasm_container)
 
 	return ui
@@ -201,12 +203,12 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 		Write(uint16(i), buffer)
 	}
 
-	ui.disasm.SetFile(rom)
+	ui.disasm_container.disasm.SetFile(rom)
 
 	go func() {
-		ui.disasm.Disassemble()
+		ui.disasm_container.disasm.Disassemble()
 
-		for _, line := range ui.disasm.lines {
+		for _, line := range ui.disasm_container.disasm.lines {
 			ui.disasm_container.Append(fmt.Sprintf("%04X|\t%s", line.offset, line.disasm))
 		}
 	}()
