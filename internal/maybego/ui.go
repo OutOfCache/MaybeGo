@@ -3,6 +3,7 @@ package maybego
 import (
 	"fmt"
 	"image/color"
+	"slices"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -47,7 +48,8 @@ type cpu_state_bindings struct {
 
 type disasmWindow struct {
 	*widget.TextGrid
-	disasm *Disasm
+	disasm      *Disasm
+	breakpoints []uint
 }
 
 type Interface struct {
@@ -59,6 +61,7 @@ type Interface struct {
 	cpu_state        *cpu_state_bindings
 	emu              *Emulator
 	disasm_container *disasmWindow
+	halt             bool
 }
 
 func GenerateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
@@ -161,6 +164,8 @@ func NewUI(logger *Logger) *Interface {
 		TextGrid: &widget.TextGrid{},
 		disasm:   NewDisasm(),
 	}
+	disasm_container.breakpoints = append(disasm_container.breakpoints, 0x150)
+	disasm_container.breakpoints = append(disasm_container.breakpoints, 0x21B)
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
 
 	// ============= Debugger: Disassembler =============
@@ -288,6 +293,9 @@ func (ui *Interface) Run() {
 	go func() {
 		frame_time := 16 * time.Millisecond // for 60 fps
 		for range time.NewTicker(frame_time).C {
+			if ui.halt {
+				return
+			}
 			fyne.DoAndWait(func() {
 
 				frame_ready := false
@@ -295,6 +303,12 @@ func (ui *Interface) Run() {
 				for _ = range max_render_time {
 					frame_ready = ui.emu.Run()
 					if frame_ready {
+						break
+					}
+					next_pc := ui.emu.GetCPUState().registers.PC
+					if slices.Contains(ui.disasm_container.breakpoints, uint(next_pc)) {
+						fmt.Println("halted. next_pc: %X")
+						ui.halt = true
 						break
 					}
 				}
@@ -318,6 +332,7 @@ func (dw *disasmWindow) Tapped(ev *fyne.PointEvent) {
 	selectedStyle := widget.CustomTextGridStyle{}
 	selectedStyle.BGColor = theme.Color(theme.ColorNameFocus)
 	// TODO visual indication that it is selected instantly
+	dw.breakpoints = append(dw.breakpoints, dw.disasm.lines[xpos].offset)
 	dw.SetRowStyle(xpos, &selectedStyle)
 	dw.BaseWidget.Refresh()
 }
