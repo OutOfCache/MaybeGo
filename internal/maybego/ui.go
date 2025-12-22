@@ -55,6 +55,7 @@ type disasmWindow struct {
 type debugView struct {
 	disasm_win *disasmWindow
 	halt       bool
+	step       bool
 }
 
 type Interface struct {
@@ -181,9 +182,13 @@ func NewUI(logger *Logger) *Interface {
 			debug_view.halt = true
 			fmt.Printf("halt: %t\n", debug_view.halt)
 		}),
-		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {}),
+		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {
+			debug_view.halt = false
+			debug_view.step = true
+		}),
 		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {
 			debug_view.halt = false
+			debug_view.step = false
 			fmt.Printf("halt: %t\n", debug_view.halt)
 		}),
 		widget.NewToolbarSpacer(),
@@ -325,6 +330,10 @@ func (ui *Interface) Run() {
 
 				frame_ready := false
 				max_render_time := (456 /* dots */ * 153 /* lines */ / 4 /* cpu cyc */)
+				if ui.debug_view.step {
+					max_render_time = 1
+					ui.debug_view.halt = true
+				}
 				for _ = range max_render_time {
 					frame_ready = ui.emu.Run()
 					if frame_ready {
