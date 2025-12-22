@@ -193,7 +193,11 @@ func NewUI(logger *Logger) *Interface {
 		}),
 		widget.NewToolbarSpacer(),
 		widget.NewToolbarSeparator(),
-		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {}),
+		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {
+			e.Reset()
+			debug_view.halt = false
+			debug_view.step = false
+		}),
 	)
 
 	disasm_content := container.NewBorder(toolbar, nil, nil, nil, disasm_container)
