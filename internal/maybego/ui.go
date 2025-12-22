@@ -86,55 +86,7 @@ func NewUI(logger *Logger) *Interface {
 		})
 
 	// ============= Debugger: CPU State =============
-	cpu := &cpuStateWindow{
-		container: container.New(layout.NewVBoxLayout()),
-		state:     &cpu_state_bindings{cycles: binding.NewInt()},
-	}
-	cpu_state_label := widget.NewLabel("CPU State")
-	cpu_state_label.TextStyle.Bold = true
-	cpu.container.Add(cpu_state_label)
-	register_container := container.NewHBox()
-	register_container_lo := container.NewVBox()
-	register_container_hi := container.NewVBox()
-	cpu.container.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.cycles, "cpu cycle: %d")))
-	cpu.state.registers.a = binding.NewInt()
-	cpu.state.registers.b = binding.NewInt()
-	cpu.state.registers.c = binding.NewInt()
-	cpu.state.registers.d = binding.NewInt()
-	cpu.state.registers.e = binding.NewInt()
-	cpu.state.registers.h = binding.NewInt()
-	cpu.state.registers.l = binding.NewInt()
-	cpu.state.registers.pc = binding.NewInt()
-	cpu.state.registers.sp = binding.NewInt()
-	registers_label := widget.NewLabel("Registers")
-	registers_label.TextStyle.Bold = true
-	cpu.container.Add(registers_label)
-
-	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.a, "A: %X")))
-	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.pc, "PC: %X")))
-	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.b, "B: %X")))
-	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.c, "C: %X")))
-	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.d, "D: %X")))
-	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.e, "E: %X")))
-	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.h, "H: %X")))
-	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.l, "L: %X")))
-	register_container.Add(register_container_lo)
-	register_container.Add(register_container_hi)
-	register_container.Resize(fyne.NewSize(160, 160))
-	cpu.container.Add(register_container)
-
-	cpu.state.flagstring = binding.NewString()
-
-	flag_container := container.NewVBox()
-	flag_label := widget.NewLabel("Flags")
-	flag_label.TextStyle.Bold = true
-	flagstring_label := widget.NewLabelWithData(cpu.state.flagstring)
-	flagstring_label.TextStyle.Monospace = true
-	flag_container.Add(flag_label)
-	flag_container.Add(flagstring_label)
-	cpu.container.Add(flag_container)
-
-	// cpu_state_container.Hide()
+	cpu := createCpuStateWindow()
 	cpu_state_visibility := fyne.NewMenuItem("CPU state", func() {
 		if cpu.container.Hidden {
 			cpu.container.Refresh()
@@ -359,6 +311,59 @@ func createVramView() *fyne.Container {
 	}
 
 	return vram
+}
+
+func createCpuStateWindow() *cpuStateWindow {
+	cpu := &cpuStateWindow{
+		container: container.New(layout.NewVBoxLayout()),
+		state:     &cpu_state_bindings{cycles: binding.NewInt()},
+	}
+	cpu_state_label := widget.NewLabel("CPU State")
+	cpu_state_label.TextStyle.Bold = true
+	cpu.container.Add(cpu_state_label)
+	cpu.container.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.cycles, "cpu cycle: %d")))
+
+	register_container := container.NewHBox()
+	register_container_lo := container.NewVBox()
+	register_container_hi := container.NewVBox()
+	cpu.state.registers.a = binding.NewInt()
+	cpu.state.registers.b = binding.NewInt()
+	cpu.state.registers.c = binding.NewInt()
+	cpu.state.registers.d = binding.NewInt()
+	cpu.state.registers.e = binding.NewInt()
+	cpu.state.registers.h = binding.NewInt()
+	cpu.state.registers.l = binding.NewInt()
+	cpu.state.registers.pc = binding.NewInt()
+	cpu.state.registers.sp = binding.NewInt()
+	registers_label := widget.NewLabel("Registers")
+	registers_label.TextStyle.Bold = true
+	cpu.container.Add(registers_label)
+
+	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.a, "A: %X")))
+	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.pc, "PC: %X")))
+	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.b, "B: %X")))
+	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.c, "C: %X")))
+	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.d, "D: %X")))
+	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.e, "E: %X")))
+	register_container_lo.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.h, "H: %X")))
+	register_container_hi.Add(widget.NewLabelWithData(binding.IntToStringWithFormat(cpu.state.registers.l, "L: %X")))
+	register_container.Add(register_container_lo)
+	register_container.Add(register_container_hi)
+	register_container.Resize(fyne.NewSize(160, 160))
+	cpu.container.Add(register_container)
+
+	cpu.state.flagstring = binding.NewString()
+
+	flag_container := container.NewVBox()
+	flag_label := widget.NewLabel("Flags")
+	flag_label.TextStyle.Bold = true
+	flagstring_label := widget.NewLabelWithData(cpu.state.flagstring)
+	flagstring_label.TextStyle.Monospace = true
+	flag_container.Add(flag_label)
+	flag_container.Add(flagstring_label)
+	cpu.container.Add(flag_container)
+
+	return cpu
 }
 
 func (dw *disasmWindow) Tapped(ev *fyne.PointEvent) {
