@@ -191,7 +191,6 @@ func NewUI(logger *Logger) *Interface {
 		widget.NewToolbarSeparator(),
 		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {
 			e.Reset()
-			debug_view.halt = false
 			debug_view.step = false
 			display.Refresh()
 		}),
