@@ -58,17 +58,17 @@ type cpuStateWindow struct {
 }
 
 type debugView struct {
+	cpu_win    *cpuStateWindow
 	disasm_win *disasmWindow
 	halt       bool
 	step       bool
 }
 
 type Interface struct {
-	app        fyne.App
-	window     fyne.Window
-	display    *canvas.Raster
-	vram       *fyne.Container
-	cpu        *cpuStateWindow
+	app     fyne.App
+	window  fyne.Window
+	display *canvas.Raster
+	vram    *fyne.Container
 	emu        *Emulator
 	debug_view *debugView
 }
@@ -104,9 +104,9 @@ func NewUI(logger *Logger) *Interface {
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
 
 	debug_view := &debugView{
-		disasm_win:    disasm_container,
-		cpu_state_win: cpu,
-		halt:          false,
+		disasm_win: disasm_container,
+		cpu_win:    cpu,
+		halt:       false,
 	}
 	toolbar := widget.NewToolbar(
 		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {
@@ -153,7 +153,7 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu /*cpu_state: cpu_state,*/, emu: e, debug_view: debug_view}
+	ui := &Interface{app: a, window: w, display: display, vram: vram /*, cpu: cpu /*cpu_state: cpu_state,*/, emu: e, debug_view: debug_view}
 	ui.debug_view.disasm_win.ExtendBaseWidget(disasm_container)
 
 	return ui
@@ -189,15 +189,15 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 
 func (ui *Interface) SetCPUState() {
 	current_state := ui.emu.GetCPUState()
-	ui.cpu.state.cycles.Set(int(current_state.cycles))
-	ui.cpu.state.registers.a.Set(int(current_state.registers.A))
-	ui.cpu.state.registers.b.Set(int(current_state.registers.B))
-	ui.cpu.state.registers.c.Set(int(current_state.registers.C))
-	ui.cpu.state.registers.d.Set(int(current_state.registers.D))
-	ui.cpu.state.registers.e.Set(int(current_state.registers.E))
-	ui.cpu.state.registers.h.Set(int(current_state.registers.H))
-	ui.cpu.state.registers.l.Set(int(current_state.registers.L))
-	ui.cpu.state.registers.pc.Set(int(current_state.registers.PC))
+	ui.debug_view.cpu_win.state.cycles.Set(int(current_state.cycles))
+	ui.debug_view.cpu_win.state.registers.a.Set(int(current_state.registers.A))
+	ui.debug_view.cpu_win.state.registers.b.Set(int(current_state.registers.B))
+	ui.debug_view.cpu_win.state.registers.c.Set(int(current_state.registers.C))
+	ui.debug_view.cpu_win.state.registers.d.Set(int(current_state.registers.D))
+	ui.debug_view.cpu_win.state.registers.e.Set(int(current_state.registers.E))
+	ui.debug_view.cpu_win.state.registers.h.Set(int(current_state.registers.H))
+	ui.debug_view.cpu_win.state.registers.l.Set(int(current_state.registers.L))
+	ui.debug_view.cpu_win.state.registers.pc.Set(int(current_state.registers.PC))
 
 	renderFlags := func() string {
 		flags := ""
@@ -242,7 +242,7 @@ func (ui *Interface) SetCPUState() {
 		return flags
 	}
 
-	ui.cpu.state.flagstring.Set(renderFlags())
+	ui.debug_view.cpu_win.state.flagstring.Set(renderFlags())
 }
 
 func (ui *Interface) Run() {
@@ -275,7 +275,7 @@ func (ui *Interface) Run() {
 					ui.display.Refresh()
 				}
 
-				if ui.cpu.container.Visible() {
+				if ui.debug_view.cpu_win.container.Visible() {
 					ui.SetCPUState()
 				}
 			})
