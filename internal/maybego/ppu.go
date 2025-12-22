@@ -23,6 +23,7 @@ var err error
 
 func NewPPU(logger *Logger) *PPU {
 	ppu := &PPU{logger: logger, dots: 0, scanline: 0}
+	ppu.Reset()
 
 	return ppu
 }
@@ -178,4 +179,14 @@ func (ppu *PPU) Render(cycles byte) bool {
 	Write(LY, (cur_row+1)%154)
 
 	return frame_ready
+}
+
+func (ppu *PPU) Reset() {
+	ppu.dots = 0
+	ppu.scanline = 0
+	ppu.tiledata = 0
+	ppu.tilemap = 0
+
+	framebufferPalette = [160 * 144]byte{}
+	BGMapPalette = [256 * 256]byte{}
 }
