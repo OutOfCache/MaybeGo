@@ -69,8 +69,8 @@ type Interface struct {
 	window  fyne.Window
 	display *canvas.Raster
 	vram    *fyne.Container
-	emu        *Emulator
-	debug_view *debugView
+	emu     *Emulator
+	debug   *debugView
 }
 
 func NewUI(logger *Logger) *Interface {
@@ -103,28 +103,28 @@ func NewUI(logger *Logger) *Interface {
 	}
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
 
-	debug_view := &debugView{
+	debug := &debugView{
 		disasm_win: disasm_container,
 		cpu_win:    cpu,
 		halt:       false,
 	}
 	toolbar := widget.NewToolbar(
 		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {
-			debug_view.halt = true
+			debug.halt = true
 		}),
 		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {
-			debug_view.halt = false
-			debug_view.step = true
+			debug.halt = false
+			debug.step = true
 		}),
 		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {
-			debug_view.halt = false
-			debug_view.step = false
+			debug.halt = false
+			debug.step = false
 		}),
 		widget.NewToolbarSpacer(),
 		widget.NewToolbarSeparator(),
 		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {
 			e.Reset()
-			debug_view.step = false
+			debug.step = false
 			display.Refresh()
 		}),
 	)
@@ -153,8 +153,8 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	ui := &Interface{app: a, window: w, display: display, vram: vram /*, cpu: cpu /*cpu_state: cpu_state,*/, emu: e, debug_view: debug_view}
-	ui.debug_view.disasm_win.ExtendBaseWidget(disasm_container)
+	ui := &Interface{app: a, window: w, display: display, vram: vram /*, cpu: cpu /*cpu_state: cpu_state,*/, emu: e, debug: debug}
+	ui.debug.disasm_win.ExtendBaseWidget(disasm_container)
 
 	return ui
 }
@@ -164,13 +164,13 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 		Write(uint16(i), buffer)
 	}
 
-	ui.debug_view.disasm_win.disasm.SetFile(rom)
+	ui.debug.disasm_win.disasm.SetFile(rom)
 
 	go func() {
-		ui.debug_view.disasm_win.disasm.Disassemble()
+		ui.debug.disasm_win.disasm.Disassemble()
 
-		for _, line := range ui.debug_view.disasm_win.disasm.lines {
-			ui.debug_view.disasm_win.Append(fmt.Sprintf("%04X|\t%s", line.offset, line.disasm))
+		for _, line := range ui.debug.disasm_win.disasm.lines {
+			ui.debug.disasm_win.Append(fmt.Sprintf("%04X|\t%s", line.offset, line.disasm))
 		}
 	}()
 
@@ -189,15 +189,15 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 
 func (ui *Interface) SetCPUState() {
 	current_state := ui.emu.GetCPUState()
-	ui.debug_view.cpu_win.state.cycles.Set(int(current_state.cycles))
-	ui.debug_view.cpu_win.state.registers.a.Set(int(current_state.registers.A))
-	ui.debug_view.cpu_win.state.registers.b.Set(int(current_state.registers.B))
-	ui.debug_view.cpu_win.state.registers.c.Set(int(current_state.registers.C))
-	ui.debug_view.cpu_win.state.registers.d.Set(int(current_state.registers.D))
-	ui.debug_view.cpu_win.state.registers.e.Set(int(current_state.registers.E))
-	ui.debug_view.cpu_win.state.registers.h.Set(int(current_state.registers.H))
-	ui.debug_view.cpu_win.state.registers.l.Set(int(current_state.registers.L))
-	ui.debug_view.cpu_win.state.registers.pc.Set(int(current_state.registers.PC))
+	ui.debug.cpu_win.state.cycles.Set(int(current_state.cycles))
+	ui.debug.cpu_win.state.registers.a.Set(int(current_state.registers.A))
+	ui.debug.cpu_win.state.registers.b.Set(int(current_state.registers.B))
+	ui.debug.cpu_win.state.registers.c.Set(int(current_state.registers.C))
+	ui.debug.cpu_win.state.registers.d.Set(int(current_state.registers.D))
+	ui.debug.cpu_win.state.registers.e.Set(int(current_state.registers.E))
+	ui.debug.cpu_win.state.registers.h.Set(int(current_state.registers.H))
+	ui.debug.cpu_win.state.registers.l.Set(int(current_state.registers.L))
+	ui.debug.cpu_win.state.registers.pc.Set(int(current_state.registers.PC))
 
 	renderFlags := func() string {
 		flags := ""
@@ -242,23 +242,23 @@ func (ui *Interface) SetCPUState() {
 		return flags
 	}
 
-	ui.debug_view.cpu_win.state.flagstring.Set(renderFlags())
+	ui.debug.cpu_win.state.flagstring.Set(renderFlags())
 }
 
 func (ui *Interface) Run() {
 	go func() {
 		frame_time := 16 * time.Millisecond // for 60 fps
 		for range time.NewTicker(frame_time).C {
-			if ui.debug_view.halt {
+			if ui.debug.halt {
 				continue
 			}
 			fyne.DoAndWait(func() {
 
 				frame_ready := false
 				max_render_time := (456 /* dots */ * 153 /* lines */ / 4 /* cpu cyc */)
-				if ui.debug_view.step {
+				if ui.debug.step {
 					max_render_time = 1
-					ui.debug_view.halt = true
+					ui.debug.halt = true
 				}
 				for _ = range max_render_time {
 					frame_ready = ui.emu.Run()
@@ -266,8 +266,8 @@ func (ui *Interface) Run() {
 						break
 					}
 					next_pc := ui.emu.GetCPUState().registers.PC
-					if slices.Contains(ui.debug_view.disasm_win.breakpoints, uint(next_pc)) {
-						ui.debug_view.halt = true
+					if slices.Contains(ui.debug.disasm_win.breakpoints, uint(next_pc)) {
+						ui.debug.halt = true
 						break
 					}
 				}
@@ -275,7 +275,7 @@ func (ui *Interface) Run() {
 					ui.display.Refresh()
 				}
 
-				if ui.debug_view.cpu_win.container.Visible() {
+				if ui.debug.cpu_win.container.Visible() {
 					ui.SetCPUState()
 				}
 			})
