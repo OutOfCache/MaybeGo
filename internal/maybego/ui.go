@@ -177,9 +177,15 @@ func NewUI(logger *Logger) *Interface {
 		halt:   false,
 	}
 	toolbar := widget.NewToolbar(
-		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {}),
+		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {
+			debug_view.halt = true
+			fmt.Printf("halt: %t\n", debug_view.halt)
+		}),
 		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {}),
-		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {}),
+		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {
+			debug_view.halt = false
+			fmt.Printf("halt: %t\n", debug_view.halt)
+		}),
 		widget.NewToolbarSpacer(),
 		widget.NewToolbarSeparator(),
 		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {}),
