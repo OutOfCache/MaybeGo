@@ -97,36 +97,8 @@ func NewUI(logger *Logger) *Interface {
 	})
 	// ============= Debugger: CPU State =============
 	// ============= Debugger: Disassembler =============
-	disasm_container := createDisasmView()
-	debug := &debugView{
-		disasm_win: disasm_container,
-		cpu_win:    cpu,
-		halt:       false,
-		step:       false,
-	}
-
-	toolbar := widget.NewToolbar(
-		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {
-			debug.halt = true
-		}),
-		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {
-			debug.halt = false
-			debug.step = true
-		}),
-		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {
-			debug.halt = false
-			debug.step = false
-		}),
-		widget.NewToolbarSpacer(),
-		widget.NewToolbarSeparator(),
-		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {
-			e.Reset()
-			debug.step = false
-			display.Refresh()
-		}),
-	)
-
-	debug_container := container.NewBorder(toolbar, nil, nil, nil, disasm_container)
+	debug := createDebugView(cpu)
+	debug_container := createDebugContainer(e, display, debug)
 
 	// ============= Debugger: Disassembler =============
 
@@ -150,8 +122,8 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	ui := &Interface{app: a, window: w, display: display, vram: vram /*, cpu: cpu /*cpu_state: cpu_state,*/, emu: e, debug: debug}
-	ui.debug.disasm_win.ExtendBaseWidget(disasm_container)
+	ui := &Interface{app: a, window: w, display: display, vram: vram, emu: e, debug: debug}
+	ui.debug.disasm_win.ExtendBaseWidget(debug.disasm_win)
 
 	return ui
 }
@@ -370,6 +342,43 @@ func createDisasmView() *disasmWindow {
 	}
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
 	return disasm_container
+}
+
+func createDebugView(cpu *cpuStateWindow) *debugView {
+	disasm_container := createDisasmView()
+	debug := &debugView{
+		disasm_win: disasm_container,
+		cpu_win:    cpu,
+		halt:       false,
+		step:       false,
+	}
+
+	return debug
+}
+
+func createDebugContainer(emu *Emulator, display *canvas.Raster, debug *debugView) *fyne.Container {
+	toolbar := widget.NewToolbar(
+		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {
+			debug.halt = true
+		}),
+		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {
+			debug.halt = false
+			debug.step = true
+		}),
+		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {
+			debug.halt = false
+			debug.step = false
+		}),
+		widget.NewToolbarSpacer(),
+		widget.NewToolbarSeparator(),
+		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {
+			emu.Reset()
+			debug.step = false
+			display.Refresh()
+		}),
+	)
+
+	return container.NewBorder(toolbar, nil, nil, nil, debug.disasm_win)
 }
 
 func (dw *disasmWindow) Tapped(ev *fyne.PointEvent) {
