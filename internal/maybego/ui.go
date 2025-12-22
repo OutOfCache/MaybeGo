@@ -169,8 +169,6 @@ func NewUI(logger *Logger) *Interface {
 		TextGrid: &widget.TextGrid{},
 		disasm:   NewDisasm(),
 	}
-	disasm_container.breakpoints = append(disasm_container.breakpoints, 0x150)
-	disasm_container.breakpoints = append(disasm_container.breakpoints, 0x21B)
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
 
 	debug_view := &debugView{
