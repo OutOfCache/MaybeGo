@@ -171,12 +171,9 @@ func NewUI(logger *Logger) *Interface {
 		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {}),
 		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {}),
 		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {}),
+		widget.NewToolbarSpacer(),
 		widget.NewToolbarSeparator(),
 		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {}),
-		widget.NewToolbarSpacer(),
-		widget.NewToolbarAction(theme.HelpIcon(), func() {
-			fmt.Println("Display help")
-		}),
 	)
 
 	disasm_content := container.NewBorder(toolbar, nil, nil, nil, disasm_container)
