@@ -97,17 +97,14 @@ func NewUI(logger *Logger) *Interface {
 	})
 	// ============= Debugger: CPU State =============
 	// ============= Debugger: Disassembler =============
-	disasm_container := &disasmWindow{
-		TextGrid: &widget.TextGrid{},
-		disasm:   NewDisasm(),
-	}
-	disasm_container.Scroll = fyne.ScrollVerticalOnly
-
+	disasm_container := createDisasmView()
 	debug := &debugView{
 		disasm_win: disasm_container,
 		cpu_win:    cpu,
 		halt:       false,
+		step:       false,
 	}
+
 	toolbar := widget.NewToolbar(
 		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {
 			debug.halt = true
@@ -129,14 +126,14 @@ func NewUI(logger *Logger) *Interface {
 		}),
 	)
 
-	disasm_content := container.NewBorder(toolbar, nil, nil, nil, disasm_container)
+	debug_container := container.NewBorder(toolbar, nil, nil, nil, disasm_container)
 
 	// ============= Debugger: Disassembler =============
 
 	vram := createVramView()
 	// TODO: scaling factor
 	display.SetMinSize(fyne.NewSize(160, 144))
-	content := container.New(layout.NewHBoxLayout(), disasm_content, layout.NewSpacer(), cpu.container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
+	content := container.New(layout.NewHBoxLayout(), debug_container, layout.NewSpacer(), cpu.container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
 
 	vram.Hide()
 	vram_visibility := fyne.NewMenuItem("VRAM viewer", func() {
@@ -364,6 +361,15 @@ func createCpuStateWindow() *cpuStateWindow {
 	cpu.container.Add(flag_container)
 
 	return cpu
+}
+
+func createDisasmView() *disasmWindow {
+	disasm_container := &disasmWindow{
+		TextGrid: &widget.TextGrid{},
+		disasm:   NewDisasm(),
+	}
+	disasm_container.Scroll = fyne.ScrollVerticalOnly
+	return disasm_container
 }
 
 func (dw *disasmWindow) Tapped(ev *fyne.PointEvent) {
