@@ -69,21 +69,6 @@ type Interface struct {
 	debug_view *debugView
 }
 
-func GenerateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
-	return func(x, y, w, h int) color.Color {
-		x_conv := (x / scale)
-		y_conv := (y / scale)
-		if x_conv > 7 || y_conv > 7 {
-			return color.RGBA{R: 0, G: 0, B: 0, A: 0}
-		}
-
-		address := uint16(0x8000 + (tileID * 16) + (y_conv * 2))
-		pixelcolor := (Read(address) >> (7 - x_conv) & 0x1) + (Read(address+1)>>(7-x_conv)&0x1)*2
-
-		return Palette[pixelcolor]
-	}
-}
-
 func NewUI(logger *Logger) *Interface {
 	a := app.New()
 	w := a.NewWindow("MaybeGo")
@@ -200,14 +185,7 @@ func NewUI(logger *Logger) *Interface {
 
 	// ============= Debugger: Disassembler =============
 
-	vram := container.New(layout.NewGridLayout(16))
-	scale := 2
-	tile_size := float32(scale * 8)
-	for i := 0; i < 384; i++ {
-		tile := canvas.NewRasterWithPixels(GenerateVramTile(i, scale))
-		tile.SetMinSize(fyne.NewSize(tile_size, tile_size))
-		vram.Add(tile)
-	}
+	vram := createVramView()
 	// TODO: scaling factor
 	display.SetMinSize(fyne.NewSize(160, 144))
 	content := container.New(layout.NewHBoxLayout(), disasm_content, layout.NewSpacer(), cpu_state_container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
@@ -357,6 +335,34 @@ func (ui *Interface) Run() {
 	}()
 	ui.window.ShowAndRun()
 
+}
+
+func generateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
+	return func(x, y, w, h int) color.Color {
+		x_conv := (x / scale)
+		y_conv := (y / scale)
+		if x_conv > 7 || y_conv > 7 {
+			return color.RGBA{R: 0, G: 0, B: 0, A: 0}
+		}
+
+		address := uint16(0x8000 + (tileID * 16) + (y_conv * 2))
+		pixelcolor := (Read(address) >> (7 - x_conv) & 0x1) + (Read(address+1)>>(7-x_conv)&0x1)*2
+
+		return Palette[pixelcolor]
+	}
+}
+
+func createVramView() *fyne.Container {
+	vram := container.New(layout.NewGridLayout(16))
+	scale := 2
+	tile_size := float32(scale * 8)
+	for i := 0; i < 384; i++ {
+		tile := canvas.NewRasterWithPixels(generateVramTile(i, scale))
+		tile.SetMinSize(fyne.NewSize(tile_size, tile_size))
+		vram.Add(tile)
+	}
+
+	return vram
 }
 
 func (dw *disasmWindow) Tapped(ev *fyne.PointEvent) {
