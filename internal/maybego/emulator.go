@@ -36,7 +36,7 @@ func (emu *Emulator) GetCPUState() cpu_state {
 
 // TODO: for loading roms during runtime
 func (emu *Emulator) Reset() {
-	// cpu.Reset()
+	emu.cpu.Reset()
 	// ppu.Reset()
 }
 
