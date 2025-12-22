@@ -52,16 +52,20 @@ type disasmWindow struct {
 	breakpoints []uint
 }
 
+type debugView struct {
+	disasm *disasmWindow
+	halt   bool
+}
+
 type Interface struct {
-	app              fyne.App
-	window           fyne.Window
-	display          *canvas.Raster
-	vram             *fyne.Container
-	cpu              *fyne.Container
-	cpu_state        *cpu_state_bindings
-	emu              *Emulator
-	disasm_container *disasmWindow
-	halt             bool
+	app        fyne.App
+	window     fyne.Window
+	display    *canvas.Raster
+	vram       *fyne.Container
+	cpu        *fyne.Container
+	cpu_state  *cpu_state_bindings
+	emu        *Emulator
+	debug_view *debugView
 }
 
 func GenerateVramTile(tileID int, scale int) func(x, y, w, h int) color.Color {
@@ -167,6 +171,11 @@ func NewUI(logger *Logger) *Interface {
 	disasm_container.breakpoints = append(disasm_container.breakpoints, 0x150)
 	disasm_container.breakpoints = append(disasm_container.breakpoints, 0x21B)
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
+
+	debug_view := &debugView{
+		disasm: disasm_container,
+		halt:   false,
+	}
 	toolbar := widget.NewToolbar(
 		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {}),
 		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {}),
@@ -207,8 +216,8 @@ func NewUI(logger *Logger) *Interface {
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
 
-	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, disasm_container: disasm_container}
-	ui.disasm_container.ExtendBaseWidget(disasm_container)
+	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, debug_view: debug_view}
+	ui.debug_view.disasm.ExtendBaseWidget(disasm_container)
 
 	return ui
 }
@@ -218,13 +227,13 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 		Write(uint16(i), buffer)
 	}
 
-	ui.disasm_container.disasm.SetFile(rom)
+	ui.debug_view.disasm.disasm.SetFile(rom)
 
 	go func() {
-		ui.disasm_container.disasm.Disassemble()
+		ui.debug_view.disasm.disasm.Disassemble()
 
-		for _, line := range ui.disasm_container.disasm.lines {
-			ui.disasm_container.Append(fmt.Sprintf("%04X|\t%s", line.offset, line.disasm))
+		for _, line := range ui.debug_view.disasm.disasm.lines {
+			ui.debug_view.disasm.Append(fmt.Sprintf("%04X|\t%s", line.offset, line.disasm))
 		}
 	}()
 
@@ -303,8 +312,8 @@ func (ui *Interface) Run() {
 	go func() {
 		frame_time := 16 * time.Millisecond // for 60 fps
 		for range time.NewTicker(frame_time).C {
-			if ui.halt {
-				return
+			if ui.debug_view.halt {
+				continue
 			}
 			fyne.DoAndWait(func() {
 
@@ -316,9 +325,9 @@ func (ui *Interface) Run() {
 						break
 					}
 					next_pc := ui.emu.GetCPUState().registers.PC
-					if slices.Contains(ui.disasm_container.breakpoints, uint(next_pc)) {
-						fmt.Println("halted. next_pc: %X")
-						ui.halt = true
+					if slices.Contains(ui.debug_view.disasm.breakpoints, uint(next_pc)) {
+						fmt.Printf("halted. next_pc: %X", next_pc)
+						ui.debug_view.halt = true
 						break
 					}
 				}
