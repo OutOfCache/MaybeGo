@@ -178,7 +178,6 @@ func NewUI(logger *Logger) *Interface {
 	toolbar := widget.NewToolbar(
 		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {
 			debug_view.halt = true
-			fmt.Printf("halt: %t\n", debug_view.halt)
 		}),
 		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {
 			debug_view.halt = false
@@ -187,7 +186,6 @@ func NewUI(logger *Logger) *Interface {
 		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {
 			debug_view.halt = false
 			debug_view.step = false
-			fmt.Printf("halt: %t\n", debug_view.halt)
 		}),
 		widget.NewToolbarSpacer(),
 		widget.NewToolbarSeparator(),
@@ -344,7 +342,6 @@ func (ui *Interface) Run() {
 					}
 					next_pc := ui.emu.GetCPUState().registers.PC
 					if slices.Contains(ui.debug_view.disasm_win.breakpoints, uint(next_pc)) {
-						fmt.Printf("halted. next_pc: %X", next_pc)
 						ui.debug_view.halt = true
 						break
 					}
