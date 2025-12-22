@@ -60,19 +60,7 @@ type CPU struct {
 // dummy "constructor"
 func NewCPU(logger *Logger) *CPU {
 	cpu := &CPU{reg: new(Registers), flg: new(Flags), clk: new(Clocks)}
-	cpu.reg.PC = 0x100  // to bypass boot rom for now
-	cpu.reg.SP = 0xFFFE // bypassing boot rom
-	cpu.reg.A = 0x01 // after boot: 0x1
-	cpu.flg.Z = true
-	cpu.flg.N = false
-	cpu.flg.H = true // true
-	cpu.flg.C = true // true
-	cpu.reg.B = 0x00
-	cpu.reg.C = 0x13 // after boot: 0x13
-	cpu.reg.D = 0x00
-	cpu.reg.E = 0xD8 // after boot: 0xD8
-	cpu.reg.H = 0x01 // after boot: 0x01
-	cpu.reg.L = 0x4D // after boot: 0x4D
+	cpu.Reset()
 
 	cpu.clk.MASTER_CLK = 4194304
 
@@ -3892,4 +3880,22 @@ func (cpu *CPU) set_interrupt_request(request_bit byte) {
 	new_flags := previous_flags | request_bit
 
 	Write(IF, new_flags)
+}
+
+func (cpu *CPU) Reset() {
+	cpu.reg.PC = 0x100  // to bypass boot rom for now
+	cpu.reg.SP = 0xFFFE // bypassing boot rom
+	cpu.reg.A = 0x01    // after boot: 0x1
+	cpu.flg.Z = true
+	cpu.flg.N = false
+	cpu.flg.H = true // true
+	cpu.flg.C = true // true
+	cpu.reg.B = 0x00
+	cpu.reg.C = 0x13 // after boot: 0x13
+	cpu.reg.D = 0x00
+	cpu.reg.E = 0xD8 // after boot: 0xD8
+	cpu.reg.H = 0x01 // after boot: 0x01
+	cpu.reg.L = 0x4D // after boot: 0x4D
+
+	cpu.clk.cycles = 0
 }
