@@ -167,6 +167,19 @@ func NewUI(logger *Logger) *Interface {
 	disasm_container.breakpoints = append(disasm_container.breakpoints, 0x150)
 	disasm_container.breakpoints = append(disasm_container.breakpoints, 0x21B)
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
+	toolbar := widget.NewToolbar(
+		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {}),
+		widget.NewToolbarAction(theme.MediaPlayIcon(), func() {}),
+		widget.NewToolbarAction(theme.MediaFastForwardIcon(), func() {}),
+		widget.NewToolbarSeparator(),
+		widget.NewToolbarAction(theme.MediaReplayIcon(), func() {}),
+		widget.NewToolbarSpacer(),
+		widget.NewToolbarAction(theme.HelpIcon(), func() {
+			fmt.Println("Display help")
+		}),
+	)
+
+	disasm_content := container.NewBorder(toolbar, nil, nil, nil, disasm_container)
 
 	// ============= Debugger: Disassembler =============
 
@@ -180,7 +193,7 @@ func NewUI(logger *Logger) *Interface {
 	}
 	// TODO: scaling factor
 	display.SetMinSize(fyne.NewSize(160, 144))
-	content := container.New(layout.NewHBoxLayout(), disasm_container, layout.NewSpacer(), cpu_state_container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
+	content := container.New(layout.NewHBoxLayout(), disasm_content, layout.NewSpacer(), cpu_state_container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
 
 	vram.Hide()
 	vram_visibility := fyne.NewMenuItem("VRAM viewer", func() {
