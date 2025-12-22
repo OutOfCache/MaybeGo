@@ -195,6 +195,7 @@ func NewUI(logger *Logger) *Interface {
 			e.Reset()
 			debug_view.halt = false
 			debug_view.step = false
+			display.Refresh()
 		}),
 	)
 
