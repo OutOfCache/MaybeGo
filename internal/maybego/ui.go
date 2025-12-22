@@ -53,8 +53,8 @@ type disasmWindow struct {
 }
 
 type debugView struct {
-	disasm *disasmWindow
-	halt   bool
+	disasm_win *disasmWindow
+	halt       bool
 }
 
 type Interface struct {
@@ -173,8 +173,8 @@ func NewUI(logger *Logger) *Interface {
 	disasm_container.Scroll = fyne.ScrollVerticalOnly
 
 	debug_view := &debugView{
-		disasm: disasm_container,
-		halt:   false,
+		disasm_win: disasm_container,
+		halt:       false,
 	}
 	toolbar := widget.NewToolbar(
 		widget.NewToolbarAction(theme.MediaPauseIcon(), func() {
@@ -223,7 +223,7 @@ func NewUI(logger *Logger) *Interface {
 	w.SetContent(content)
 
 	ui := &Interface{app: a, window: w, display: display, vram: vram, cpu: cpu_state_container, cpu_state: cpu_state, emu: e, debug_view: debug_view}
-	ui.debug_view.disasm.ExtendBaseWidget(disasm_container)
+	ui.debug_view.disasm_win.ExtendBaseWidget(disasm_container)
 
 	return ui
 }
@@ -233,13 +233,13 @@ func (ui *Interface) LoadRom(rom *[]byte) {
 		Write(uint16(i), buffer)
 	}
 
-	ui.debug_view.disasm.disasm.SetFile(rom)
+	ui.debug_view.disasm_win.disasm.SetFile(rom)
 
 	go func() {
-		ui.debug_view.disasm.disasm.Disassemble()
+		ui.debug_view.disasm_win.disasm.Disassemble()
 
-		for _, line := range ui.debug_view.disasm.disasm.lines {
-			ui.debug_view.disasm.Append(fmt.Sprintf("%04X|\t%s", line.offset, line.disasm))
+		for _, line := range ui.debug_view.disasm_win.disasm.lines {
+			ui.debug_view.disasm_win.Append(fmt.Sprintf("%04X|\t%s", line.offset, line.disasm))
 		}
 	}()
 
@@ -331,7 +331,7 @@ func (ui *Interface) Run() {
 						break
 					}
 					next_pc := ui.emu.GetCPUState().registers.PC
-					if slices.Contains(ui.debug_view.disasm.breakpoints, uint(next_pc)) {
+					if slices.Contains(ui.debug_view.disasm_win.breakpoints, uint(next_pc)) {
 						fmt.Printf("halted. next_pc: %X", next_pc)
 						ui.debug_view.halt = true
 						break
