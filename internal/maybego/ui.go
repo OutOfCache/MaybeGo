@@ -87,14 +87,17 @@ func NewUI(logger *Logger) *Interface {
 
 	// ============= Debugger: CPU State =============
 	cpu := createCpuStateWindow()
-	cpu_state_visibility := fyne.NewMenuItem("CPU state", func() {
+	var cpu_state_visibility *fyne.MenuItem
+	cpu_state_visibility = fyne.NewMenuItem("CPU state", func() {
 		if cpu.container.Hidden {
 			cpu.container.Refresh()
 			cpu.container.Show()
 		} else {
 			cpu.container.Hide()
 		}
+		cpu_state_visibility.Checked = !cpu.container.Hidden
 	})
+	cpu_state_visibility.Checked = !cpu.container.Hidden
 	// ============= Debugger: CPU State =============
 	// ============= Debugger: Disassembler =============
 	debug := createDebugView(cpu)
@@ -122,16 +125,19 @@ func NewUI(logger *Logger) *Interface {
 	content := container.New(layout.NewHBoxLayout(), debug_container, layout.NewSpacer(), cpu.container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
 
 	vram.Hide()
-	vram_visibility := fyne.NewMenuItem("VRAM viewer", func() {
+	var vram_visibility *fyne.MenuItem
+	vram_visibility = fyne.NewMenuItem("VRAM viewer", func() {
 		if vram.Hidden {
 			vram.Refresh()
 			vram.Show()
 		} else {
 			vram.Hide()
 		}
+		vram_visibility.Checked = vram.Visible()
 	})
+	vram_visibility.Checked = vram.Visible()
 
-	debug_menu := fyne.NewMenu("Debug", cpu_state_visibility, vram_visibility)
+	debug_menu := fyne.NewMenu("Debug", debug_visibility, cpu_state_visibility, vram_visibility)
 	main_menu := fyne.NewMainMenu(debug_menu)
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
