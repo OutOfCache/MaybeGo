@@ -120,10 +120,6 @@ func NewUI(logger *Logger) *Interface {
 	// ============= Debugger: Disassembler =============
 
 	vram := createVramView()
-	// TODO: scaling factor
-	display.SetMinSize(fyne.NewSize(160, 144))
-	content := container.New(layout.NewHBoxLayout(), debug_container, layout.NewSpacer(), cpu.container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
-
 	vram.Hide()
 	var vram_visibility *fyne.MenuItem
 	vram_visibility = fyne.NewMenuItem("VRAM viewer", func() {
@@ -136,6 +132,10 @@ func NewUI(logger *Logger) *Interface {
 		vram_visibility.Checked = vram.Visible()
 	})
 	vram_visibility.Checked = vram.Visible()
+
+	// TODO: scaling factor
+	display.SetMinSize(fyne.NewSize(160, 144))
+	content := container.New(layout.NewHBoxLayout(), debug_container, layout.NewSpacer(), cpu.container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
 
 	debug_menu := fyne.NewMenu("Debug", debug_visibility, cpu_state_visibility, vram_visibility)
 	main_menu := fyne.NewMainMenu(debug_menu)
