@@ -365,12 +365,12 @@ func (dis *Disasm) jr_flag(flag string) string {
 
 func (dis *Disasm) jp() string {
 	dis.current_addr++
-	return "JR " + dis.printImm16At(dis.current_addr) + ""
+	return "JP " + dis.printImm16At(dis.current_addr) + ""
 }
 
 func (dis *Disasm) jp_hl() string {
 	dis.current_addr++
-	return "JR " + dis.printImm16At(dis.current_addr) + ""
+	return "JP " + dis.printImm16At(dis.current_addr) + ""
 }
 
 func (dis *Disasm) jp_flag(flag string) string {
