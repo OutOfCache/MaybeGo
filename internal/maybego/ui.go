@@ -87,23 +87,17 @@ func NewUI(logger *Logger) *Interface {
 
 	// ============= Debugger: CPU State =============
 	cpu := createCpuStateWindow()
-	var cpu_state_visibility *fyne.MenuItem
-	cpu_state_visibility = fyne.NewMenuItem("CPU state", func() {
-		if cpu.container.Hidden {
-			cpu.container.Refresh()
-			cpu.container.Show()
-		} else {
-			cpu.container.Hide()
-		}
-		cpu_state_visibility.Checked = !cpu.container.Hidden
-	})
-	cpu_state_visibility.Checked = !cpu.container.Hidden
+
 	// ============= Debugger: CPU State =============
 	// ============= Debugger: Disassembler =============
-	debug := createDebugView(cpu)
+	disasm_container := createDisasmView()
+
+	debug := createDebugView(cpu, disasm_container)
 	debug_container := createDebugContainer(e, display, debug)
 
 	var debug_visibility *fyne.MenuItem
+	var disasm_visibility *fyne.MenuItem
+	var cpu_state_visibility *fyne.MenuItem
 	debug_visibility = fyne.NewMenuItem("Debugger", func() {
 		if debug_container.Hidden {
 			debug_container.Refresh()
@@ -114,9 +108,35 @@ func NewUI(logger *Logger) *Interface {
 			debug_container.Hide()
 			cpu.container.Hide()
 		}
-		debug_visibility.Checked = debug_container.Visible()
+		debug_visibility.Checked = !debug_container.Hidden
+		disasm_visibility.Checked = !debug_container.Hidden
+		cpu_state_visibility.Checked = !cpu.container.Hidden
 	})
-	debug_visibility.Checked = debug_container.Visible()
+	debug_visibility.Checked = !debug_container.Hidden || !cpu.container.Hidden
+
+	disasm_visibility = fyne.NewMenuItem("Disassembly", func() {
+		if debug_container.Hidden {
+			debug_container.Refresh()
+			debug_container.Show()
+		} else {
+			debug_container.Hide()
+		}
+		disasm_visibility.Checked = !debug_container.Hidden
+		debug_visibility.Checked = !debug_container.Hidden || !cpu.container.Hidden
+	})
+	disasm_visibility.Checked = !debug_container.Hidden
+
+	cpu_state_visibility = fyne.NewMenuItem("CPU state", func() {
+		if cpu.container.Hidden {
+			cpu.container.Refresh()
+			cpu.container.Show()
+		} else {
+			cpu.container.Hide()
+		}
+		cpu_state_visibility.Checked = !cpu.container.Hidden
+		debug_visibility.Checked = !debug_container.Hidden || !cpu.container.Hidden
+	})
+	cpu_state_visibility.Checked = !cpu.container.Hidden
 	// ============= Debugger: Disassembler =============
 
 	vram := createVramView()
@@ -137,7 +157,7 @@ func NewUI(logger *Logger) *Interface {
 	display.SetMinSize(fyne.NewSize(160, 144))
 	content := container.New(layout.NewHBoxLayout(), debug_container, layout.NewSpacer(), cpu.container, layout.NewSpacer(), display, layout.NewSpacer(), vram)
 
-	debug_menu := fyne.NewMenu("Debug", debug_visibility, cpu_state_visibility, vram_visibility)
+	debug_menu := fyne.NewMenu("Debug", debug_visibility, disasm_visibility, cpu_state_visibility, vram_visibility)
 	main_menu := fyne.NewMainMenu(debug_menu)
 	w.SetMainMenu(main_menu)
 	w.SetContent(content)
@@ -364,10 +384,9 @@ func createDisasmView() *disasmWindow {
 	return disasm_container
 }
 
-func createDebugView(cpu *cpuStateWindow) *debugView {
-	disasm_container := createDisasmView()
+func createDebugView(cpu *cpuStateWindow, disasm *disasmWindow) *debugView {
 	debug := &debugView{
-		disasm_win: disasm_container,
+		disasm_win: disasm,
 		cpu_win:    cpu,
 		halt:       false,
 		step:       false,
