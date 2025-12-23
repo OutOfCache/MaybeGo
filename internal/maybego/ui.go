@@ -100,6 +100,20 @@ func NewUI(logger *Logger) *Interface {
 	debug := createDebugView(cpu)
 	debug_container := createDebugContainer(e, display, debug)
 
+	var debug_visibility *fyne.MenuItem
+	debug_visibility = fyne.NewMenuItem("Debugger", func() {
+		if debug_container.Hidden {
+			debug_container.Refresh()
+			debug_container.Show()
+
+			cpu.container.Show()
+		} else {
+			debug_container.Hide()
+			cpu.container.Hide()
+		}
+		debug_visibility.Checked = debug_container.Visible()
+	})
+	debug_visibility.Checked = debug_container.Visible()
 	// ============= Debugger: Disassembler =============
 
 	vram := createVramView()
