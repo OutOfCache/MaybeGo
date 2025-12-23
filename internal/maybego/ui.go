@@ -50,6 +50,7 @@ type disasmWindow struct {
 	*widget.TextGrid
 	disasm      *Disasm
 	breakpoints []uint
+	cur_pc      uint
 }
 
 type cpuStateWindow struct {
@@ -215,9 +216,14 @@ func (ui *Interface) Run() {
 					if frame_ready {
 						break
 					}
-					next_pc := ui.emu.GetCPUState().registers.PC
-					if slices.Contains(ui.debug.disasm_win.breakpoints, uint(next_pc)) {
+					next_pc := uint(ui.emu.GetCPUState().registers.PC)
+					if ui.debug.halt {
+						ui.debug.disasm_win.updatePC(next_pc)
+						break
+					}
+					if slices.Contains(ui.debug.disasm_win.breakpoints, next_pc) {
 						ui.debug.halt = true
+						ui.debug.disasm_win.updatePC(next_pc)
 						break
 					}
 				}
@@ -427,5 +433,23 @@ func (dw *disasmWindow) Tapped(ev *fyne.PointEvent) {
 	// TODO visual indication that it is selected instantly
 	dw.breakpoints = append(dw.breakpoints, dw.disasm.lines[xpos].offset)
 	dw.SetRowStyle(xpos, &selectedStyle)
+	dw.BaseWidget.Refresh()
+}
+
+func (dw *disasmWindow) pcToLine(pc uint) int {
+	index, _ := slices.BinarySearchFunc(dw.disasm.lines, pc, func(opc Opcode, offset uint) int {
+		return int(opc.offset) - int(offset)
+	})
+	return index
+}
+
+func (dw *disasmWindow) updatePC(pc uint) {
+	fmt.Println("prev pc: ", dw.cur_pc, " now: ", pc)
+	defaultStyle := widget.TextGridStyleDefault
+	selectedStyle := widget.CustomTextGridStyle{}
+	selectedStyle.BGColor = theme.Color(theme.ColorNameError)
+	dw.SetRowStyle(dw.pcToLine(dw.cur_pc), defaultStyle)
+	dw.cur_pc = pc
+	dw.SetRowStyle(dw.pcToLine(dw.cur_pc), &selectedStyle)
 	dw.BaseWidget.Refresh()
 }
