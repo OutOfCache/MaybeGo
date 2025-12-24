@@ -170,14 +170,17 @@ func (ppu *PPU) Render(cycles byte) bool {
 
 	cur_row := Read(LY)
 	// ppu.logger.LogValue("LY", uint16(cur_row))
-	frame_ready := cur_row == 144
 	ppu.RenderBG(cur_row)
 	if cur_row < 144 {
 		ppu.scanline = (ppu.scanline + byte(1)) % 144
 	}
 	Write(LY, (cur_row+1)%154)
+	if cur_row == 144 {
+		RequestInterrupt(0)
+		return true
+	}
 
-	return frame_ready
+	return false
 }
 
 func (ppu *PPU) Reset() {
