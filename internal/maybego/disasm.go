@@ -719,7 +719,7 @@ func (dis *Disasm) push(src string) string {
 
 func (dis *Disasm) prefix() string {
 	dis.current_addr++
-	return dis.cbOps[dis.current_addr]()
+	return dis.cbOps[(*dis.file)[dis.current_addr]]()
 }
 
 func (dis *Disasm) rlc(reg string) string {
