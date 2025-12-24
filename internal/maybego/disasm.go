@@ -277,14 +277,14 @@ func NewDisasm() *Disasm {
 	}
 
 	disasm.cbOps = [256]func() string{
-		func() string { return disasm.not_implemented() }, /* 0x00 */
-		func() string { return disasm.not_implemented() }, /* 0x01 */
-		func() string { return disasm.not_implemented() }, /* 0x02 */
-		func() string { return disasm.not_implemented() }, /* 0x03 */
-		func() string { return disasm.not_implemented() }, /* 0x04 */
-		func() string { return disasm.not_implemented() }, /* 0x05 */
-		func() string { return disasm.not_implemented() }, /* 0x06 */
-		func() string { return disasm.not_implemented() }, /* 0x07 */
+		func() string { return disasm.rlc("B") },          /* 0x00 */
+		func() string { return disasm.rlc("C") },          /* 0x01 */
+		func() string { return disasm.rlc("D") },          /* 0x02 */
+		func() string { return disasm.rlc("E") },          /* 0x03 */
+		func() string { return disasm.rlc("H") },          /* 0x04 */
+		func() string { return disasm.rlc("L") },          /* 0x05 */
+		func() string { return disasm.rlc("[HL]") },       /* 0x06 */
+		func() string { return disasm.rlc("A") },          /* 0x07 */
 		func() string { return disasm.not_implemented() }, /* 0x08 */
 		func() string { return disasm.not_implemented() }, /* 0x09 */
 		func() string { return disasm.not_implemented() }, /* 0x0A */
@@ -715,6 +715,11 @@ func (dis *Disasm) push(src string) string {
 func (dis *Disasm) prefix() string {
 	dis.current_addr++
 	return dis.cbOps[dis.current_addr]()
+}
+
+func (dis *Disasm) rlc(reg string) string {
+	dis.current_addr++
+	return "RLC " + reg
 }
 
 func (dis *Disasm) not_implemented() string {
