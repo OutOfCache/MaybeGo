@@ -1,5 +1,8 @@
 # MaybeGo
 
+![Image of the tetris title screen rendered in the emulator](./img/tetris-title.png)
+![Image of the tetris title screen with debugger and VRAM view next to it](./img/debug-tetris.png)
+
 ## Todo
 
   - [ ] CPU
@@ -12,6 +15,8 @@
     - [ ] memory map
   - [ ] PPU
     - [ ] BG (wip)
+      - [ ] scroll
+    - [ ] Window
     - [ ] Sprites
   - [ ] APU
   - [ ] Input
@@ -20,11 +25,13 @@
       - [x] VRAM view
       - [x] tilemap view
       - [x] code disassembly
-        - [ ] breakpoints
-        - [ ] step, step in, continue, pause buttons
-        - [ ] mark breakpoints
+        - [x] breakpoints
+        - [x] step, step in, continue, pause buttons
+        - [x] mark breakpoints
         - [ ] scroll to current PC
-        - [ ] mark current PC
+        - [x] mark current PC
+        - [ ] disable breakpoints
       - [ ] memory view
     - [ ] Menu Bar with ROM selection
       - [ ] reset ROM
+   - [ ] CI support running unit tests
