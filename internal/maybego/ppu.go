@@ -91,34 +91,6 @@ func (ppu *PPU) RenderBG(row byte) {
 	}
 }
 
-func (ppu *PPU) RenderRow() {
-	cur_row := Read(LY)
-	// ppu.logger.LogValue("LY", ppu.dots)
-	cur_lyc := Read(LYC)
-
-	if cur_row == cur_lyc {
-		cur_stat := Read(STAT)
-		Write(STAT, (cur_stat | 0x4))
-		if cur_stat&0x40 == 0x40 {
-			RequestInterrupt(1)
-		}
-	}
-	if cur_row < 144 {
-		ppu.RenderBG(cur_row)
-	} else {
-		cur_stat := Read(STAT)
-		Write(STAT, (cur_stat&0xFC)|0x1)
-		if cur_stat&0x10 != 0 {
-			RequestInterrupt(1)
-		}
-
-		if cur_row == 144 {
-			RequestInterrupt(0)
-		}
-	}
-	Write(LY, (cur_row+1)%153)
-}
-
 func (ppu *PPU) Render(cycles byte) bool {
 	new_dots := uint16(cycles * 4)
 	render := (ppu.dots + new_dots) > 455
