@@ -242,9 +242,9 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.invalid() },              /* 0xDD */
 		func() string { return disasm.opAImm8("SBC") },         /* 0xDE */
 		func() string { return disasm.rst("18") },              /* 0xDF */
-		func() string { return disasm.not_implemented() },      /* 0xE0 */
+		func() string { return disasm.ldhAddr(true, false) },   /* 0xE0 */
 		func() string { return disasm.pop("HL") },              /* 0xE1 */
-		func() string { return disasm.not_implemented() },      /* 0xE2 */
+		func() string { return disasm.ldhAddr(true, true) },    /* 0xE2 */
 		func() string { return disasm.invalid() },              /* 0xE3 */
 		func() string { return disasm.invalid() },              /* 0xE4 */
 		func() string { return disasm.push("HL") },             /* 0xE5 */
@@ -258,9 +258,9 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.invalid() },              /* 0xED */
 		func() string { return disasm.opAImm8("XOR") },         /* 0xEE */
 		func() string { return disasm.rst("28") },              /* 0xEF */
-		func() string { return disasm.not_implemented() },      /* 0xF0 */
+		func() string { return disasm.ldhAddr(false, false) },  /* 0xF0 */
 		func() string { return disasm.pop("AF") },              /* 0xF1 */
-		func() string { return disasm.not_implemented() },      /* 0xF2 */
+		func() string { return disasm.ldhAddr(false, true) },   /* 0xF2 */
 		func() string { disasm.current_addr++; return "DI" },   /* 0xF3 */
 		func() string { return disasm.invalid() },              /* 0xF4 */
 		func() string { return disasm.push("AF") },             /* 0xF5 */
@@ -780,6 +780,23 @@ func (dis *Disasm) set(pos byte, reg string) string {
 func (dis *Disasm) invalid() string {
 	dis.current_addr++
 	return "invalid op!"
+}
+
+// TODO: Enum for parameters here?
+func (dis *Disasm) ldhAddr(addr_first bool, reg bool) string {
+	dis.current_addr++
+	string := "LDH "
+
+	addr := "[$FF00+"
+	if reg {
+		addr += "C]"
+	} else {
+		addr += dis.printImm8At(dis.current_addr) + "]"
+	}
+	if addr_first {
+		return string + addr + ", A"
+	}
+	return string + "A, " + addr
 }
 
 func (dis *Disasm) not_implemented() string {
