@@ -341,70 +341,70 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.srl("L") },          /* 0x3D */
 		func() string { return disasm.srl("[HL]") },       /* 0x3E */
 		func() string { return disasm.srl("A") },          /* 0x3F */
-		func() string { return disasm.not_implemented() }, /* 0x40 */
-		func() string { return disasm.not_implemented() }, /* 0x41 */
-		func() string { return disasm.not_implemented() }, /* 0x42 */
-		func() string { return disasm.not_implemented() }, /* 0x43 */
-		func() string { return disasm.not_implemented() }, /* 0x44 */
-		func() string { return disasm.not_implemented() }, /* 0x45 */
-		func() string { return disasm.not_implemented() }, /* 0x46 */
-		func() string { return disasm.not_implemented() }, /* 0x47 */
-		func() string { return disasm.not_implemented() }, /* 0x48 */
-		func() string { return disasm.not_implemented() }, /* 0x49 */
-		func() string { return disasm.not_implemented() }, /* 0x4A */
-		func() string { return disasm.not_implemented() }, /* 0x4B */
-		func() string { return disasm.not_implemented() }, /* 0x4C */
-		func() string { return disasm.not_implemented() }, /* 0x4D */
-		func() string { return disasm.not_implemented() }, /* 0x4E */
-		func() string { return disasm.not_implemented() }, /* 0x4F */
-		func() string { return disasm.not_implemented() }, /* 0x50 */
-		func() string { return disasm.not_implemented() }, /* 0x51 */
-		func() string { return disasm.not_implemented() }, /* 0x52 */
-		func() string { return disasm.not_implemented() }, /* 0x53 */
-		func() string { return disasm.not_implemented() }, /* 0x54 */
-		func() string { return disasm.not_implemented() }, /* 0x55 */
-		func() string { return disasm.not_implemented() }, /* 0x56 */
-		func() string { return disasm.not_implemented() }, /* 0x57 */
-		func() string { return disasm.not_implemented() }, /* 0x58 */
-		func() string { return disasm.not_implemented() }, /* 0x59 */
-		func() string { return disasm.not_implemented() }, /* 0x5A */
-		func() string { return disasm.not_implemented() }, /* 0x5B */
-		func() string { return disasm.not_implemented() }, /* 0x5C */
-		func() string { return disasm.not_implemented() }, /* 0x5D */
-		func() string { return disasm.not_implemented() }, /* 0x5E */
-		func() string { return disasm.not_implemented() }, /* 0x5F */
-		func() string { return disasm.not_implemented() }, /* 0x60 */
-		func() string { return disasm.not_implemented() }, /* 0x61 */
-		func() string { return disasm.not_implemented() }, /* 0x62 */
-		func() string { return disasm.not_implemented() }, /* 0x63 */
-		func() string { return disasm.not_implemented() }, /* 0x64 */
-		func() string { return disasm.not_implemented() }, /* 0x65 */
-		func() string { return disasm.not_implemented() }, /* 0x66 */
-		func() string { return disasm.not_implemented() }, /* 0x67 */
-		func() string { return disasm.not_implemented() }, /* 0x68 */
-		func() string { return disasm.not_implemented() }, /* 0x69 */
-		func() string { return disasm.not_implemented() }, /* 0x6A */
-		func() string { return disasm.not_implemented() }, /* 0x6B */
-		func() string { return disasm.not_implemented() }, /* 0x6C */
-		func() string { return disasm.not_implemented() }, /* 0x6D */
-		func() string { return disasm.not_implemented() }, /* 0x6E */
-		func() string { return disasm.not_implemented() }, /* 0x6F */
-		func() string { return disasm.not_implemented() }, /* 0x70 */
-		func() string { return disasm.not_implemented() }, /* 0x71 */
-		func() string { return disasm.not_implemented() }, /* 0x72 */
-		func() string { return disasm.not_implemented() }, /* 0x73 */
-		func() string { return disasm.not_implemented() }, /* 0x74 */
-		func() string { return disasm.not_implemented() }, /* 0x75 */
-		func() string { return disasm.not_implemented() }, /* 0x76 */
-		func() string { return disasm.not_implemented() }, /* 0x77 */
-		func() string { return disasm.not_implemented() }, /* 0x78 */
-		func() string { return disasm.not_implemented() }, /* 0x79 */
-		func() string { return disasm.not_implemented() }, /* 0x7A */
-		func() string { return disasm.not_implemented() }, /* 0x7B */
-		func() string { return disasm.not_implemented() }, /* 0x7C */
-		func() string { return disasm.not_implemented() }, /* 0x7D */
-		func() string { return disasm.not_implemented() }, /* 0x7E */
-		func() string { return disasm.not_implemented() }, /* 0x7F */
+		func() string { return disasm.bit(0, "B") },       /* 0x40 */
+		func() string { return disasm.bit(0, "C") },       /* 0x41 */
+		func() string { return disasm.bit(0, "D") },       /* 0x42 */
+		func() string { return disasm.bit(0, "E") },       /* 0x43 */
+		func() string { return disasm.bit(0, "H") },       /* 0x44 */
+		func() string { return disasm.bit(0, "L") },       /* 0x45 */
+		func() string { return disasm.bit(0, "[HL]") },    /* 0x46 */
+		func() string { return disasm.bit(0, "A") },       /* 0x47 */
+		func() string { return disasm.bit(1, "B") },       /* 0x48 */
+		func() string { return disasm.bit(1, "C") },       /* 0x49 */
+		func() string { return disasm.bit(1, "D") },       /* 0x4A */
+		func() string { return disasm.bit(1, "E") },       /* 0x4B */
+		func() string { return disasm.bit(1, "H") },       /* 0x4C */
+		func() string { return disasm.bit(1, "L") },       /* 0x4D */
+		func() string { return disasm.bit(1, "[HL]") },    /* 0x4E */
+		func() string { return disasm.bit(1, "A") },       /* 0x4F */
+		func() string { return disasm.bit(2, "B") },       /* 0x50 */
+		func() string { return disasm.bit(2, "C") },       /* 0x51 */
+		func() string { return disasm.bit(2, "D") },       /* 0x52 */
+		func() string { return disasm.bit(2, "E") },       /* 0x53 */
+		func() string { return disasm.bit(2, "H") },       /* 0x54 */
+		func() string { return disasm.bit(2, "L") },       /* 0x55 */
+		func() string { return disasm.bit(2, "[HL]") },    /* 0x56 */
+		func() string { return disasm.bit(2, "A") },       /* 0x57 */
+		func() string { return disasm.bit(3, "B") },       /* 0x58 */
+		func() string { return disasm.bit(3, "C") },       /* 0x59 */
+		func() string { return disasm.bit(3, "D") },       /* 0x5A */
+		func() string { return disasm.bit(3, "E") },       /* 0x5B */
+		func() string { return disasm.bit(3, "H") },       /* 0x5C */
+		func() string { return disasm.bit(3, "L") },       /* 0x5D */
+		func() string { return disasm.bit(3, "[HL]") },    /* 0x5E */
+		func() string { return disasm.bit(3, "A") },       /* 0x5F */
+		func() string { return disasm.bit(4, "B") },       /* 0x60 */
+		func() string { return disasm.bit(4, "C") },       /* 0x61 */
+		func() string { return disasm.bit(4, "D") },       /* 0x62 */
+		func() string { return disasm.bit(4, "E") },       /* 0x63 */
+		func() string { return disasm.bit(4, "H") },       /* 0x64 */
+		func() string { return disasm.bit(4, "L") },       /* 0x65 */
+		func() string { return disasm.bit(4, "[HL]") },    /* 0x66 */
+		func() string { return disasm.bit(4, "A") },       /* 0x67 */
+		func() string { return disasm.bit(5, "B") },       /* 0x68 */
+		func() string { return disasm.bit(5, "C") },       /* 0x69 */
+		func() string { return disasm.bit(5, "D") },       /* 0x6A */
+		func() string { return disasm.bit(5, "E") },       /* 0x6B */
+		func() string { return disasm.bit(5, "H") },       /* 0x6C */
+		func() string { return disasm.bit(5, "L") },       /* 0x6D */
+		func() string { return disasm.bit(5, "[HL]") },    /* 0x6E */
+		func() string { return disasm.bit(5, "A") },       /* 0x6F */
+		func() string { return disasm.bit(6, "B") },       /* 0x70 */
+		func() string { return disasm.bit(6, "C") },       /* 0x71 */
+		func() string { return disasm.bit(6, "D") },       /* 0x72 */
+		func() string { return disasm.bit(6, "E") },       /* 0x73 */
+		func() string { return disasm.bit(6, "H") },       /* 0x74 */
+		func() string { return disasm.bit(6, "L") },       /* 0x75 */
+		func() string { return disasm.bit(6, "[HL]") },    /* 0x76 */
+		func() string { return disasm.bit(6, "A") },       /* 0x77 */
+		func() string { return disasm.bit(7, "B") },       /* 0x78 */
+		func() string { return disasm.bit(7, "C") },       /* 0x79 */
+		func() string { return disasm.bit(7, "D") },       /* 0x7A */
+		func() string { return disasm.bit(7, "E") },       /* 0x7B */
+		func() string { return disasm.bit(7, "H") },       /* 0x7C */
+		func() string { return disasm.bit(7, "L") },       /* 0x7D */
+		func() string { return disasm.bit(7, "[HL]") },    /* 0x7E */
+		func() string { return disasm.bit(7, "A") },       /* 0x7F */
 		func() string { return disasm.not_implemented() }, /* 0x80 */
 		func() string { return disasm.not_implemented() }, /* 0x81 */
 		func() string { return disasm.not_implemented() }, /* 0x82 */
@@ -755,6 +755,11 @@ func (dis *Disasm) swap(reg string) string {
 func (dis *Disasm) srl(reg string) string {
 	dis.current_addr++
 	return "SRL " + reg
+}
+
+func (dis *Disasm) bit(pos byte, reg string) string {
+	dis.current_addr++
+	return "BIT " + fmt.Sprintf("%d", pos) + ", " + reg
 }
 
 func (dis *Disasm) not_implemented() string {
