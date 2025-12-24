@@ -221,7 +221,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.ret("Z") },               /* 0xC8 */
 		func() string { disasm.current_addr++; return "RET" },  /* 0xC9 */
 		func() string { return disasm.jp_flag("Z") },           /* 0xCA */
-		func() string { return disasm.not_implemented() },      /* 0xCB */
+		func() string { return disasm.prefix() },               /* 0xCB */
 		func() string { return disasm.call_flag("Z") },         /* 0xCC */
 		func() string { return disasm.call() },                 /* 0xCD */
 		func() string { return disasm.not_implemented() },      /* 0xCE */
