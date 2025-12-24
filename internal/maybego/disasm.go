@@ -303,7 +303,7 @@ func (dis *Disasm) printImm8At(addr uint) string {
 
 func (dis *Disasm) printImm16At(start_addr uint) string {
 	dis.current_addr += 2
-	return fmt.Sprintf("%02X %02X", (*dis.file)[start_addr], (*dis.file)[start_addr+1])
+	return fmt.Sprintf("%02X%02X", (*dis.file)[start_addr+1], (*dis.file)[start_addr])
 }
 
 func (dis *Disasm) ldImm16(reg string) string {
