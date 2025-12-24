@@ -229,7 +229,7 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.ret("NC") },              /* 0xD0 */
 		func() string { return disasm.pop("DE") },              /* 0xD1 */
 		func() string { return disasm.jp_flag("NC") },          /* 0xD2 */
-		func() string { return disasm.not_implemented() },      /* 0xD3 */
+		func() string { return disasm.invalid() },              /* 0xD3 */
 		func() string { return disasm.call_flag("NC") },        /* 0xD4 */
 		func() string { return disasm.push("DE") },             /* 0xD5 */
 		func() string { return disasm.opAImm8("SUB") },         /* 0xD6 */
@@ -237,32 +237,32 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.ret("C") },               /* 0xD8 */
 		func() string { disasm.current_addr++; return "RETI" }, /* 0xD9 */
 		func() string { return disasm.jp_flag("C") },           /* 0xDA */
-		func() string { return disasm.not_implemented() },      /* 0xDB */
+		func() string { return disasm.invalid() },              /* 0xDB */
 		func() string { return disasm.call_flag("C") },         /* 0xDC */
-		func() string { return disasm.not_implemented() },      /* 0xDD */
+		func() string { return disasm.invalid() },              /* 0xDD */
 		func() string { return disasm.opAImm8("SBC") },         /* 0xDE */
 		func() string { return disasm.rst("18") },              /* 0xDF */
 		func() string { return disasm.not_implemented() },      /* 0xE0 */
 		func() string { return disasm.pop("HL") },              /* 0xE1 */
 		func() string { return disasm.not_implemented() },      /* 0xE2 */
-		func() string { return disasm.not_implemented() },      /* 0xE3 */
-		func() string { return disasm.not_implemented() },      /* 0xE4 */
+		func() string { return disasm.invalid() },              /* 0xE3 */
+		func() string { return disasm.invalid() },              /* 0xE4 */
 		func() string { return disasm.push("HL") },             /* 0xE5 */
 		func() string { return disasm.opAImm8("AND") },         /* 0xE6 */
 		func() string { return disasm.rst("20") },              /* 0xE7 */
 		func() string { return disasm.addImm8("SP") },          /* 0xE8 */
 		func() string { return disasm.jp_hl() },                /* 0xE9 */
 		func() string { return disasm.ldImm16Reg("A") },        /* 0xEA */
-		func() string { return disasm.not_implemented() },      /* 0xEB */
-		func() string { return disasm.not_implemented() },      /* 0xEC */
-		func() string { return disasm.not_implemented() },      /* 0xED */
+		func() string { return disasm.invalid() },              /* 0xEB */
+		func() string { return disasm.invalid() },              /* 0xEC */
+		func() string { return disasm.invalid() },              /* 0xED */
 		func() string { return disasm.opAImm8("XOR") },         /* 0xEE */
 		func() string { return disasm.rst("28") },              /* 0xEF */
 		func() string { return disasm.not_implemented() },      /* 0xF0 */
 		func() string { return disasm.pop("AF") },              /* 0xF1 */
 		func() string { return disasm.not_implemented() },      /* 0xF2 */
 		func() string { disasm.current_addr++; return "DI" },   /* 0xF3 */
-		func() string { return disasm.not_implemented() },      /* 0xF4 */
+		func() string { return disasm.invalid() },              /* 0xF4 */
 		func() string { return disasm.push("AF") },             /* 0xF5 */
 		func() string { return disasm.opAImm8("OR") },          /* 0xF6 */
 		func() string { return disasm.rst("30") },              /* 0xF7 */
@@ -270,8 +270,8 @@ func NewDisasm() *Disasm {
 		func() string { return disasm.not_implemented() },      /* 0xF9 */
 		func() string { return disasm.ldRegImm16("A") },        /* 0xFA */
 		func() string { disasm.current_addr++; return "EI" },   /* 0xFB */
-		func() string { return disasm.not_implemented() },      /* 0xFC */
-		func() string { return disasm.not_implemented() },      /* 0xFD */
+		func() string { return disasm.invalid() },              /* 0xFC */
+		func() string { return disasm.invalid() },              /* 0xFD */
 		func() string { return disasm.opAImm8("CP") },          /* 0xFE */
 		func() string { return disasm.rst("38") },              /* 0xFF */
 	}
@@ -775,6 +775,11 @@ func (dis *Disasm) res(pos byte, reg string) string {
 func (dis *Disasm) set(pos byte, reg string) string {
 	dis.current_addr++
 	return "SET " + fmt.Sprintf("%d", pos) + ", " + reg
+}
+
+func (dis *Disasm) invalid() string {
+	dis.current_addr++
+	return "invalid op!"
 }
 
 func (dis *Disasm) not_implemented() string {
