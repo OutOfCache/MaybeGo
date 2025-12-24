@@ -163,7 +163,6 @@ func (ppu *PPU) Render(cycles byte) bool {
 		ppu.tiledata = 0x8000
 	}
 
-	RequestInterrupt(0)
 	Write(LCDC, (cur_lcdc&(0xFC))|0x1)
 	if cur_stat&0x10 != 0 {
 		RequestInterrupt(1)
