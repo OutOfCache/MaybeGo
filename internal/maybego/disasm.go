@@ -659,7 +659,7 @@ func (dis *Disasm) addImm8(dst string) string {
 
 func (dis *Disasm) opAImm8(op string) string {
 	dis.current_addr++
-	return op + " A, " + dis.printImm16At(dis.current_addr)
+	return op + " A, " + dis.printImm8At(dis.current_addr)
 }
 
 func (dis *Disasm) addReg(dst string, src string) string {
