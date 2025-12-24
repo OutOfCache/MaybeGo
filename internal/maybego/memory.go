@@ -7,5 +7,8 @@ func Read(adr uint16) byte {
 }
 
 func Write(adr uint16, val byte) {
+	if adr == 0xFF00 {
+		val = 0xF
+	}
 	Memory[adr] = val
 }
