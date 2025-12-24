@@ -87,10 +87,12 @@ func NewUI(logger *Logger) *Interface {
 		})
 
 	cpu := createCpuStateWindow()
+	cpu.container.Hide()
 	disasm_container := createDisasmView()
 
 	debug := createDebugView(cpu, disasm_container)
 	debug_container := createDebugContainer(e, display, debug)
+	debug_container.Hide()
 
 	vram := createVramView()
 	vram.Hide()
@@ -444,7 +446,6 @@ func (dw *disasmWindow) pcToLine(pc uint) int {
 }
 
 func (dw *disasmWindow) updatePC(pc uint) {
-	fmt.Println("prev pc: ", dw.cur_pc, " now: ", pc)
 	defaultStyle := widget.TextGridStyleDefault
 	selectedStyle := widget.CustomTextGridStyle{}
 	selectedStyle.BGColor = theme.Color(theme.ColorNameError)
