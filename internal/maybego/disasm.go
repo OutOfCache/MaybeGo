@@ -567,33 +567,33 @@ func (dis *Disasm) printImm16At(start_addr uint) string {
 
 func (dis *Disasm) ldImm16(reg string) string {
 	dis.current_addr++
-	return "LD " + reg + " " + dis.printImm16At(dis.current_addr) + ""
+	return "LD " + reg + " " + dis.printImm16At(dis.current_addr)
 }
 
 func (dis *Disasm) ldImm8(reg string) string {
 	dis.current_addr++
-	return "LD " + reg + " " + dis.printImm8At(dis.current_addr) + ""
+	return "LD " + reg + " " + dis.printImm8At(dis.current_addr)
 }
 
 func (dis *Disasm) ldAddrReg(addr string, reg string) string {
 	dis.current_addr++
-	return "LD [" + addr + "], " + reg + ""
+	return "LD [" + addr + "], " + reg
 }
 
 func (dis *Disasm) inc(reg string) string {
 	dis.current_addr++
-	return "INC " + reg + ""
+	return "INC " + reg
 }
 
 func (dis *Disasm) dec(reg string) string {
 	dis.current_addr++
-	return "DEC " + reg + ""
+	return "DEC " + reg
 }
 
 // Load [a16], reg
 func (dis *Disasm) ldImm16Reg(reg string) string {
 	dis.current_addr++
-	return "LD [" + dis.printImm16At(dis.current_addr) + "], " + reg + ""
+	return "LD [" + dis.printImm16At(dis.current_addr) + "], " + reg
 }
 
 // Load reg, [a16]
@@ -609,107 +609,107 @@ func (dis *Disasm) ldRegAddr(reg string, addr string) string {
 
 func (dis *Disasm) ldRegReg(dst string, src string) string {
 	dis.current_addr++
-	return "LD " + dst + ", " + src + ""
+	return "LD " + dst + ", " + src
 }
 
 func (dis *Disasm) jr() string {
 	dis.current_addr++
-	return "JR " + dis.printImm8At(dis.current_addr) + ""
+	return "JR " + dis.printImm8At(dis.current_addr)
 }
 
 func (dis *Disasm) jr_flag(flag string) string {
 	dis.current_addr++
-	return "JR " + flag + ", " + dis.printImm8At(dis.current_addr) + ""
+	return "JR " + flag + ", " + dis.printImm8At(dis.current_addr)
 }
 
 func (dis *Disasm) jp() string {
 	dis.current_addr++
-	return "JP " + dis.printImm16At(dis.current_addr) + ""
+	return "JP " + dis.printImm16At(dis.current_addr)
 }
 
 func (dis *Disasm) jp_hl() string {
 	dis.current_addr++
-	return "JP " + dis.printImm16At(dis.current_addr) + ""
+	return "JP " + dis.printImm16At(dis.current_addr)
 }
 
 func (dis *Disasm) jp_flag(flag string) string {
 	dis.current_addr++
-	return "JP " + flag + ", " + dis.printImm16At(dis.current_addr) + ""
+	return "JP " + flag + ", " + dis.printImm16At(dis.current_addr)
 }
 
 func (dis *Disasm) call() string {
 	dis.current_addr++
-	return "CALL " + dis.printImm16At(dis.current_addr) + ""
+	return "CALL " + dis.printImm16At(dis.current_addr)
 }
 
 func (dis *Disasm) call_flag(flag string) string {
 	dis.current_addr++
-	return "CALL " + flag + ", " + dis.printImm16At(dis.current_addr) + ""
+	return "CALL " + flag + ", " + dis.printImm16At(dis.current_addr)
 }
 
 func (dis *Disasm) rst(addr string) string {
 	dis.current_addr++
-	return "RST $" + addr + ""
+	return "RST $" + addr
 }
 
 func (dis *Disasm) addImm8(dst string) string {
 	dis.current_addr++
-	return "ADD " + dst + ", " + dis.printImm16At(dis.current_addr) + ""
+	return "ADD " + dst + ", " + dis.printImm16At(dis.current_addr)
 }
 
 func (dis *Disasm) addReg(dst string, src string) string {
 	dis.current_addr++
-	return "ADD " + dst + ", " + src + ""
+	return "ADD " + dst + ", " + src
 }
 
 func (dis *Disasm) adcReg(src string) string {
 	dis.current_addr++
-	return "ADC A, " + src + ""
+	return "ADC A, " + src
 }
 
 func (dis *Disasm) subReg(src string) string {
 	dis.current_addr++
-	return "SUB A, " + src + ""
+	return "SUB A, " + src
 }
 
 func (dis *Disasm) sbcReg(src string) string {
 	dis.current_addr++
-	return "SBC A, " + src + ""
+	return "SBC A, " + src
 }
 
 func (dis *Disasm) andReg(src string) string {
 	dis.current_addr++
-	return "AND A, " + src + ""
+	return "AND A, " + src
 }
 
 func (dis *Disasm) xorReg(src string) string {
 	dis.current_addr++
-	return "XOR A, " + src + ""
+	return "XOR A, " + src
 }
 
 func (dis *Disasm) orReg(src string) string {
 	dis.current_addr++
-	return "OR A, " + src + ""
+	return "OR A, " + src
 }
 
 func (dis *Disasm) cpReg(src string) string {
 	dis.current_addr++
-	return "CP A, " + src + ""
+	return "CP A, " + src
 }
 
 func (dis *Disasm) ret(flag string) string {
 	dis.current_addr++
-	return "RET " + flag + ""
+	return "RET " + flag
 }
 
 func (dis *Disasm) pop(dst string) string {
 	dis.current_addr++
-	return "POP " + dst + ""
+	return "POP " + dst
 }
 
 func (dis *Disasm) push(src string) string {
 	dis.current_addr++
-	return "PUSH " + src + ""
+	return "PUSH " + src
 }
 
 func (dis *Disasm) prefix() string {
