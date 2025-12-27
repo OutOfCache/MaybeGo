@@ -17,8 +17,8 @@ func NewEmulator(logger *Logger) *Emulator {
 	// TODO: no logger in CPU or PPU
 	cpu := NewCPU(logger)
 	ppu := NewPPU(logger)
-	Write(0xFF00, 0x0F)
 	e := &Emulator{cpu: cpu, ppu: ppu, logger: logger}
+	InitMemory()
 
 	return e
 }

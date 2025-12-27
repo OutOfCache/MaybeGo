@@ -2,6 +2,10 @@ package maybego
 
 var Memory [65536]byte
 
+func InitMemory() {
+	Memory[0xFF00] = 0xF // init joypad input
+}
+
 func Read(adr uint16) byte {
 	return Memory[adr]
 }
