@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -85,6 +86,13 @@ func NewUI(logger *Logger) *Interface {
 			}
 			return Palette[e.ppu.GetCurrentFrame()[(160*y)+x]]
 		})
+
+	w.Canvas().(desktop.Canvas).SetOnKeyDown(func(ke *fyne.KeyEvent) {
+		e.PressButton(string(ke.Name))
+	})
+	w.Canvas().(desktop.Canvas).SetOnKeyUp(func(ke *fyne.KeyEvent) {
+		e.ReleaseButton(string(ke.Name))
+	})
 
 	cpu := createCpuStateWindow()
 	cpu.container.Hide()
