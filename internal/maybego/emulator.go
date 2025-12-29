@@ -62,7 +62,6 @@ func (emu *Emulator) Run() bool {
 }
 
 func (emu *Emulator) PressButton(key string) {
-	// keycode := byte(0)
 	switch key {
 	case "V":
 		emu.joypad.setButton(ButtonA)
@@ -76,12 +75,23 @@ func (emu *Emulator) PressButton(key string) {
 	case "Z":
 		emu.joypad.setButton(ButtonStart)
 		return
+	case "Up":
+		emu.joypad.setDirection(DirectionUp)
+		return
+	case "Down":
+		emu.joypad.setDirection(DirectionDown)
+		return
+	case "Left":
+		emu.joypad.setDirection(DirectionLeft)
+		return
+	case "Right":
+		emu.joypad.setDirection(DirectionRight)
+		return
 	}
 
 }
 
 func (emu *Emulator) ReleaseButton(key string) {
-	// keycode := byte(0)
 	switch key {
 	case "V":
 		emu.joypad.resetButton(ButtonA)
@@ -94,6 +104,18 @@ func (emu *Emulator) ReleaseButton(key string) {
 		return
 	case "Z":
 		emu.joypad.resetButton(ButtonStart)
+		return
+	case "Up":
+		emu.joypad.resetDirection(DirectionUp)
+		return
+	case "Down":
+		emu.joypad.resetDirection(DirectionDown)
+		return
+	case "Left":
+		emu.joypad.resetDirection(DirectionLeft)
+		return
+	case "Right":
+		emu.joypad.resetDirection(DirectionRight)
 		return
 	}
 

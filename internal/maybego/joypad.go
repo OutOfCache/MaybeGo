@@ -76,24 +76,20 @@ func (joy *Joypad) updateControls() {
 func (joy *Joypad) setButton(b Button) {
 	mask := byte(^(1 << b))
 	joy.buttons &= mask
-	fmt.Printf("Buttons: %X\n", joy.buttons)
 }
 
 func (joy *Joypad) resetButton(b Button) {
 	mask := byte((1 << b))
 	joy.buttons |= mask
-	fmt.Printf("Buttons: %X\n", joy.buttons)
 }
 
 func (joy *Joypad) setDirection(d Direction) {
 	mask := byte(^(1 << d))
 	joy.directions &= mask
-	fmt.Printf("Directions: %X\n", joy.directions)
 }
 
 func (joy *Joypad) resetDirection(d Direction) {
 	mask := byte((1 << d))
 	joy.directions |= mask
-	fmt.Printf("Directions: %X\n", joy.directions)
 }
 
