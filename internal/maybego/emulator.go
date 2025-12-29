@@ -3,6 +3,7 @@ package maybego
 type Emulator struct {
 	cpu        *CPU
 	ppu        *PPU
+	joypad     *Joypad
 	rom_loaded bool
 	logger     *Logger
 }
@@ -17,8 +18,9 @@ func NewEmulator(logger *Logger) *Emulator {
 	// TODO: no logger in CPU or PPU
 	cpu := NewCPU(logger)
 	ppu := NewPPU(logger)
-	e := &Emulator{cpu: cpu, ppu: ppu, logger: logger}
 	InitMemory()
+	joy := NewJoypad()
+	e := &Emulator{cpu: cpu, ppu: ppu, joypad: joy, logger: logger}
 
 	return e
 }
@@ -55,5 +57,44 @@ func (emu *Emulator) Run() bool {
 	}
 
 	cycles := emu.FetchDecodeExec()
+	emu.joypad.updateControls()
 	return emu.ppu.Render(cycles)
+}
+
+func (emu *Emulator) PressButton(key string) {
+	// keycode := byte(0)
+	switch key {
+	case "V":
+		emu.joypad.setButton(ButtonA)
+		return
+	case "C":
+		emu.joypad.setButton(ButtonB)
+		return
+	case "X":
+		emu.joypad.setButton(ButtonSelect)
+		return
+	case "Z":
+		emu.joypad.setButton(ButtonStart)
+		return
+	}
+
+}
+
+func (emu *Emulator) ReleaseButton(key string) {
+	// keycode := byte(0)
+	switch key {
+	case "V":
+		emu.joypad.resetButton(ButtonA)
+		return
+	case "C":
+		emu.joypad.resetButton(ButtonB)
+		return
+	case "X":
+		emu.joypad.resetButton(ButtonSelect)
+		return
+	case "Z":
+		emu.joypad.resetButton(ButtonStart)
+		return
+	}
+
 }
