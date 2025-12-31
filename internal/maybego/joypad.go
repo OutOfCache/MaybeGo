@@ -1,7 +1,5 @@
 package maybego
 
-import "fmt"
-
 type Joypad struct {
 	prev_joypad byte
 	directions  byte
@@ -33,15 +31,7 @@ func NewJoypad() *Joypad {
 }
 
 func (joy *Joypad) updateControls() {
-	new_joypad := Read(JOYP)
-	// The buttons are only read on a write to JOYP
-	// If there was no change, there is no need
-	// changed := new_joypad != joy.prev_joypad
-
-	// if !changed {
-	// 	return
-	// }
-
+	new_joypad := Read(JOYP) & 0xF0
 	directions_enabled := (new_joypad & 0x30) == 0x20
 	buttons_enabled := (new_joypad & 0x30) == 0x10
 
@@ -53,17 +43,13 @@ func (joy *Joypad) updateControls() {
 
 	if directions_enabled {
 		new_joypad |= joy.directions
-		// joy.buttons = 0xF
-		// fmt.Println("reset buttons")
 	} else {
 		new_joypad |= joy.buttons
-		// joy.directions = 0xF
-		// fmt.Println("reset directions")
 	}
 
 	bitmask := byte(0x1)
-	for i := range 4 {
-		if new_joypad&bitmask == 0 /*&& joy.prev_joypad&bitmask == 0*/ {
+	for range 4 {
+		if new_joypad&bitmask == 0 {
 			RequestInterrupt(4)
 		}
 		bitmask <<= 1
@@ -92,4 +78,3 @@ func (joy *Joypad) resetDirection(d Direction) {
 	mask := byte((1 << d))
 	joy.directions |= mask
 }
-
