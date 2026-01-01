@@ -15,12 +15,13 @@ func TestRowTransition(t *testing.T) {
 	}{
 		{0, 1},
 		{143, 144},
-		{152, 0},
+		{153, 0},
 	}
 
 	for _, test := range tests {
 		Write(LY, test.ly)
-		ppu.RenderRow()
+		ppu.dots = 456
+		ppu.Render(0)
 		if Read(LY) != test.expectedLY {
 			t.Errorf("Current LY: %3d; expected: %3d", Read(LY), test.expectedLY)
 		}
