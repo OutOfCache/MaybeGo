@@ -38,8 +38,9 @@ func TestVBlankInterrupt(t *testing.T) {
 		// stat set, int enabled
 		{1, 0x10, 0x10, 0x0},   // mode 0, rows 0-143, ie, stat set
 		{143, 0x10, 0x10, 0x0}, // mode 0, rows 0-143, ie, stat set
-		{144, 0x10, 0x11, 0x1}, // mode 0, row 145-153, ie
-		{145, 0x10, 0x11, 0x0}, // mode 0, row 144, ie
+		{144, 0x10, 0x11, 0x1}, // mode 0, row 144, ie
+		{145, 0x10, 0x11, 0x1}, // mode 0, row 145-153, ie
+		{145, 0x11, 0x11, 0x0}, // mode 1, row 145-153, ie
 		// stat not set, int enabled
 		{144, 0x00, 0x01, 0x1}, // mode 0, row 143, ie
 		{145, 0x01, 0x01, 0x0}, // mode 1, rows 144, ie
