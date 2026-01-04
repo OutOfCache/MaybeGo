@@ -95,12 +95,19 @@ func (ppu *PPU) RenderBG(row byte) {
 }
 
 func (ppu *PPU) Render(cycles byte) bool {
+	cur_lcdc := Read(LCDC)
+	lcd_on := cur_lcdc&0x1 != 0
+
+	if !lcd_on {
+		ppu.Reset()
+		return false
+	}
+
 	new_dots := uint16(cycles * 4)
 	render := (ppu.dots + new_dots) > 455
 	ppu.dots = (ppu.dots + new_dots) % 456
 	// ppu.logger.LogValue("dots", ppu.dots)
 
-	cur_lcdc := Read(LCDC)
 	cur_stat := Read(STAT)
 
 	// if LCD is turned off
