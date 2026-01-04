@@ -50,19 +50,20 @@ func TestVBlankInterrupt(t *testing.T) {
 		Write(IF, 0x0)
 		Write(LY, test.ly)
 		Write(STAT, test.stat)
-		ppu.RenderRow()
+		ppu.dots = MODE3_END
+		ppu.Render(0)
 
 		actualSTAT := Read(STAT)
 		actualIF := (Read(IF) & 0x1)
 
 		if actualSTAT != test.expectedSTAT {
 			t.Errorf("Wrong STAT. Got %.2X, expected %.2X", actualSTAT, test.expectedSTAT)
-			t.Errorf("Test: {LY: %3d, STAT: %.2X", test.ly, test.stat)
+			t.Errorf("Test: {LY: %3d, STAT: %.2X}", test.ly, test.stat)
 		}
 
 		if actualIF != test.expectedIF {
 			t.Errorf("Wrong IF. Got %.2X, expected %.2X", actualIF, test.expectedIF)
-			t.Errorf("Test: {LY: %3d, STAT: %.2X", test.ly, test.stat)
+			t.Errorf("Test: {LY: %3d, STAT: %.2X}", test.ly, test.stat)
 		}
 	}
 }
