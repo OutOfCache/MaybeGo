@@ -1,10 +1,13 @@
 package maybego
 
 const (
-	LCDC uint16 = 0xFF40
-	STAT uint16 = 0xFF41
-	LY   uint16 = 0xFF44
-	LYC  uint16 = 0xFF45
+	LCDC      uint16 = 0xFF40
+	STAT      uint16 = 0xFF41
+	LY        uint16 = 0xFF44
+	LYC       uint16 = 0xFF45
+	MODE2_END uint16 = 80
+	MODE3_END uint16 = 80 + 289
+	MODE0_END uint16 = 456
 )
 
 type PPU struct {
@@ -105,14 +108,14 @@ func (ppu *PPU) Render(cycles byte) bool {
 	// 	return
 	// }
 
-	if ppu.dots <= 80 {
+	if ppu.dots <= MODE2_END {
 		Write(STAT, (cur_stat&0xFE)|0x2)
 		if cur_stat&0x20 != 0 {
 			RequestInterrupt(1)
 		}
-	} else if ppu.dots <= (80 + 289) {
+	} else if ppu.dots <= MODE3_END {
 		Write(STAT, (cur_stat&0xFC)|0x3)
-	} else if ppu.dots <= 456 {
+	} else if ppu.dots <= MODE0_END {
 		Write(STAT, (cur_stat & 0xFC))
 		if cur_stat&0x8 != 0 {
 			RequestInterrupt(1)
