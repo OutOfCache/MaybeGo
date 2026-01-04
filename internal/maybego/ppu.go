@@ -103,12 +103,13 @@ func (ppu *PPU) Render(cycles byte) bool {
 	// }
 
 	new_dots := uint16(cycles * 4)
-	render := (ppu.dots + new_dots) > 455
+	row_done := (ppu.dots + new_dots) > 455
 	ppu.dots = (ppu.dots + new_dots) % 456
 	// ppu.logger.LogValue("dots", ppu.dots)
 
 	cur_lcdc := Read(LCDC)
 	cur_stat := Read(STAT)
+	cur_mode := cur_stat & 0x3
 
 	// if LCD is turned off
 	// if cur_lcdc & 0x80 == 0 {
@@ -116,23 +117,46 @@ func (ppu *PPU) Render(cycles byte) bool {
 	// }
 
 	if ppu.dots <= MODE2_END {
-		Write(STAT, (cur_stat&0xFE)|0x2)
-		if cur_stat&0x20 != 0 {
-			RequestInterrupt(1)
+		if cur_mode != 2 {
+			if cur_stat&0x20 != 0 {
+				Write(STAT, (cur_stat&0xFE)|0x2)
+				RequestInterrupt(1)
+			}
 		}
 	} else if ppu.dots <= MODE3_END {
-		Write(STAT, (cur_stat&0xFC)|0x3)
+		if cur_mode != 3 {
+			Write(STAT, (cur_stat&0xFC)|0x3)
+		}
 	} else if ppu.dots <= MODE0_END {
-		Write(STAT, (cur_stat & 0xFC))
-		if cur_stat&0x8 != 0 {
-			RequestInterrupt(1)
+		if cur_mode != 0 {
+			Write(STAT, (cur_stat & 0xFC))
+			if cur_stat&0x8 != 0 {
+				RequestInterrupt(1)
+			}
 		}
 	}
 
-	if !render {
-		return false
+	Write(LCDC, (cur_lcdc&(0xFC))|0x1)
+	if cur_stat&0x10 != 0 {
+		RequestInterrupt(1)
 	}
 
+	cur_row := Read(LY)
+
+	if cur_row >= 144 {
+		if cur_mode != 1 {
+			RequestInterrupt(0)
+		}
+		Write(STAT, (cur_stat&0xFC | 0x01))
+	}
+
+	if !row_done {
+		// fmt.Println("not render")
+		return false
+	}
+	Write(LY, (cur_row+1)%154)
+
+	// cur_lcdc := Read(LCDC)
 	if cur_lcdc&0x8 == 0 {
 		ppu.tilemap = 0x9800
 	} else {
@@ -145,20 +169,16 @@ func (ppu *PPU) Render(cycles byte) bool {
 		ppu.tiledata = 0x8000
 	}
 
-	Write(LCDC, (cur_lcdc&(0xFC))|0x1)
-	if cur_stat&0x10 != 0 {
-		RequestInterrupt(1)
-	}
-
-	cur_row := Read(LY)
 	// ppu.logger.LogValue("LY", uint16(cur_row))
 	ppu.RenderBG(cur_row)
 	if cur_row < 144 {
 		ppu.scanline = (ppu.scanline + byte(1)) % 144
-	}
-	Write(LY, (cur_row+1)%154)
-	if cur_row == 144 {
-		RequestInterrupt(0)
+	} else if cur_row == 144 {
+		// RequestInterrupt(0)
+		// Write(STAT, (cur_stat&0xFC | 0x01))
+		return true
+	} else {
+		// Write(STAT, (cur_stat&0xFC | 0x01))
 		return true
 	}
 
