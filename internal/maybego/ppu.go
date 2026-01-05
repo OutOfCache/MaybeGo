@@ -135,6 +135,10 @@ func (ppu *PPU) Render(cycles byte) bool {
 			}
 		}
 	}
+	if !row_done {
+		// fmt.Println("not render")
+		return false
+	}
 
 	Write(LCDC, (cur_lcdc&(0xFC))|0x1)
 	if cur_stat&0x10 != 0 {
@@ -142,6 +146,7 @@ func (ppu *PPU) Render(cycles byte) bool {
 	}
 
 	cur_row := Read(LY)
+	Write(LY, (cur_row+1)%154)
 
 	if cur_row >= 144 {
 		if cur_mode != 1 {
@@ -149,12 +154,6 @@ func (ppu *PPU) Render(cycles byte) bool {
 		}
 		Write(STAT, (cur_stat&0xFC | 0x01))
 	}
-
-	if !row_done {
-		// fmt.Println("not render")
-		return false
-	}
-	Write(LY, (cur_row+1)%154)
 
 	// cur_lcdc := Read(LCDC)
 	if cur_lcdc&0x8 == 0 {
@@ -173,12 +172,10 @@ func (ppu *PPU) Render(cycles byte) bool {
 	ppu.RenderBG(cur_row)
 	if cur_row < 144 {
 		ppu.scanline = (ppu.scanline + byte(1)) % 144
-	} else if cur_row == 144 {
-		// RequestInterrupt(0)
-		// Write(STAT, (cur_stat&0xFC | 0x01))
-		return true
-	} else {
-		// Write(STAT, (cur_stat&0xFC | 0x01))
+	}
+	if cur_row == 144 {
+		RequestInterrupt(0)
+		Write(STAT, (cur_stat&0xFC | 0x01))
 		return true
 	}
 
