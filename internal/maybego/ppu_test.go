@@ -263,7 +263,7 @@ var tile = []byte{
 	0x38, 0x7C,
 }
 
-var tileColors = []uint32{
+var tileColors = []byte{
 	0, 2, 3, 3, 3, 3, 2, 0,
 	0, 3, 0, 0, 0, 0, 3, 0,
 	0, 3, 0, 0, 0, 0, 3, 0,
@@ -276,7 +276,7 @@ var tileColors = []uint32{
 
 func TestUnsignedTileData(t *testing.T) {
 	var tests = []struct {
-		tileNr      int
+		tileNr int
 	}{
 		{0}, {31}, {32}, {255}, {1023},
 	}
@@ -284,27 +284,27 @@ func TestUnsignedTileData(t *testing.T) {
 	// LCD & PPU enable	// BG data area: 8000-8FFF, unsigned
 	ppu.tiledata = 0x8000
 	// Setup tile data for tileID 1
-	for i := 0; i < 16; i+= 1 {
-		Write(uint16(0x8010 + i), tile[i]);
+	for i := 0; i < 16; i += 1 {
+		Write(uint16(0x8010+i), tile[i])
 	}
 
 	cpu.flg.IME = true
 	for _, test := range tests {
 		// Set the tested tiles to tileID 1.
-		Write(ppu.tilemap + uint16(test.tileNr), 0x1)
-		startRow := 8 * (test.tileNr / 32);
+		Write(ppu.tilemap+uint16(test.tileNr), 0x1)
+		startRow := 8 * (test.tileNr / 32)
 		for i := 0; i < 8; i++ {
-		    ppu.RenderBG(byte(startRow + i));
+			ppu.RenderBG(byte(startRow + i))
 		}
 
-		y := startRow;
-		x := (test.tileNr % 32) * 8;
+		y := startRow
+		x := (test.tileNr % 32) * 8
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 8; j++ {
-				actualColor := BGMapRGBA[(((y + i) * 256)) + (x + j)];
-				expectedColor := Palette[tileColors[i * 8 + j]];
+				actualColor := BGMapPalette[((y+i)*256)+(x+j)]
+				expectedColor := tileColors[i*8+j]
 				if actualColor != expectedColor {
-					t.Errorf("Wrong color in tile %d. Got %.6X @ (%d,%d), expected %.6X", test.tileNr, actualColor, x + j, y + i, expectedColor);
+					t.Errorf("Wrong color in tile %d. Got %.6X @ (%d,%d), expected %.6X", test.tileNr, actualColor, x+j, y+i, expectedColor)
 				}
 			}
 		}
@@ -313,10 +313,10 @@ func TestUnsignedTileData(t *testing.T) {
 
 func TestSignedTileData(t *testing.T) {
 	var tests = []struct {
-		tileNr      int
-		tileID      int
+		tileNr int
+		tileID int
 	}{
-		{0, 1},   {31, 1},   {32, 1},   {255, 1},   {1023, 1},   // block 2 (0x9000-0x9FFF)
+		{0, 1}, {31, 1}, {32, 1}, {255, 1}, {1023, 1}, // block 2 (0x9000-0x9FFF)
 		{0, 127}, {31, 127}, {32, 127}, {255, 127}, {1023, 127}, // block 2 (0x9000-0x9FFF)
 		{0, 128}, {31, 128}, {32, 128}, {255, 128}, {1023, 128}, // block 1 (0x8800-0x8FFF)
 		{0, 255}, {31, 255}, {32, 255}, {255, 255}, {1023, 255}, // block 1 (0x8800-0x8FFF)
@@ -328,24 +328,24 @@ func TestSignedTileData(t *testing.T) {
 	cpu.flg.IME = true
 	for _, test := range tests {
 		// Setup tile data for tileID 1
-		for i := 0; i < 16; i+= 1 {
-			Write(uint16(0x9000 + uint16(int8(test.tileID * 0x10)) + uint16(i)), tile[i]);
+		for i := 0; i < 16; i += 1 {
+			Write(uint16(0x9000+uint16(int8(test.tileID*0x10))+uint16(i)), tile[i])
 		}
 		// Set the tested tiles to the tested tileID.
-		Write(ppu.tilemap + uint16(test.tileNr), byte(test.tileID))
-		startRow := 8 * (test.tileNr / 32);
+		Write(ppu.tilemap+uint16(test.tileNr), byte(test.tileID))
+		startRow := 8 * (test.tileNr / 32)
 		for i := 0; i < 8; i++ {
-		    ppu.RenderBG(byte(startRow + i));
+			ppu.RenderBG(byte(startRow + i))
 		}
 
-		y := startRow;
-		x := (test.tileNr % 32) * 8;
+		y := startRow
+		x := (test.tileNr % 32) * 8
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 8; j++ {
-				actualColor := BGMapRGBA[(((y + i) * 256)) + (x + j)];
-				expectedColor := Palette[tileColors[i * 8 + j]];
+				actualColor := BGMapPalette[((y+i)*256)+(x+j)]
+				expectedColor := tileColors[i*8+j]
 				if actualColor != expectedColor {
-					t.Errorf("Wrong color in tile %d, ID %d. Got %.6X @ (%d,%d), expected %.6X", test.tileNr, test.tileID, actualColor, x + j, y + i, expectedColor);
+					t.Errorf("Wrong color in tile %d, ID %d. Got %.6X @ (%d,%d), expected %.6X", test.tileNr, test.tileID, actualColor, x+j, y+i, expectedColor)
 				}
 			}
 		}
@@ -354,14 +354,14 @@ func TestSignedTileData(t *testing.T) {
 
 func TestLCDCSettings(t *testing.T) {
 	var tests = []struct {
-		lcdc    byte
+		lcdc               byte
 		expectedBGTiledata uint16
-		expectedBGTilemap uint16
+		expectedBGTilemap  uint16
 	}{
-	    {0x00, 0x8800, 0x9800},
-	    {0x08, 0x8800, 0x9C00},
-	    {0x10, 0x8000, 0x9800},
-	    {0x18, 0x8000, 0x9C00},
+		{0x00, 0x8800, 0x9800},
+		{0x08, 0x8800, 0x9C00},
+		{0x10, 0x8000, 0x9800},
+		{0x18, 0x8000, 0x9C00},
 	}
 
 	for _, test := range tests {
