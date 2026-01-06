@@ -118,8 +118,8 @@ func (ppu *PPU) Render(cycles byte) bool {
 
 	if ppu.dots <= MODE2_END {
 		if cur_mode != 2 {
+			Write(STAT, (cur_stat&0xFE)|0x2)
 			if cur_stat&0x20 != 0 {
-				Write(STAT, (cur_stat&0xFE)|0x2)
 				RequestInterrupt(1)
 			}
 		}

@@ -36,8 +36,8 @@ func TestVBlankInterrupt(t *testing.T) {
 		expectedIF   byte
 	}{
 		// stat set, int enabled
-		{1, 0x10, 0x10, 0x0},   // mode 0, rows 0-143, ie, stat set
-		{143, 0x10, 0x10, 0x0}, // mode 0, rows 0-143, ie, stat set
+		{1, 0x10, 0x12, 0x0},   // mode 0, rows 0-143, ie, stat set
+		{143, 0x10, 0x12, 0x0}, // mode 0, rows 0-143, ie, stat set
 		{144, 0x10, 0x11, 0x1}, // mode 0, row 144, ie
 		{145, 0x10, 0x11, 0x1}, // mode 0, row 145-153, ie
 		{145, 0x11, 0x11, 0x0}, // mode 1, row 145-153, ie
@@ -52,7 +52,7 @@ func TestVBlankInterrupt(t *testing.T) {
 		Write(LY, test.ly)
 		Write(STAT, test.stat)
 		Write(LCDC, 0x1) // LCD enable
-		ppu.dots = MODE0_END + 1
+		ppu.dots = MODE0_END
 		ppu.Render(0)
 
 		actualSTAT := Read(STAT)
@@ -78,8 +78,8 @@ func TestMode1STATInterrupt(t *testing.T) {
 		expectedIF   byte
 	}{
 		// stat set, int enabled
-		{1, 0x10, 0x10, 0x0},   // mode 0, rows 0-143, ie, stat set
-		{143, 0x10, 0x10, 0x0}, // mode 0, rows 0-143, ie, stat set
+		{1, 0x10, 0x12, 0x0},   // mode 0, rows 0-143, ie, stat set
+		{143, 0x10, 0x12, 0x0}, // mode 0, rows 0-143, ie, stat set
 		{144, 0x10, 0x11, 0x2}, // mode 0, row 145-153, ie
 		{145, 0x10, 0x11, 0x2}, // mode 0, row 144, ie
 		// stat not set, int enabled
@@ -141,6 +141,7 @@ func TestMode2STATInterrupt(t *testing.T) {
 	cpu.flg.IME = true
 	for _, test := range tests {
 		Write(IF, 0x0)
+		Write(LY, 0)
 		Write(STAT, test.stat)
 		ppu.dots = test.dots
 		ppu.Render(test.cycles)
@@ -150,12 +151,12 @@ func TestMode2STATInterrupt(t *testing.T) {
 
 		if actualSTAT != test.expectedSTAT {
 			t.Errorf("Wrong STAT. Got %.2X, expected %.2X", actualSTAT, test.expectedSTAT)
-			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X", test.dots, test.cycles, test.stat)
+			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X}", test.dots, test.cycles, test.stat)
 		}
 
 		if actualIF != test.expectedIF {
 			t.Errorf("Wrong IF. Got %.2X, expected %.2X", actualIF, test.expectedIF)
-			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X", test.dots, test.cycles, test.stat)
+			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X}", test.dots, test.cycles, test.stat)
 		}
 	}
 }
