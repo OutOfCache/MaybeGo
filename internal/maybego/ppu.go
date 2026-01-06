@@ -140,9 +140,11 @@ func (ppu *PPU) Render(cycles byte) bool {
 		return false
 	}
 
-	Write(LCDC, (cur_lcdc&(0xFC))|0x1)
-
 	cur_row := Read(LY)
+	lyc := Read(LYC)
+	if cur_row == lyc && cur_stat&0x40 != 0 {
+		RequestInterrupt(1)
+	}
 	Write(LY, (cur_row+1)%154)
 
 	if cur_row >= 144 {
