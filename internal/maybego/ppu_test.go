@@ -52,7 +52,7 @@ func TestVBlankInterrupt(t *testing.T) {
 		Write(LY, test.ly)
 		Write(STAT, test.stat)
 		Write(LCDC, 0x1) // LCD enable
-		ppu.dots = MODE3_END + 1
+		ppu.dots = MODE0_END + 1
 		ppu.Render(0)
 
 		actualSTAT := Read(STAT)
