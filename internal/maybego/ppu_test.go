@@ -90,6 +90,7 @@ func TestMode1STATInterrupt(t *testing.T) {
 	cpu.flg.IME = true
 	for _, test := range tests {
 		Write(IF, 0x0)
+		Write(LYC, 0)
 		Write(LY, test.ly)
 		Write(STAT, test.stat)
 		ppu.dots = MODE0_END
@@ -142,6 +143,7 @@ func TestMode2STATInterrupt(t *testing.T) {
 	for _, test := range tests {
 		Write(IF, 0x0)
 		Write(LY, 0)
+		Write(LYC, 128)
 		Write(STAT, test.stat)
 		ppu.dots = test.dots
 		ppu.Render(test.cycles)
@@ -217,11 +219,11 @@ func TestLYCInterrupt(t *testing.T) {
 	}{
 		// stat set, int enabled
 		{128, 127, 0x40, 0x0, 0x42}, // mode 0, rows 0-143, ie, stat set
-		{128, 128, 0x40, 0x2, 0x42}, // mode 0, rows 0-143, ie, stat set
+		{128, 128, 0x40, 0x2, 0x46}, // mode 0, rows 0-143, ie, stat set
 		{128, 129, 0x40, 0x0, 0x42}, // mode 0, rows 0-143, ie, stat set
 		// stat disabled
 		{128, 127, 0x00, 0x0, 0x02}, // mode 0, rows 0-143, ie, stat set
-		{128, 128, 0x00, 0x0, 0x02}, // mode 0, rows 0-143, ie, stat set
+		{128, 128, 0x00, 0x0, 0x06}, // mode 0, rows 0-143, ie, stat set
 		{128, 129, 0x00, 0x0, 0x02}, // mode 0, rows 0-143, ie, stat set
 	}
 
@@ -239,12 +241,12 @@ func TestLYCInterrupt(t *testing.T) {
 
 		if actualSTAT != test.expectedSTAT {
 			t.Errorf("Wrong STAT. Got %.2X, expected %.2X", actualSTAT, test.expectedSTAT)
-			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X}", test.ly, test.lyc, test.stat)
+			t.Errorf("Test: {ly: %.2d, lyc: %.2d, STAT: %.2X}", test.ly, test.lyc, test.stat)
 		}
 
 		if actualIF != test.expectedIF {
 			t.Errorf("Wrong IF. Got %.2X, expected %.2X", actualIF, test.expectedIF)
-			t.Errorf("Test: {dots: %.2d, cycles: %.2d, STAT: %.2X}", test.ly, test.lyc, test.stat)
+			t.Errorf("Test: {ly: %.2d, lyc: %.2d, STAT: %.2X}", test.ly, test.lyc, test.stat)
 		}
 	}
 }

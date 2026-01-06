@@ -140,10 +140,16 @@ func (ppu *PPU) Render(cycles byte) bool {
 		return false
 	}
 
+	cur_stat = Read(STAT)
 	cur_row := Read(LY)
 	lyc := Read(LYC)
-	if cur_row == lyc && cur_stat&0x40 != 0 {
-		RequestInterrupt(1)
+	if cur_row == lyc {
+		Write(STAT, cur_stat|0x04) // set LYC bit
+		if cur_stat&0x40 != 0 {
+			RequestInterrupt(1)
+		}
+	} else {
+		Write(STAT, cur_stat&0xFB) // reset LYC bit
 	}
 	Write(LY, (cur_row+1)%154)
 
