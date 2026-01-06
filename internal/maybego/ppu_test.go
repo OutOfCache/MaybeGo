@@ -329,7 +329,11 @@ func TestSignedTileData(t *testing.T) {
 	for _, test := range tests {
 		// Setup tile data for tileID 1
 		for i := 0; i < 16; i += 1 {
-			Write(uint16(0x9000+uint16(int8(test.tileID*0x10))+uint16(i)), tile[i])
+			address := uint16(0x9000 + uint16(test.tileID*0x10) + uint16(i))
+			if test.tileID > 127 {
+				address -= 0x1000
+			}
+			Write(address, tile[i])
 		}
 		// Set the tested tiles to the tested tileID.
 		Write(ppu.tilemap+uint16(test.tileNr), byte(test.tileID))

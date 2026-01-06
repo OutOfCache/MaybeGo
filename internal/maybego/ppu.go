@@ -67,7 +67,10 @@ func (ppu *PPU) RenderBG(row byte) {
 		var tileY uint16
 
 		if ppu.tiledata == 0x8800 {
-			tileY = uint16(0x800 + uint16(int8(uint16(tileID)*0x10)))
+			tileY = 0x800 + uint16(tileID)*0x10
+			if tileID > 127 {
+				tileY -= 0x1000
+			}
 		} else {
 			tileY = uint16(tileID) * uint16(0x10)
 		}
