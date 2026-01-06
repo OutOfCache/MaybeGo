@@ -140,10 +140,12 @@ func (ppu *PPU) Render(cycles byte) bool {
 		return false
 	}
 
-	cur_stat = Read(STAT)
 	cur_row := Read(LY)
+	Write(LY, (cur_row+1)%154)
+
+	cur_stat = Read(STAT)
 	lyc := Read(LYC)
-	if cur_row == lyc {
+	if (Read(LY)) == lyc {
 		Write(STAT, cur_stat|0x04) // set LYC bit
 		if cur_stat&0x40 != 0 {
 			RequestInterrupt(1)
@@ -151,8 +153,8 @@ func (ppu *PPU) Render(cycles byte) bool {
 	} else {
 		Write(STAT, cur_stat&0xFB) // reset LYC bit
 	}
-	Write(LY, (cur_row+1)%154)
 
+	cur_stat = Read(STAT)
 	if cur_row >= 144 {
 		if cur_mode != 1 {
 			RequestInterrupt(0)
