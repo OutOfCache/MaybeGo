@@ -92,7 +92,8 @@ func TestMode1STATInterrupt(t *testing.T) {
 		Write(IF, 0x0)
 		Write(LY, test.ly)
 		Write(STAT, test.stat)
-		ppu.RenderRow()
+		ppu.dots = MODE0_END
+		ppu.Render(0)
 
 		actualSTAT := Read(STAT)
 		actualIF := (Read(IF) & 0x2)
