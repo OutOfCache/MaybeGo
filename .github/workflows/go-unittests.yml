@@ -24,7 +24,7 @@ jobs:
     - run: cd internal/maybego/
 
     - name: Test CPU
-      run: cd internal/maybego && pwd && go test -v cpu_test.go cpu.go memory.go logger.go
+      run: cd internal/maybego && go test -v cpu_test.go cpu.go memory.go logger.go
     
     - name: Test PPU
-      run: go test -v ppu_test.go cpu.go memory.go logger.go ppu.go
+      run: cd internal/maybego && go test -v ppu_test.go cpu.go memory.go logger.go ppu.go
