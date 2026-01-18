@@ -5,6 +5,7 @@ const (
 	STAT      uint16 = 0xFF41
 	LY        uint16 = 0xFF44
 	LYC       uint16 = 0xFF45
+	BGP       uint16 = 0xFF47
 	MODE2_END uint16 = 80
 	MODE3_END uint16 = 80 + 289
 	MODE0_END uint16 = 456
@@ -20,6 +21,7 @@ type PPU struct {
 
 var framebufferPalette [160 * 144]byte
 var BGMapPalette [256 * 256]byte
+var paletteValues [4]byte
 
 var winWidth, winHeight int32 = 160, 144
 var err error
@@ -37,6 +39,11 @@ func (ppu *PPU) GetCurrentFrame() *[160 * 144]byte {
 
 func (ppu *PPU) RenderBG(row byte) {
 	y := int(row)
+	palette := Read(BGP)
+	for i := range 4 {
+		paletteValues[i] = palette & 0x3
+		palette >>= 2
+	}
 	// FIXME: tileID only changes every 8 pixels
 	// for tileID := 0; tileID < 8; tileID += 1 {
 	// 	var tileStart uint16
@@ -90,9 +97,9 @@ func (ppu *PPU) RenderBG(row byte) {
 		// if pixelcolor != 0 {
 		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
 		// }
-		BGMapPalette[y*256+x] = pixelcolor
+		BGMapPalette[y*256+x] = paletteValues[pixelcolor]
 		if x /* - SCX */ < 160 && y < 144 {
-			framebufferPalette[(int(ppu.scanline)*160)+x] = pixelcolor
+			framebufferPalette[(int(ppu.scanline)*160)+x] = paletteValues[pixelcolor]
 		}
 	}
 }

@@ -264,14 +264,14 @@ var tile = []byte{
 }
 
 var tileColors = []byte{
-	0, 2, 3, 3, 3, 3, 2, 0,
-	0, 3, 0, 0, 0, 0, 3, 0,
-	0, 3, 0, 0, 0, 0, 3, 0,
-	0, 3, 0, 0, 0, 0, 3, 0,
-	0, 3, 1, 3, 3, 3, 3, 0,
-	0, 1, 1, 1, 3, 1, 3, 0,
-	0, 3, 1, 3, 1, 3, 2, 0,
-	0, 2, 3, 3, 3, 2, 0, 0,
+	3, 1, 0, 0, 0, 0, 1, 3,
+	3, 0, 3, 3, 3, 3, 0, 3,
+	3, 0, 3, 3, 3, 3, 0, 3,
+	3, 0, 3, 3, 3, 3, 0, 3,
+	3, 0, 2, 0, 0, 0, 0, 3,
+	3, 2, 2, 2, 0, 2, 0, 3,
+	3, 0, 2, 0, 2, 0, 1, 3,
+	3, 1, 0, 0, 0, 1, 3, 3,
 }
 
 func TestUnsignedTileData(t *testing.T) {
@@ -282,6 +282,7 @@ func TestUnsignedTileData(t *testing.T) {
 	}
 
 	// LCD & PPU enable	// BG data area: 8000-8FFF, unsigned
+	Write(BGP, 0b00011011)
 	ppu.tiledata = 0x8000
 	// Setup tile data for tileID 1
 	for i := 0; i < 16; i += 1 {
@@ -324,6 +325,7 @@ func TestSignedTileData(t *testing.T) {
 
 	// LCD & PPU enable	// BG data area: 0x8800-0x97FF, signed
 	ppu.tiledata = 0x8800
+	Write(BGP, 0b00011011)
 
 	cpu.flg.IME = true
 	for _, test := range tests {
@@ -378,6 +380,43 @@ func TestLCDCSettings(t *testing.T) {
 		}
 		if ppu.tilemap != test.expectedBGTilemap {
 			t.Errorf("Tilemap is %.4X; expected %.4X for LCDC %.2X", ppu.tilemap, test.expectedBGTilemap, test.lcdc)
+		}
+	}
+}
+
+var paletteTile = []byte{
+	0b00110011, 0b00001111, // gradient in the first line, colors 0 0 1 1 2 2 3 3
+}
+
+func TestPalettes(t *testing.T) {
+	var tests = []struct {
+		palette           byte
+		expectedBGPalette [8]byte
+	}{
+		{0b00011011, [8]byte{3, 3, 2, 2, 1, 1, 0, 0}},
+		{0b11100100, [8]byte{0, 0, 1, 1, 2, 2, 3, 3}},
+		{0b01010101, [8]byte{1, 1, 1, 1, 1, 1, 1, 1}},
+		{0b00110011, [8]byte{3, 3, 0, 0, 3, 3, 0, 0}},
+	}
+
+	ppu.tiledata = 0x8000
+	// Setup tile data for tileID 1
+	for i := 0; i < 2; i += 1 {
+		Write(uint16(0x8010+i), paletteTile[i])
+	}
+
+	for _, test := range tests {
+		Write(BGP, test.palette)
+		// Set the tested tile to tileID 1.
+		Write(ppu.tilemap, 0x1)
+		ppu.RenderBG(byte(0))
+
+		for j := 0; j < 8; j++ {
+			actualColor := BGMapPalette[j]
+			expectedColor := test.expectedBGPalette[j]
+			if actualColor != expectedColor {
+				t.Errorf("Wrong color with palette %b. Got %02d @ (%d,%d), expected %02d", test.palette, actualColor, j, 0, expectedColor)
+			}
 		}
 	}
 }
