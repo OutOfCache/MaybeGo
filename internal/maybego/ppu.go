@@ -3,6 +3,7 @@ package maybego
 const (
 	LCDC      uint16 = 0xFF40
 	STAT      uint16 = 0xFF41
+	SCY       uint16 = 0xFF42
 	LY        uint16 = 0xFF44
 	LYC       uint16 = 0xFF45
 	BGP       uint16 = 0xFF47
@@ -38,7 +39,7 @@ func (ppu *PPU) GetCurrentFrame() *[160 * 144]byte {
 }
 
 func (ppu *PPU) RenderBG(row byte) {
-	y := int(row)
+	y := (int(row) + int(Read(SCY))) % 256
 	palette := Read(BGP)
 	for i := range 4 {
 		paletteValues[i] = palette & 0x3
