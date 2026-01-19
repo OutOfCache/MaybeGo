@@ -4,6 +4,7 @@ const (
 	LCDC      uint16 = 0xFF40
 	STAT      uint16 = 0xFF41
 	SCY       uint16 = 0xFF42
+	SCX       uint16 = 0xFF43
 	LY        uint16 = 0xFF44
 	LYC       uint16 = 0xFF45
 	BGP       uint16 = 0xFF47
@@ -99,9 +100,11 @@ func (ppu *PPU) RenderBG(row byte) {
 		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
 		// }
 		BGMapPalette[y*256+x] = paletteValues[pixelcolor]
-		if x /* - SCX */ < 160 && y < 144 {
-			framebufferPalette[(int(ppu.scanline)*160)+x] = paletteValues[pixelcolor]
-		}
+	}
+
+	scx := int(Read(SCX))
+	for x := 0; y < 144 && x < 160; x++ {
+		framebufferPalette[(int(ppu.scanline)*160)+x] = BGMapPalette[y*256+((x+scx)%256)]
 	}
 }
 
