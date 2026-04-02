@@ -100,11 +100,17 @@ func (ppu *PPU) RenderBG(row byte) {
 		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
 		// }
 		BGMapPalette[y*256+x] = paletteValues[pixelcolor]
+		// fmt.Printf("y: %d, x: %d, pixelcolor: %d, row: %d\n", y, x, pixelcolor, row)
 	}
 
 	scx := int(Read(SCX))
+	shifted_x := scx % 256
+	framebuffer_row := int(ppu.scanline) * 160
+	bgm_row := y * 256
 	for x := 0; y < 144 && x < 160; x++ {
-		framebufferPalette[(int(ppu.scanline)*160)+x] = BGMapPalette[y*256+((x+scx)%256)]
+		// shifted_x := (x + scx) % 256
+		framebufferPalette[framebuffer_row+x] = BGMapPalette[bgm_row+shifted_x]
+		shifted_x = (shifted_x + 1) % 256
 	}
 }
 
