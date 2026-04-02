@@ -9,13 +9,13 @@ pkgs.mkShell {
     pkgs.delve
     pkgs.gcc
     pkgs.pkg-config
-    pkgs.xorg.libX11.dev
+    pkgs.libX11.dev
     pkgs.libGL
-    pkgs.xorg.libXcursor
-    pkgs.xorg.libXi
-    pkgs.xorg.libXinerama
-    pkgs.xorg.libXrandr
-    pkgs.xorg.libXxf86vm
+    pkgs.libxcursor
+    pkgs.libxi
+    pkgs.libxinerama
+    pkgs.libxrandr
+    pkgs.libxxf86vm
     pkgs.libxkbcommon
     pkgs.wayland
   ];
