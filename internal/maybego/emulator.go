@@ -14,11 +14,11 @@ type cpu_state struct {
 	flags     *Flags
 }
 
-func NewEmulator(logger *Logger) *Emulator {
+func NewEmulator(logger *Logger, boot *string) *Emulator {
 	// TODO: no logger in CPU or PPU
-	cpu := NewCPU(logger)
+	has_boot := InitMemory(boot)
+	cpu := NewCPU(logger, has_boot)
 	ppu := NewPPU(logger)
-	InitMemory()
 	joy := NewJoypad()
 	e := &Emulator{cpu: cpu, ppu: ppu, joypad: joy, logger: logger}
 

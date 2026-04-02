@@ -34,6 +34,7 @@ func main() {
 	debugFlag := flag.Bool("debug", false, "enables logging")
 	logFile := flag.String("logfile", "", "log output file")
 	logContents := flag.String("logcontent", "", "what to log. Can be a combination of the following\npc\t\tlog pc and opcode information\nreg\t\tlog registers\nflags\tlog flags\nall\t\tlog everything")
+	bootRom := flag.String("boot", "", "bootrom to load")
 
 	flag.Parse()
 	logContentsSplit := strings.Split(*logContents, ",")
@@ -54,7 +55,7 @@ func main() {
 		}
 	}
 
-	ui = maybego.NewUI(logger)
+	ui = maybego.NewUI(logger, bootRom)
 	// TODO: optional argument
 	loadROM()
 	ui.Run()

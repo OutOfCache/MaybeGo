@@ -75,10 +75,10 @@ type Interface struct {
 	debug   *debugView
 }
 
-func NewUI(logger *Logger) *Interface {
+func NewUI(logger *Logger, boot *string) *Interface {
 	a := app.New()
 	w := a.NewWindow("MaybeGo")
-	e := NewEmulator(logger)
+	e := NewEmulator(logger, boot)
 	display := canvas.NewRasterWithPixels(
 		func(x, y, w, h int) color.Color {
 			if x > 159 || y > 143 {
