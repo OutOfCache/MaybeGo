@@ -123,21 +123,29 @@ func (ppu *PPU) RenderOAM(row byte) {
 	// x := 8  // left col
 	framebuffer_row := int(row) * 160
 	oam_base := 0xFE00
-	for x := 0; x < 6; x++ {
+	// is_double_size := Read(LCDC&0x4) != 0
+	// fmt.Printf("is double size? %t\n", is_double_size)
+	for x := 0; x < 40; x++ {
 		// for i := 0; i < 6; i++ {
 		// tile_idx := Read(uint16(oam_base + 4*i + 2)) // tile is at byte 2
-		// fmt.Printf("OAM %x\t: Tile Idx: %x\n", i, tile_idx)
 		sprite_y := Read(uint16(oam_base + 4*x))
 		if row < (sprite_y-16) || row >= (sprite_y-16+8) {
 			continue
 		}
 		tile_idx := Read(uint16(oam_base + 4*x + 2)) // tile is at byte 2
-		address := 0x8000 + uint16(tile_idx)*16 + uint16(ppu.scanline%8)*2
+		address := 0x8000 + uint16(tile_idx)*16 + uint16(row-(sprite_y-16))*2
+		// if is_double_size {
+		// 	address = 0x8000 + (uint16(tile_idx)&0xFE)*0x10 + (uint16(row)%16)*2
+		// }
+		sprite_x := int(Read(uint16(oam_base+4*x+1))) - 8
 		for j := 0; j < 8; j++ {
-			sprite_x := int(Read(uint16(oam_base+4*x+1))) - 8
+			framebuffer_x := sprite_x + j
+			if framebuffer_x < 0 || framebuffer_x >= 160 {
+				continue
+			}
+			// fmt.Printf("OAM %x\t: Tile Idx: %x, tile_y: %x, address: %x, framebuffer x,y: (%d, %d), row: %d\n", x, tile_idx, sprite_y, address, framebuffer_row, framebuffer_x, row)
 			pixelcolor := (Read(address) >> (7 - (j % 8)) & 0x1) +
 				(Read(address+1)>>(7-(j%8))&0x1)*2
-			framebuffer_x := sprite_x + j
 			framebufferPalette[framebuffer_row+framebuffer_x] = paletteValues[pixelcolor]
 		}
 		// }
@@ -230,9 +238,9 @@ func (ppu *PPU) Render(cycles byte) bool {
 
 	// ppu.logger.LogValue("LY", uint16(cur_row))
 	ppu.RenderBG(cur_row)
-	ppu.RenderOAM(cur_row)
 	if cur_row < 144 {
 		ppu.scanline = (ppu.scanline + byte(1)) % 144
+		ppu.RenderOAM(cur_row)
 	}
 	if cur_row == 144 {
 		RequestInterrupt(0)
