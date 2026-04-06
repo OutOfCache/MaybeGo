@@ -122,12 +122,10 @@ func (ppu *PPU) RenderBG(row byte) {
 }
 
 func (ppu *PPU) RenderOAM(row byte) {
-	// for now, render the first 6 OBJ in sequence
-	// assume 8x8 mode
-	// render from the top left row, ignoring x and y for now
-	// ignore OBJ palette for now, use BG palette
-	// y := 16 // top row
-	// x := 8  // left col
+	// TODO: 10 obj per line limit
+	// TODO: double size mode? -> why does this seem to work?
+	// TODO: refactor
+	// TODO: flip etc
 	framebuffer_row := int(row) * 160
 	oam_base := 0xFE00
 	cur_lcdc := Read(LCDC)
@@ -140,9 +138,7 @@ func (ppu *PPU) RenderOAM(row byte) {
 		obPaletteValues[i] = palette & 0x3
 		palette >>= 2
 	}
-	// obPaletteValues[0] &= 0xFC
 	// is_double_size := Read(LCDC&0x4) != 0
-	// fmt.Printf("is double size? %t\n", is_double_size)
 	for x := 0; x < 40; x++ {
 		// for i := 0; i < 6; i++ {
 		// tile_idx := Read(uint16(oam_base + 4*i + 2)) // tile is at byte 2
@@ -152,16 +148,12 @@ func (ppu *PPU) RenderOAM(row byte) {
 		}
 		tile_idx := Read(uint16(oam_base + 4*x + 2)) // tile is at byte 2
 		address := 0x8000 + uint16(tile_idx)*16 + uint16(row-(sprite_y-16))*2
-		// if is_double_size {
-		// 	address = 0x8000 + (uint16(tile_idx)&0xFE)*0x10 + (uint16(row)%16)*2
-		// }
 		sprite_x := int(Read(uint16(oam_base+4*x+1))) - 8
 		for j := 0; j < 8; j++ {
 			framebuffer_x := sprite_x + j
 			if framebuffer_x < 0 || framebuffer_x >= 160 {
 				continue
 			}
-			// fmt.Printf("OAM %x\t: Tile Idx: %x, tile_y: %x, address: %x, framebuffer x,y: (%d, %d), row: %d\n", x, tile_idx, sprite_y, address, framebuffer_row, framebuffer_x, row)
 			pixelcolor := (Read(address) >> (7 - (j % 8)) & 0x1) +
 				(Read(address+1)>>(7-(j%8))&0x1)*2
 
@@ -171,7 +163,6 @@ func (ppu *PPU) RenderOAM(row byte) {
 			}
 			framebufferPalette[framebuffer_row+framebuffer_x] = obPaletteValues[pixelcolor]
 		}
-		// }
 	}
 }
 
