@@ -130,7 +130,12 @@ func (ppu *PPU) RenderOAM(row byte) {
 	// x := 8  // left col
 	framebuffer_row := int(row) * 160
 	oam_base := 0xFE00
-	palette := Read(OBP0)
+	cur_lcdc := Read(LCDC)
+	palette_adr := OBP0
+	if cur_lcdc&0x10 != 0 {
+		palette_adr = OBP1
+	}
+	palette := Read(palette_adr)
 	for i := range 4 {
 		obPaletteValues[i] = palette & 0x3
 		palette >>= 2
