@@ -8,6 +8,8 @@ const (
 	LY        uint16 = 0xFF44
 	LYC       uint16 = 0xFF45
 	BGP       uint16 = 0xFF47
+	OBP0      uint16 = 0xFF48
+	OBP1      uint16 = 0xFF49
 	MODE2_END uint16 = 80
 	MODE3_END uint16 = 80 + 289
 	MODE0_END uint16 = 456
@@ -23,7 +25,8 @@ type PPU struct {
 
 var framebufferPalette [160 * 144]byte
 var BGMapPalette [256 * 256]byte
-var paletteValues [4]byte
+var bgPaletteValues [4]byte
+var obPaletteValues [4]byte
 
 var winWidth, winHeight int32 = 160, 144
 var err error
@@ -40,10 +43,14 @@ func (ppu *PPU) GetCurrentFrame() *[160 * 144]byte {
 }
 
 func (ppu *PPU) RenderBG(row byte) {
+	// DR. Mario problem
+	// Tile 0x158 should be 0x198
+	// 0x163 -> 0x193
+	// Tile 0x140 not working
 	y := (int(row) + int(Read(SCY))) % 256
 	palette := Read(BGP)
 	for i := range 4 {
-		paletteValues[i] = palette & 0x3
+		bgPaletteValues[i] = palette & 0x3
 		palette >>= 2
 	}
 	// FIXME: tileID only changes every 8 pixels
@@ -99,7 +106,7 @@ func (ppu *PPU) RenderBG(row byte) {
 		// if pixelcolor != 0 {
 		// 	fmt.Printf("Color @ (%d, %d): %d\n", x, y, pixelcolor)
 		// }
-		BGMapPalette[y*256+x] = paletteValues[pixelcolor]
+		BGMapPalette[y*256+x] = bgPaletteValues[pixelcolor]
 		// fmt.Printf("y: %d, x: %d, pixelcolor: %d, row: %d\n", y, x, pixelcolor, row)
 	}
 
@@ -123,6 +130,12 @@ func (ppu *PPU) RenderOAM(row byte) {
 	// x := 8  // left col
 	framebuffer_row := int(row) * 160
 	oam_base := 0xFE00
+	palette := Read(OBP0)
+	for i := range 4 {
+		obPaletteValues[i] = palette & 0x3
+		palette >>= 2
+	}
+	// obPaletteValues[0] &= 0xFC
 	// is_double_size := Read(LCDC&0x4) != 0
 	// fmt.Printf("is double size? %t\n", is_double_size)
 	for x := 0; x < 40; x++ {
@@ -146,7 +159,12 @@ func (ppu *PPU) RenderOAM(row byte) {
 			// fmt.Printf("OAM %x\t: Tile Idx: %x, tile_y: %x, address: %x, framebuffer x,y: (%d, %d), row: %d\n", x, tile_idx, sprite_y, address, framebuffer_row, framebuffer_x, row)
 			pixelcolor := (Read(address) >> (7 - (j % 8)) & 0x1) +
 				(Read(address+1)>>(7-(j%8))&0x1)*2
-			framebufferPalette[framebuffer_row+framebuffer_x] = paletteValues[pixelcolor]
+
+			// transparent
+			if pixelcolor == 0 {
+				continue
+			}
+			framebufferPalette[framebuffer_row+framebuffer_x] = obPaletteValues[pixelcolor]
 		}
 		// }
 	}
