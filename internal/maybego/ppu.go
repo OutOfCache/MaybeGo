@@ -129,11 +129,10 @@ func (ppu *PPU) RenderOAM(row byte) {
 		// fmt.Printf("OAM %x\t: Tile Idx: %x\n", i, tile_idx)
 		sprite_y := Read(uint16(oam_base + 4*x))
 		if row < (sprite_y-16) || row >= (sprite_y-16+8) {
-			fmt.Printf("Row %d not in range of sprite_y %d\n", row, sprite_y)
 			continue
 		}
 		tile_idx := Read(uint16(oam_base + 4*x + 2)) // tile is at byte 2
-		address := 0x8000 + uint16(tile_idx*16) + uint16(ppu.scanline%8)*2
+		address := 0x8000 + uint16(tile_idx)*16 + uint16(ppu.scanline%8)*2
 		fmt.Printf("OAM %x\t: Tile Idx: %x\n", x, tile_idx)
 		for j := 0; j < 8; j++ {
 			pixelcolor := (Read(address) >> (7 - (j % 8)) & 0x1) +
