@@ -133,11 +133,11 @@ func (ppu *PPU) RenderOAM(row byte) {
 		}
 		tile_idx := Read(uint16(oam_base + 4*x + 2)) // tile is at byte 2
 		address := 0x8000 + uint16(tile_idx)*16 + uint16(ppu.scanline%8)*2
-		fmt.Printf("OAM %x\t: Tile Idx: %x\n", x, tile_idx)
 		for j := 0; j < 8; j++ {
+			sprite_x := int(Read(uint16(oam_base+4*x+1))) - 8
 			pixelcolor := (Read(address) >> (7 - (j % 8)) & 0x1) +
 				(Read(address+1)>>(7-(j%8))&0x1)*2
-			framebuffer_x := x*8 + j
+			framebuffer_x := sprite_x + j
 			framebufferPalette[framebuffer_row+framebuffer_x] = paletteValues[pixelcolor]
 		}
 		// }
