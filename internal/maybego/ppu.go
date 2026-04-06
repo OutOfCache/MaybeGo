@@ -114,6 +114,36 @@ func (ppu *PPU) RenderBG(row byte) {
 	}
 }
 
+func (ppu *PPU) RenderOAM(row byte) {
+	// for now, render the first 6 OBJ in sequence
+	// assume 8x8 mode
+	// render from the top left row, ignoring x and y for now
+	// ignore OBJ palette for now, use BG palette
+	if ppu.scanline > 8 {
+		return
+	}
+	// y := 16 // top row
+	// x := 8  // left col
+	framebuffer_row := int(ppu.scanline) * 160
+	oam_base := 0xFE00
+	for x := 0; x < 6; x++ {
+		// for i := 0; i < 6; i++ {
+		// tile_idx := Read(uint16(oam_base + 4*i + 2)) // tile is at byte 2
+		// fmt.Printf("OAM %x\t: Tile Idx: %x\n", i, tile_idx)
+		// sprite_y := Read(uint16(oam_base + 4*x))
+		tile_idx := Read(uint16(oam_base + 4*x + 2)) // tile is at byte 2
+		address := 0x8000 + uint16(tile_idx*16) + uint16(ppu.scanline%8)*2
+		fmt.Printf("OAM %x\t: Tile Idx: %x\n", x, tile_idx)
+		for j := 0; j < 8; j++ {
+			pixelcolor := (Read(address) >> (7 - (j % 8)) & 0x1) +
+				(Read(address+1)>>(7-(j%8))&0x1)*2
+			framebuffer_x := x*8 + j
+			framebufferPalette[framebuffer_row+framebuffer_x] = paletteValues[pixelcolor]
+		}
+		// }
+	}
+}
+
 func (ppu *PPU) Render(cycles byte) bool {
 	// lcd_on := cur_lcdc&0x1 != 0
 
@@ -200,6 +230,7 @@ func (ppu *PPU) Render(cycles byte) bool {
 
 	// ppu.logger.LogValue("LY", uint16(cur_row))
 	ppu.RenderBG(cur_row)
+	ppu.RenderOAM(cur_row)
 	if cur_row < 144 {
 		ppu.scanline = (ppu.scanline + byte(1)) % 144
 	}
