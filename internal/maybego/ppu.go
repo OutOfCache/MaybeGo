@@ -119,18 +119,19 @@ func (ppu *PPU) RenderOAM(row byte) {
 	// assume 8x8 mode
 	// render from the top left row, ignoring x and y for now
 	// ignore OBJ palette for now, use BG palette
-	if ppu.scanline > 8 {
-		return
-	}
 	// y := 16 // top row
 	// x := 8  // left col
-	framebuffer_row := int(ppu.scanline) * 160
+	framebuffer_row := int(row) * 160
 	oam_base := 0xFE00
 	for x := 0; x < 6; x++ {
 		// for i := 0; i < 6; i++ {
 		// tile_idx := Read(uint16(oam_base + 4*i + 2)) // tile is at byte 2
 		// fmt.Printf("OAM %x\t: Tile Idx: %x\n", i, tile_idx)
-		// sprite_y := Read(uint16(oam_base + 4*x))
+		sprite_y := Read(uint16(oam_base + 4*x))
+		if row < (sprite_y-16) || row >= (sprite_y-16+8) {
+			fmt.Printf("Row %d not in range of sprite_y %d\n", row, sprite_y)
+			continue
+		}
 		tile_idx := Read(uint16(oam_base + 4*x + 2)) // tile is at byte 2
 		address := 0x8000 + uint16(tile_idx*16) + uint16(ppu.scanline%8)*2
 		fmt.Printf("OAM %x\t: Tile Idx: %x\n", x, tile_idx)
