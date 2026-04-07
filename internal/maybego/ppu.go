@@ -139,13 +139,15 @@ func (ppu *PPU) RenderOAM(row byte) {
 		palette >>= 2
 	}
 	// is_double_size := Read(LCDC&0x4) != 0
-	for x := 0; x < 40; x++ {
+	num_sprites := 0
+	for x := 0; x < 40 && num_sprites < 10; x++ {
 		// for i := 0; i < 6; i++ {
 		// tile_idx := Read(uint16(oam_base + 4*i + 2)) // tile is at byte 2
 		sprite_y := Read(uint16(oam_base + 4*x))
 		if row < (sprite_y-16) || row >= (sprite_y-16+8) {
 			continue
 		}
+		num_sprites++
 		tile_idx := Read(uint16(oam_base + 4*x + 2)) // tile is at byte 2
 		address := 0x8000 + uint16(tile_idx)*16 + uint16(row-(sprite_y-16))*2
 		sprite_x := int(Read(uint16(oam_base+4*x+1))) - 8
